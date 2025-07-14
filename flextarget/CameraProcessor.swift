@@ -27,6 +27,7 @@ class CameraProcessor: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
     private let queue = DispatchQueue(label: "camera.queue")
     private let sessionQueue = DispatchQueue(label: "camera.session.queue")
     private var isSessionRunning = false
+    private var shouldAdjustExposure = false
     
     // MARK: State
     private var frameCount = 0
@@ -72,6 +73,9 @@ class CameraProcessor: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
                 if let isStable = notification.userInfo?["isStable"] as? Bool, !isStable {
                     self?.lastRectifyMatrix = nil
                     self?.rectified = false
+                    self?.shouldAdjustExposure = false
+//                    Restore the device exposure settings
+                    self?.restoreAutoExposure()
                     print("Motion unstable, resetting rectification state.")
                 }
             }
@@ -79,33 +83,6 @@ class CameraProcessor: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
             guard let device = AVCaptureDevice.default(for: .video),
                   let input = try? AVCaptureDeviceInput(device: device),
                   self.session.canAddInput(input) else { return }
-            
-            if let device = AVCaptureDevice.default(for: .video) {
-                do {
-                    try device.lockForConfiguration()
-                    // Use a moderate bias instead of the minimum
-                    let bias = max(device.minExposureTargetBias, -4.5) // -1.0 is just an example
-                    device.setExposureTargetBias(bias, completionHandler: nil)
-                    device.exposureMode = .continuousAutoExposure
-
-                    // Set frame rate to 50 fps
-                    let desiredFrameRate: Double = 50
-                    for vFormat in device.formats {
-                        let ranges = vFormat.videoSupportedFrameRateRanges
-                        let frameRates = ranges[0]
-                        if frameRates.maxFrameRate >= desiredFrameRate && frameRates.minFrameRate <= desiredFrameRate {
-                            device.activeFormat = vFormat
-                            device.activeVideoMinFrameDuration = CMTime(value: 1, timescale: CMTimeScale(desiredFrameRate))
-                            device.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: CMTimeScale(desiredFrameRate))
-                            break
-                        }
-                    }
-                    device.unlockForConfiguration()
-                    
-                } catch {
-                    print("Failed to set exposure: \(error)")
-                }
-            }
             
             self.session.addInput(input)
             self.output.setSampleBufferDelegate(self, queue: self.queue)
@@ -176,6 +153,11 @@ class CameraProcessor: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
         //DONT DO THIS AS AVMETADATA OUTPUT WILL NOT WORK
         //updateVideoOrientation(for: connection)
         
+        if shouldAdjustExposure {
+            reduceExposure(to: -4.0) // Reduce exposure bias
+            shouldAdjustExposure = false
+        }
+        
         //Check if 4 QR corners are detecte with the MetaDataOutput
         if self.qrCount != 4 {
             // If QR code is found, we can skip further processing, just preview
@@ -245,6 +227,7 @@ class CameraProcessor: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
                             self.previewImage = rectified
                             self.lastRectifyMatrix = matrix
                             self.rectified = true
+                            self.shouldAdjustExposure = true // Set flag to adjust exposure next time
 //                            print("Rectification matrix: \(matrix)")
                         }
                     }
@@ -253,7 +236,7 @@ class CameraProcessor: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
                 if(self.rectified == true){
                     let binarized = OpenCVWrapper.metalBinaryRedHSV(self.previewImage)
                                         
-                    if let nsCenters = OpenCVWrapper.centersOfContours(from: binarized) as? [NSValue] {
+                    if let nsCenters = OpenCVWrapper.centersOfContours(from: binarized) {
                         let centers = nsCenters.map { $0.cgPointValue }
 
                         if centers.count > 0 {
@@ -284,187 +267,6 @@ class CameraProcessor: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
             } // QR Code Found
         } // IF QR Code Found
     }
-                    
-                    //                    DispatchQueue.main.async {
-                    //
-                    //                        self.previewImage = rectified
-                    //
-                    //                        let binarized = OpenCVWrapper.metalBinaryRedHSV(rectified)
-                    //
-                    //                        if let nsCenters = OpenCVWrapper.centersOfContours(from: binarized) as? [NSValue] {
-                    //                            let centers = nsCenters.map { $0.cgPointValue }
-                    //                            print("Contour centers: \(centers)")
-                    //                            if centers.count > 0 {
-                    //                                let timestamp = Int(Date().timeIntervalSince1970 * 1000)
-                    //                                let t = (self.bleStateTimestamp != 0) ? (timestamp - self.bleStateTimestamp) : timestamp
-                    //                                let xScale: CGFloat = 476.4 / 1920.0
-                    //                                let yScale: CGFloat = 268.0 / 1080.0
-                    //                                let centersWithTimestamp = centers.map { center in
-                    //                                    let xPhys = 268 - center.y * yScale
-                    //                                    let yPhys = 476.4 - center.x * xScale
-                    //                                    return (t: t, x: xPhys, y: yPhys, a: 0)
-                    //                                }
-                    //                                let centerString = self.jsonStringForCenters(centersWithTimestamp)
-                    //                                self.saveToLocalStorageAndSendBLE(key: "0", value: centerString ?? "{}") // Don't send timestamp for now
-                    //                            }
-                    //                        }
-                    //
-                    //                        let contoured = OpenCVWrapper.drawCirclesOnContours(from: binarized)
-                    //
-                    //                        self.previewImage = contoured
-                    //
-                    ////                        if let image = self.processedImage, let rotated = self.rotateImage90CCW(image) {
-                    ////                            self.processedImage = rotated
-                    ////                        }
-                    //
-                    //                        NotificationCenter.default.post(name: .newFrameProcessed, object: nil)
-                    //
-                    ////                        self.saveProcessedImageToPhotoGallery()
-                    //                        self.pauseProcessing = false
-                    //                        return
-                    //                    }
-                    
-                    //                    self.saveProcessedImageToPhotoGallery()
-                    //                    self.pauseProcessing = true
-                
-                
-            //Calcaluate the transformation matrix for rectification
-            
-            
-            
-//            if let box = self.boundingBox, let img = self.previewImage {
-                //                DispatchQueue.main.async {
-                //                    // Denormalize bounding box if needed
-                //                    let denormBox = CGRect(
-                //                        x: box.origin.x * img.size.width,
-                //                        y: box.origin.y * img.size.height,
-                //                        width: box.size.width * img.size.width,
-                //                        height: box.size.height * img.size.height
-                //                    )
-                //                    self.processedImage = img.drawBoundingBox(denormBox)
-                //                }
-                // print out image width and height
-                //                print("Image size: \(self.processedImage!.size.width) x \(self.processedImage!.size.height)")
-                //                print("4 QR codes detected, proceeding with image processing.")
-            
-            //            DispatchQueue.main.async {
-            //                self.previewImage = self.uiImageFromSampleBuffer(sampleBuffer)
-            //                NotificationCenter.default.post(name: .newFrameProcessed, object: nil)
-            //            }
-            //            return
-        
-        
-        //        if(self.previewImage == nil) {return}
-        //
-        //
-        //
-        //        if let (corners, _, _, _, _) = self.detectQRCorners(in: self.previewImage!), corners.count != 4  {
-        //            NotificationCenter.default.post(name: .newFrameProcessed, object: nil)
-        //            return
-        //        }
-        //
-        //        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-        //        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        //        let context = CIContext()
-        //        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
-        //        let rotated = UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
-        //        let targetSize = CGSize(width: 1080, height: 1920)
-        //        UIGraphicsBeginImageContextWithOptions(targetSize, false, rotated.scale)
-        //        rotated.draw(in: CGRect(origin: .zero, size: targetSize))
-        //        let resizedImage = UIGraphicsGetImageFromCurrentImageContext() ?? rotated
-        //        UIGraphicsEndImageContext()
-        //
-        //        // --- QR Detection ---
-        //        if let (corners, _, _, _, _) = self.detectQRCorners(in: resizedImage), corners.count > 0 {
-        //            self.lastDetectedQRCorners = corners
-        //            DispatchQueue.main.async { self.qrCodeFound = true }
-        //
-        //            // Compute centroids
-        //            let centroids = corners.map { pts in
-        //                CGPoint(
-        //                    x: pts.map { $0.x }.reduce(0, +) / 4,
-        //                    y: pts.map { $0.y }.reduce(0, +) / 4
-        //                )
-        //            }
-        //
-        //            // Find indices for each position
-        //            guard let topLeftIdx = centroids.enumerated().min(by: { $0.element.x + $0.element.y < $1.element.x + $1.element.y })?.offset,
-        //                  let topRightIdx = centroids.enumerated().min(by: { -$0.element.x + $0.element.y < -$1.element.x + $1.element.y })?.offset,
-        //                  let bottomRightIdx = centroids.enumerated().max(by: { $0.element.x + $0.element.y < $1.element.x + $1.element.y })?.offset,
-        //                  let bottomLeftIdx = centroids.enumerated().min(by: { $0.element.x - $0.element.y < $1.element.x - $1.element.y })?.offset
-        //            else {
-        //                DispatchQueue.main.async { self.previewImage = resizedImage }
-        //                return
-        //            }
-        //
-        //            // Get the required corners
-        //            var dotPoints: [CGPoint] = []
-        //            if corners.indices.contains(topLeftIdx) { dotPoints.append(corners[topLeftIdx][0]) }
-        //            if corners.indices.contains(topRightIdx) { dotPoints.append(corners[topRightIdx][1]) }
-        //            if corners.indices.contains(bottomRightIdx) { dotPoints.append(corners[bottomRightIdx][2]) }
-        //            if corners.indices.contains(bottomLeftIdx) { dotPoints.append(corners[bottomLeftIdx][3]) }
-        //
-        //            DispatchQueue.main.async {
-        //                self.previewImage = resizedImage.drawDots(at: dotPoints, color: .orange, radius: 24.0)
-        //            }
-        //
-        //            // Only proceed if all 4 QR codes are found
-        //            if corners.count == 4 {
-        //                DispatchQueue.main.async {
-        //                    AudioServicesPlaySystemSound(SystemSoundID(1057))
-        //                    self.queue.asyncAfter(deadline: .now() + 2.0) {
-        //                        // Continue with the rest of the processing pipeline here
-        //                    }
-        //                }
-        //            } else {
-        //                DispatchQueue.main.async {
-        //                    self.previewImage = resizedImage
-        //                }
-        //            }
-        //
-        //            DispatchQueue.main.async {
-        //                self.previewImage = resizedImage.drawDots(at: dotPoints, color: .orange, radius: 8.0)
-        //            }
-        //        } else {
-        //            self.lastDetectedQRCorners = nil
-        //            DispatchQueue.main.async {
-        //                self.qrCodeFound = false
-        //                self.previewImage = resizedImage
-        //                NotificationCenter.default.post(name: .newFrameProcessed, object: nil)
-        //            }
-        //        }
-        
-        // --- Stability ---
-        //        let viewChanged = hasCameraViewChanged(current: resizedImage, previous: previousFrame)
-        //        self.previousFrame = resizedImage
-        //        DispatchQueue.main.async {
-        //            self.setStabilityWarning(viewChanged)
-        //        }
-        
-        // Draw dotted line if stable
-//        let now = Date()
-        ////        if !viewChanged {
-        //            if stableStartTime == nil { stableStartTime = now }
-        //            let stableDuration = now.timeIntervalSince(stableStartTime ?? now)
-        //            if stableDuration >= 2.0,
-        //               let corners = self.lastDetectedQRCorners,
-        //               corners.count == 4,
-        //               !hasDrawnDottedLine
-        //            {
-        //                hasDrawnDottedLine = true
-        //                pauseProcessing = true
-        //                let allPoints = corners.flatMap { $0 }
-        //                if let ordered = orderCornersForDrawing(allPoints) {
-        //                    DispatchQueue.main.async {
-        //                        self.previewImage = resizedImage.drawDottedLineConnecting(points: ordered, color: .orange, lineWidth: 4, dashPattern: [8, 8])
-        //                        AudioServicesPlaySystemSound(SystemSoundID(1016))
-        //                    }
-        //                }
-        //            }
-        //        } else {
-        //            stableStartTime = nil
-        //            hasDrawnDottedLine = false
-        //        }
     
     // MARK: - Stability Warning
     
@@ -490,7 +292,47 @@ class CameraProcessor: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
         }
     }
     
+    
     // MARK: - Helpers
+    func restoreAutoExposure() {
+        sessionQueue.async {
+            if let device = AVCaptureDevice.default(for: .video) {
+                do {
+                    try device.lockForConfiguration()
+                    if device.isExposureModeSupported(.continuousAutoExposure) {
+                        device.exposureMode = .continuousAutoExposure
+                    }
+                    // Reset exposure bias to neutral
+                    let minBias = device.minExposureTargetBias
+                    let maxBias = device.maxExposureTargetBias
+                    let neutralBias: Float = 0.0
+                    let clampedBias = max(min(neutralBias, maxBias), minBias)
+                    device.setExposureTargetBias(clampedBias, completionHandler: nil)
+                    device.unlockForConfiguration()
+                } catch {
+                    print("Failed to restore exposure: \(error)")
+                }
+            }
+        }
+    }
+    
+    func reduceExposure(to bias: Float = -4.0) {
+        sessionQueue.async {
+            if let device = AVCaptureDevice.default(for: .video) {
+                do {
+                    try device.lockForConfiguration()
+                    let minBias = device.minExposureTargetBias
+                    let maxBias = device.maxExposureTargetBias
+                    let clampedBias = max(min(bias, maxBias), minBias)
+                    device.setExposureTargetBias(clampedBias, completionHandler: nil)
+                    device.unlockForConfiguration()
+                } catch {
+                    print("Failed to reduce exposure: \(error)")
+                }
+            }
+        }
+    }
+    
     func filterDuplicateCenters(_ centers: [(t: Int, x: CGFloat, y: CGFloat, a: Int)], minTimeDiff: Int = 90, minDist: CGFloat = 50) -> [(t: Int, x: CGFloat, y: CGFloat, a: Int)] {
         var filtered: [(t: Int, x: CGFloat, y: CGFloat, a: Int)] = []
         for center in centers {

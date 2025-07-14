@@ -188,14 +188,14 @@ struct CameraView: View {
             }
             
             // FPS overlay (top left)
-            VStack {
-                HStack {
-                    OverlayView(fps: fps)
-                        .padding([.top, .leading], 16)
-                    Spacer()
-                }
-                Spacer()
-            }
+//            VStack {
+//                HStack {
+//                    OverlayView(fps: fps)
+//                        .padding([.top, .leading], 16)
+//                    Spacer()
+//                }
+//                Spacer()
+//            }
             
             // Top Left Icon
             GeometryReader { geo in
