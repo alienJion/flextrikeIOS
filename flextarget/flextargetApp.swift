@@ -25,7 +25,8 @@ struct flextargetApp: App {
                         }
                     }
             } else {
-                OrientationView() // Replace with your main view
+                /*OrientationView() */ // Replace with your main view
+                AddDrillConfigView()
             }
         }
     }
