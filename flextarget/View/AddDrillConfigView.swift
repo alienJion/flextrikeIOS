@@ -1,4 +1,54 @@
 import SwiftUI
+import UIKit
+import PhotosUI
+import SwiftUI
+import UIKit
+import PhotosUI
+
+/**
+ `AddDrillConfigView` is a SwiftUI view for creating and configuring a new drill in the FlexTarget app.
+
+ This view allows users to:
+ - Enter a drill name and description.
+ - Optionally add a demo video from the camera roll, with thumbnail preview, play, and delete functionality.
+ - Configure drill parameters such as delay, sets, gun type, and target type.
+ - Save the configured drill.
+
+ ## Features
+
+ - **Drill Name**: Editable text field with a pencil icon for editing and a clear button.
+ - **Description**: Collapsible/expandable section with a single-line preview or a 5-line editor.
+ - **Demo Video**:
+    - Add a video from the camera roll using `PhotosPicker`.
+    - Shows a progress indicator while generating a thumbnail.
+    - Displays a cropped thumbnail with a play icon overlay and a delete button.
+    - Tapping the thumbnail opens a video player sheet; tapping delete resets the video state.
+ - **Drill Setup**: Button to configure sets, duration, and shots.
+ - **Gun/Target Type**: Radio toggle for selecting gun and target types.
+ - **Save**: Button to save the drill configuration.
+
+ ## State Variables
+
+ - `drillName`, `description`: User input for drill details.
+ - `demoVideoURL`, `demoVideoThumbnail`: Video file URL and its thumbnail.
+ - `selectedVideoItem`: The selected video from the picker.
+ - `isGeneratingThumbnail`: Shows a progress view while generating the thumbnail.
+ - `showVideoPlayer`: Controls the presentation of the video player sheet.
+ - `isDescriptionExpanded`: Controls the expand/collapse state of the description and video section.
+ - Other state variables for drill configuration.
+
+ ## Helper Methods
+
+ - `buildDrillConfig()`: Constructs a `DrillConfig` object from the current state.
+ - `validateFields()`: Enables/disables the save button based on input validation.
+ - `generateThumbnail(for:)`: Asynchronously generates a cropped thumbnail from a video URL.
+ - `cropToAspect(image:aspectWidth:aspectHeight:)`: Crops a UIImage to a specified aspect ratio.
+
+ ## Usage
+
+ This view is typically presented as part of the drill creation workflow. It uses SwiftUI's state management and leverages system components like `PhotosPicker` and a custom `VideoPlayerView` for video playback.
+
+ */
 
 struct AddDrillConfigView: View {
     @State private var drillName: String = ""
@@ -18,6 +68,10 @@ struct AddDrillConfigView: View {
     @State private var isDescriptionExpanded: Bool = false
     @State private var showDrillSetupModal = false
     @State private var sets: [DrillSetConfigEditable] = DrillConfigStorage.shared.loadEditableSets()
+    @State private var selectedVideoItem: PhotosPickerItem? = nil
+    @State private var demoVideoThumbnail: UIImage? = nil
+    @State private var isGeneratingThumbnail: Bool = false
+    @State private var showVideoPlayer: Bool = false
     @Environment(\.presentationMode) var presentationMode
     
     enum DelayType: String, CaseIterable { case fixed, random }
@@ -58,9 +112,14 @@ struct AddDrillConfigView: View {
         isSendEnabled = !drillName.isEmpty && !description.isEmpty && numberOfSets > 0 && setDuration > 0 && shotsPerSet > 0
     }
     
+    @FocusState private var isDrillNameFocused: Bool
+    
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
+                .onTapGesture {
+                    isDrillNameFocused = false
+                }
             VStack(spacing: 0) {
                 // Title Bar
                 HStack {
@@ -110,16 +169,21 @@ struct AddDrillConfigView: View {
                             VStack(alignment: .leading, spacing: 0) {
                                 HStack(alignment: .center, spacing: 8) {
                                     ZStack(alignment: .leading) {
-                                        // Use a hidden UITextField for focus control
-                                        TextField("Drill Name", text: $drillName, onEditingChanged: { editing in
+                                        TextField("Drill Name", text: Binding(
+                                            get: { String(drillName.prefix(30)) },
+                                            set: { newValue in
+                                                drillName = String(newValue.prefix(30))
+                                            }
+                                        ), onEditingChanged: { editing in
                                             isEditingName = editing
                                         })
+                                        .focused($isDrillNameFocused)
                                         .foregroundColor(.white)
                                         .opacity(isEditingName ? 1 : 0.01) // Hide when not editing, but keep tappable
-                                        .disabled(!isEditingName)
                                         .font(.title3)
                                         .padding(.vertical, 4)
                                         .background(Color.clear)
+                                        .submitLabel(.done)
                                         if !isEditingName {
                                             Text(drillName.isEmpty ? "Drill Name" : drillName)
                                                 .foregroundColor(.white)
@@ -127,6 +191,7 @@ struct AddDrillConfigView: View {
                                                 .padding(.vertical, 4)
                                                 .onTapGesture {
                                                     isEditingName = true
+                                                    isDrillNameFocused = true
                                                 }
                                         }
                                     }
@@ -135,6 +200,7 @@ struct AddDrillConfigView: View {
                                         Button(action: {
                                             drillName = ""
                                             isEditingName = false
+                                            isDrillNameFocused = false
                                         }) {
                                             Image(systemName: "xmark.circle.fill")
                                                 .foregroundColor(.red)
@@ -142,6 +208,7 @@ struct AddDrillConfigView: View {
                                     } else {
                                         Button(action: {
                                             isEditingName = true
+                                            isDrillNameFocused = true
                                         }) {
                                             Image(systemName: "pencil")
                                                 .foregroundColor(.red)
@@ -154,7 +221,7 @@ struct AddDrillConfigView: View {
                                     .animation(.easeInOut, value: isEditingName)
                             }
                             
-                            // Description
+                            // Description & Add Video Section
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
                                     Text("Description")
@@ -171,53 +238,103 @@ struct AddDrillConfigView: View {
                                 }
                                 ZStack(alignment: .topLeading) {
                                     TextEditor(text: $description)
-                                        .frame(height: isDescriptionExpanded ? 180 : 54)
+                                        .frame(height: isDescriptionExpanded ? 120 : 24) // 5 lines or 1 line
                                         .foregroundColor(.white)
-                                        .scrollContentBackground(.hidden) // <-- This hides the default background
+                                        .scrollContentBackground(.hidden)
                                         .background(Color.clear)
                                         .cornerRadius(8)
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 8)
                                                 .stroke(Color.gray.opacity(0.5), lineWidth: 1)
                                         )
-                                        .onTapGesture(count: 2) {
-                                            withAnimation {
-                                                isDescriptionExpanded = true
-                                            }
-                                        }
+                                        .disabled(!isDescriptionExpanded) // Only editable when expanded
                                     if description.isEmpty {
                                         Text("Enter description...")
+                                            .font(.footnote)
                                             .foregroundColor(Color.white.opacity(0.4))
                                             .padding(.top, 8)
                                             .padding(.leading, 5)
                                     }
                                 }
-                            }
-                            
-                            // Demo Video Upload
-                            Button(action: { showVideoPicker = true }) {
-                                VStack {
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(style: StrokeStyle(lineWidth: 1, dash: [4]))
-                                        .foregroundColor(.red)
-                                        .frame(height: 120)
-                                        .overlay(
-                                            VStack {
-                                                Image(systemName: "video.badge.plus")
-                                                    .font(.system(size: 30))
-                                                    .foregroundColor(.red)
-                                                Text("Add Demo Video")
-                                                    .foregroundColor(.white)
-                                                    .font(.footnote)
-                                            }
-                                        )
+                                if isDescriptionExpanded {
+                                    // Demo Video Upload (only visible when expanded)
+                                    PhotosPicker(
+                                        selection: $selectedVideoItem,
+                                        matching: .videos,
+                                        photoLibrary: .shared()
+                                    ) {
+                                        VStack {
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .stroke(style: StrokeStyle(lineWidth: 1, dash: [4]))
+                                                .foregroundColor(.red)
+                                                .frame(height: 120)
+                                                .overlay(
+                                                    Group {
+                                                        if isGeneratingThumbnail {
+                                                            ProgressView()
+                                                                .progressViewStyle(CircularProgressViewStyle(tint: .red))
+                                                                .scaleEffect(1.5)
+                                                        } else if let thumbnail = demoVideoThumbnail, demoVideoURL != nil {
+                                                            ZStack {
+                                                                Image(uiImage: thumbnail)
+                                                                    .resizable()
+                                                                    .scaledToFill()
+                                                                    .frame(height: 120)
+                                                                    .clipped()
+                                                                    .cornerRadius(16)
+                                                                    .contentShape(Rectangle())
+                                                                // Play icon in center
+                                                                Image(systemName: "play.circle.fill")
+                                                                    .resizable()
+                                                                    .frame(width: 48, height: 48)
+                                                                    .foregroundColor(.white)
+                                                                    .shadow(radius: 4)
+                                                                    .opacity(0.85)
+                                                                // Delete button at top right
+                                                                VStack {
+                                                                    HStack {
+                                                                        Spacer()
+                                                                        Button(action: {
+                                                                            demoVideoThumbnail = nil
+                                                                            demoVideoURL = nil
+                                                                            selectedVideoItem = nil
+                                                                        }) {
+                                                                            Image(systemName: "xmark.circle.fill")
+                                                                                .resizable()
+                                                                                .frame(width: 28, height: 28)
+                                                                                .foregroundColor(.red)
+                                                                                .background(Color.white.opacity(0.8))
+                                                                                .clipShape(Circle())
+                                                                                .shadow(radius: 2)
+                                                                        }
+                                                                        .padding(8)
+                                                                    }
+                                                                    Spacer()
+                                                                }
+                                                            }
+                                                            .onTapGesture {
+                                                                showVideoPlayer = true
+                                                            }
+                                                        } else {
+                                                            VStack {
+                                                                Image(systemName: "video.badge.plus")
+                                                                    .font(.system(size: 30))
+                                                                    .foregroundColor(.red)
+                                                                Text("Add Demo Video")
+                                                                    .foregroundColor(.white)
+                                                                    .font(.footnote)
+                                                            }
+                                                        }
+                                                    }
+                                                )
+                                        }
+                                    }
+                                    .sheet(isPresented: $showVideoPlayer) {
+                                        if let url = demoVideoURL {
+                                            VideoPlayerView(url: url)
+                                        }
+                                    }
                                 }
-                            }
-                            .sheet(isPresented: $showVideoPicker) {
-                                // TODO: Video picker/recorder
-                                Text("Video Picker/Recorder (TBD)")
-                                    .foregroundColor(.white)
-                                    .background(Color.black)
                             }
                         }
                         .padding()
@@ -294,7 +411,7 @@ struct AddDrillConfigView: View {
                                 }
                                 HStack(alignment: .center, spacing: 0) {
                                     VStack {
-                                        Text("\(numberOfSets)")
+                                        Text("\(sets.count)")
                                             .font(.title2)
                                             .fontWeight(.bold)
                                             .foregroundColor(.white)
@@ -308,7 +425,7 @@ struct AddDrillConfigView: View {
                                         .font(.title2)
                                     Spacer(minLength: 0)
                                     VStack {
-                                        Text("\(Int(setDuration))")
+                                        Text("\(sets.first?.duration ?? Int(setDuration))")
                                             .font(.title2)
                                             .fontWeight(.bold)
                                             .foregroundColor(.white)
@@ -322,7 +439,7 @@ struct AddDrillConfigView: View {
                                         .font(.title2)
                                     Spacer(minLength: 0)
                                     VStack {
-                                        Text("\(shotsPerSet)")
+                                        Text("\(sets.first?.shots ?? shotsPerSet)")
                                             .font(.title2)
                                             .fontWeight(.bold)
                                             .foregroundColor(.white)
@@ -402,21 +519,78 @@ struct AddDrillConfigView: View {
                         .padding(.horizontal)
                         .padding(.bottom, 20)
                     }
-//                    .onChange(of: drillName) { _ in validateFields() }
-//                    .onChange(of: description) { _ in validateFields() }
-//                    .onChange(of: numberOfSets) { _ in validateFields() }
-//                    .onChange(of: setDuration) { _ in validateFields() }
-//                    .onChange(of: shotsPerSet) { _ in validateFields() }
-//                    .onChange(of: sets) { _ in
-//                        numberOfSets = sets.count
-//                        setDuration = sets.first?.duration != nil ? Double(sets.first!.duration) : 30
-//                        shotsPerSet = sets.first?.shots ?? 5
-//                        validateFields()
-//                    }
-//                    .onAppear { validateFields() }
+                    .onAppear { validateFields() }
+                    .onChange(of: selectedVideoItem) { newItem in
+                        guard let item = newItem else { return }
+                        isGeneratingThumbnail = true
+                        Task {
+                            // Try to get a URL first
+                            if let url = try? await item.loadTransferable(type: URL.self) {
+                                demoVideoURL = url
+                                if let thumbnail = await generateThumbnail(for: url) {
+                                    demoVideoThumbnail = thumbnail
+                                }
+                            } else if let data = try? await item.loadTransferable(type: Data.self) {
+                                // Save to temp file
+                                let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mov")
+                                do {
+                                    try data.write(to: tempURL)
+                                    demoVideoURL = tempURL
+                                    if let thumbnail = await generateThumbnail(for: tempURL) {
+                                        demoVideoThumbnail = thumbnail
+                                    }
+                                } catch {
+                                    print("Failed to write video data to temp file: \(error)")
+                                }
+                            }
+                            isGeneratingThumbnail = false
+                        }
+                    }
                 }
             }
         }
+    }
+    // Helper to generate thumbnail from video URL
+    func generateThumbnail(for url: URL) async -> UIImage? {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global().async {
+                let asset = AVAsset(url: url)
+                let imageGenerator = AVAssetImageGenerator(asset: asset)
+                imageGenerator.appliesPreferredTrackTransform = true
+                let time = CMTime(seconds: 0.1, preferredTimescale: 600)
+                do {
+                    let cgImage = try imageGenerator.copyCGImage(at: time, actualTime: nil)
+                    let uiImage = UIImage(cgImage: cgImage)
+                    // Crop to fit area (aspect fill 16:9)
+                    let cropped = cropToAspect(image: uiImage, aspectWidth: 16, aspectHeight: 9)
+                    continuation.resume(returning: cropped)
+                } catch {
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
+    }
+    // Helper to crop UIImage to aspect ratio
+    func cropToAspect(image: UIImage, aspectWidth: CGFloat, aspectHeight: CGFloat) -> UIImage {
+        let imgSize = image.size
+        let targetAspect = aspectWidth / aspectHeight
+        let imgAspect = imgSize.width / imgSize.height
+        var cropRect: CGRect
+        if imgAspect > targetAspect {
+            // Wider than target: crop width
+            let newWidth = imgSize.height * targetAspect
+            let x = (imgSize.width - newWidth) / 2
+            cropRect = CGRect(x: x, y: 0, width: newWidth, height: imgSize.height)
+        } else {
+            // Taller than target: crop height
+            let newHeight = imgSize.width / targetAspect
+            let y = (imgSize.height - newHeight) / 2
+            cropRect = CGRect(x: 0, y: y, width: imgSize.width, height: newHeight)
+        }
+        if let cgImage = image.cgImage?.cropping(to: cropRect) {
+            return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
+        }
+        return image
     }
 }
 
