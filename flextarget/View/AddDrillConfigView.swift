@@ -64,7 +64,6 @@ struct AddDrillConfigView: View {
     @State private var shotsPerSet: Int = 5
     @State private var gunType: GunType = .airsoft
     @State private var targetType: TargetType = .paper
-    @State private var isSendEnabled: Bool = false
     @State private var isDescriptionExpanded: Bool = false
     @State private var showDrillSetupModal = false
     @State private var sets: [DrillSetConfigEditable] = DrillConfigStorage.shared.loadEditableSets()
@@ -108,8 +107,26 @@ struct AddDrillConfigView: View {
         )
     }
     
-    private func validateFields() {
-        isSendEnabled = !drillName.isEmpty && !description.isEmpty && numberOfSets > 0 && setDuration > 0 && shotsPerSet > 0
+    private func validateFields() -> Bool {
+        // Title and description must not be empty
+        guard !drillName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return false
+        }
+        guard !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return false
+        }
+        // Number of sets must be > 0
+        guard sets.count > 0 else {
+            return false
+        }
+        // For each set, duration, shots(NOTE: nil is infinte for shot), distance, pauseTime must not be nil or zero
+        for set in sets {
+            if set.duration <= 0 || set.distance <= 0 || set.pauseTime <= 0 {
+                return false
+            }
+        }
+        
+        return true
     }
     
     @FocusState private var isDrillNameFocused: Bool
@@ -500,8 +517,8 @@ struct AddDrillConfigView: View {
                         
                         // Bottom Buttons
                         HStack {
-                            // Removed Cancel button
                             Button(action: {
+                                validateFields()
                                 let config = buildDrillConfig()
                                 DrillConfigStorage.shared.add(config)
                                 presentationMode.wrappedValue.dismiss()
@@ -511,15 +528,13 @@ struct AddDrillConfigView: View {
                                     .fontWeight(.semibold)
                                     .frame(maxWidth: .infinity)
                                     .padding()
-                                    .background(isSendEnabled ? Color.red : Color.gray)
+                                    .background(Color.red)
                                     .cornerRadius(8)
                             }
-                            .disabled(!isSendEnabled)
                         }
                         .padding(.horizontal)
                         .padding(.bottom, 20)
                     }
-                    .onAppear { validateFields() }
                     .onChange(of: selectedVideoItem) { newItem in
                         guard let item = newItem else { return }
                         isGeneratingThumbnail = true
