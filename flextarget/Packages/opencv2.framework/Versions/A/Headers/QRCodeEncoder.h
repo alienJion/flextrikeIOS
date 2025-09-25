@@ -28,6 +28,7 @@ typedef NS_ENUM(int, CorrectionLevel) {
 
 // C++: enum ECIEncodings (cv.QRCodeEncoder.ECIEncodings)
 typedef NS_ENUM(int, ECIEncodings) {
+    QRCodeEncoder_ECI_SHIFT_JIS NS_SWIFT_NAME(ECI_SHIFT_JIS) = 20,
     QRCodeEncoder_ECI_UTF8 NS_SWIFT_NAME(ECI_UTF8) = 26
 };
 

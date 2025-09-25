@@ -176,6 +176,30 @@ CV_EXPORTS @interface GraphicalCodeDetector : NSObject
 - (BOOL)detectAndDecodeMulti:(Mat*)img decoded_info:(NSMutableArray<NSString*>*)decoded_info NS_SWIFT_NAME(detectAndDecodeMulti(img:decoded_info:));
 
 
+//
+//  NativeByteArray cv::GraphicalCodeDetector::detectAndDecode(Mat img, Mat& points = Mat(), Mat& straight_code = Mat())
+//
+    // Return type 'NativeByteArray' is not supported, skipping the function
+
+
+//
+//  NativeByteArray cv::GraphicalCodeDetector::decode(Mat img, Mat points, Mat& straight_code = Mat())
+//
+    // Return type 'NativeByteArray' is not supported, skipping the function
+
+
+//
+//  bool cv::GraphicalCodeDetector::decodeMulti(Mat img, Mat points, vector_NativeByteArray& decoded_info, vector_Mat& straight_code = vector_Mat())
+//
+// Unknown type 'vector_NativeByteArray' (O), skipping the function
+
+
+//
+//  bool cv::GraphicalCodeDetector::detectAndDecodeMulti(Mat img, vector_NativeByteArray& decoded_info, Mat& points = Mat(), vector_Mat& straight_code = vector_Mat())
+//
+// Unknown type 'vector_NativeByteArray' (O), skipping the function
+
+
 
 @end
 

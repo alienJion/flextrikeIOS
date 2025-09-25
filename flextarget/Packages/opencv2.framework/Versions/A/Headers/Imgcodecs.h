@@ -19,6 +19,16 @@
 @class Range;
 
 
+// C++: enum ImageMetadataType (cv.ImageMetadataType)
+typedef NS_ENUM(int, ImageMetadataType) {
+    IMAGE_METADATA_UNKNOWN = -1,
+    IMAGE_METADATA_EXIF = 0,
+    IMAGE_METADATA_XMP = 1,
+    IMAGE_METADATA_ICCP = 2,
+    IMAGE_METADATA_MAX = 2
+};
+
+
 // C++: enum ImreadModes (cv.ImreadModes)
 typedef NS_ENUM(int, ImreadModes) {
     IMREAD_UNCHANGED = -1,
@@ -73,6 +83,7 @@ typedef NS_ENUM(int, ImwriteFlags) {
     IMWRITE_PNG_COMPRESSION = 16,
     IMWRITE_PNG_STRATEGY = 17,
     IMWRITE_PNG_BILEVEL = 18,
+    IMWRITE_PNG_FILTER = 19,
     IMWRITE_PXM_BINARY = 32,
     IMWRITE_EXR_TYPE = (3 << 4) + 0,
     IMWRITE_EXR_COMPRESSION = (3 << 4) + 1,
@@ -144,6 +155,18 @@ typedef NS_ENUM(int, ImwritePAMFlags) {
 };
 
 
+// C++: enum ImwritePNGFilterFlags (cv.ImwritePNGFilterFlags)
+typedef NS_ENUM(int, ImwritePNGFilterFlags) {
+    IMWRITE_PNG_FILTER_NONE = 8,
+    IMWRITE_PNG_FILTER_SUB = 16,
+    IMWRITE_PNG_FILTER_UP = 32,
+    IMWRITE_PNG_FILTER_AVG = 64,
+    IMWRITE_PNG_FILTER_PAETH = 128,
+    IMWRITE_PNG_FAST_FILTERS = (IMWRITE_PNG_FILTER_NONE | IMWRITE_PNG_FILTER_SUB | IMWRITE_PNG_FILTER_UP),
+    IMWRITE_PNG_ALL_FILTERS = (IMWRITE_PNG_FAST_FILTERS | IMWRITE_PNG_FILTER_AVG | IMWRITE_PNG_FILTER_PAETH)
+};
+
+
 // C++: enum ImwritePNGFlags (cv.ImwritePNGFlags)
 typedef NS_ENUM(int, ImwritePNGFlags) {
     IMWRITE_PNG_STRATEGY_DEFAULT = 0,
@@ -209,7 +232,7 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * Member classes: `Animation`
  *
- * Member enums: `ImreadModes`, `ImwriteFlags`, `ImwriteJPEGSamplingFactorParams`, `ImwriteTiffCompressionFlags`, `ImwriteTiffPredictorFlags`, `ImwriteEXRTypeFlags`, `ImwriteEXRCompressionFlags`, `ImwritePNGFlags`, `ImwritePAMFlags`, `ImwriteHDRCompressionFlags`, `ImwriteGIFCompressionFlags`
+ * Member enums: `ImreadModes`, `ImwriteFlags`, `ImwriteJPEGSamplingFactorParams`, `ImwriteTiffCompressionFlags`, `ImwriteTiffPredictorFlags`, `ImwriteEXRTypeFlags`, `ImwriteEXRCompressionFlags`, `ImwritePNGFlags`, `ImwritePNGFilterFlags`, `ImwritePAMFlags`, `ImwriteHDRCompressionFlags`, `ImwriteGIFCompressionFlags`, `ImageMetadataType`
  */
 CV_EXPORTS @interface Imgcodecs : NSObject
 
@@ -357,6 +380,31 @@ CV_EXPORTS @interface Imgcodecs : NSObject
 
 
 //
+//  Mat cv::imreadWithMetadata(String filename, vector_int& metadataTypes, vector_Mat& metadata, int flags = IMREAD_ANYCOLOR)
+//
+/**
+ * Reads an image from a file together with associated metadata.
+ *
+ * The function imreadWithMetadata reads image from the specified file. It does the same thing as imread, but additionally reads metadata if the corresponding file contains any.
+ * @param filename Name of the file to be loaded.
+ * @param metadataTypes Output vector with types of metadata chucks returned in metadata, see ImageMetadataType.
+ * @param metadata Output vector of vectors or vector of matrices to store the retrieved metadata
+ * @param flags Flag that can take values of cv::ImreadModes
+ */
++ (Mat*)imreadWithMetadata:(NSString*)filename metadataTypes:(IntVector*)metadataTypes metadata:(NSMutableArray<Mat*>*)metadata flags:(int)flags NS_SWIFT_NAME(imreadWithMetadata(filename:metadataTypes:metadata:flags:));
+
+/**
+ * Reads an image from a file together with associated metadata.
+ *
+ * The function imreadWithMetadata reads image from the specified file. It does the same thing as imread, but additionally reads metadata if the corresponding file contains any.
+ * @param filename Name of the file to be loaded.
+ * @param metadataTypes Output vector with types of metadata chucks returned in metadata, see ImageMetadataType.
+ * @param metadata Output vector of vectors or vector of matrices to store the retrieved metadata
+ */
++ (Mat*)imreadWithMetadata:(NSString*)filename metadataTypes:(IntVector*)metadataTypes metadata:(NSMutableArray<Mat*>*)metadata NS_SWIFT_NAME(imreadWithMetadata(filename:metadataTypes:metadata:));
+
+
+//
 //  bool cv::imreadmulti(String filename, vector_Mat& mats, int flags = IMREAD_ANYCOLOR)
 //
 /**
@@ -454,6 +502,49 @@ CV_EXPORTS @interface Imgcodecs : NSObject
 
 
 //
+//  bool cv::imdecodeanimation(Mat buf, Animation& animation, int start = 0, int count = INT16_MAX)
+//
+/**
+ * Loads frames from an animated image buffer into an Animation structure.
+ *
+ * The function imdecodeanimation loads frames from an animated image buffer (e.g., GIF, AVIF, APNG, WEBP) into the provided Animation struct.
+ *
+ * @param buf A reference to an InputArray containing the image buffer.
+ * @param animation A reference to an Animation structure where the loaded frames will be stored. It should be initialized before the function is called.
+ * @param start The index of the first frame to load. This is optional and defaults to 0.
+ * @param count The number of frames to load. This is optional and defaults to 32767.
+ *
+ * @return Returns true if the buffer was successfully loaded and frames were extracted; returns false otherwise.
+ */
++ (BOOL)imdecodeanimation:(Mat*)buf animation:(Animation*)animation start:(int)start count:(int)count NS_SWIFT_NAME(imdecodeanimation(buf:animation:start:count:));
+
+/**
+ * Loads frames from an animated image buffer into an Animation structure.
+ *
+ * The function imdecodeanimation loads frames from an animated image buffer (e.g., GIF, AVIF, APNG, WEBP) into the provided Animation struct.
+ *
+ * @param buf A reference to an InputArray containing the image buffer.
+ * @param animation A reference to an Animation structure where the loaded frames will be stored. It should be initialized before the function is called.
+ * @param start The index of the first frame to load. This is optional and defaults to 0.
+ *
+ * @return Returns true if the buffer was successfully loaded and frames were extracted; returns false otherwise.
+ */
++ (BOOL)imdecodeanimation:(Mat*)buf animation:(Animation*)animation start:(int)start NS_SWIFT_NAME(imdecodeanimation(buf:animation:start:));
+
+/**
+ * Loads frames from an animated image buffer into an Animation structure.
+ *
+ * The function imdecodeanimation loads frames from an animated image buffer (e.g., GIF, AVIF, APNG, WEBP) into the provided Animation struct.
+ *
+ * @param buf A reference to an InputArray containing the image buffer.
+ * @param animation A reference to an Animation structure where the loaded frames will be stored. It should be initialized before the function is called.
+ *
+ * @return Returns true if the buffer was successfully loaded and frames were extracted; returns false otherwise.
+ */
++ (BOOL)imdecodeanimation:(Mat*)buf animation:(Animation*)animation NS_SWIFT_NAME(imdecodeanimation(buf:animation:));
+
+
+//
 //  bool cv::imwriteanimation(String filename, Animation animation, vector_int params = std::vector<int>())
 //
 /**
@@ -484,6 +575,51 @@ CV_EXPORTS @interface Imgcodecs : NSObject
  * @return Returns true if the animation was successfully saved; returns false otherwise.
  */
 + (BOOL)imwriteanimation:(NSString*)filename animation:(Animation*)animation NS_SWIFT_NAME(imwriteanimation(filename:animation:));
+
+
+//
+//  bool cv::imencodeanimation(String ext, Animation animation, vector_uchar& buf, vector_int params = std::vector<int>())
+//
+/**
+ * Encodes an Animation to a memory buffer.
+ *
+ * The function imencodeanimation encodes the provided Animation data into a memory
+ * buffer in an animated format. Supported formats depend on the implementation and
+ * may include formats like GIF, AVIF, APNG, or WEBP.
+ *
+ * @param ext The file extension that determines the format of the encoded data.
+ * @param animation A constant reference to an Animation struct containing the
+ * frames and metadata to be encoded.
+ * @param buf A reference to a vector of unsigned chars where the encoded data will
+ * be stored.
+ * @param params Optional format-specific parameters encoded as pairs (paramId_1,
+ * paramValue_1, paramId_2, paramValue_2, ...). These parameters are used to
+ * specify additional options for the encoding process. Refer to `cv::ImwriteFlags`
+ * for details on possible parameters.
+ *
+ * @return Returns true if the animation was successfully encoded; returns false otherwise.
+ */
++ (BOOL)imencodeanimation:(NSString*)ext animation:(Animation*)animation buf:(ByteVector*)buf params:(IntVector*)params NS_SWIFT_NAME(imencodeanimation(ext:animation:buf:params:));
+
+/**
+ * Encodes an Animation to a memory buffer.
+ *
+ * The function imencodeanimation encodes the provided Animation data into a memory
+ * buffer in an animated format. Supported formats depend on the implementation and
+ * may include formats like GIF, AVIF, APNG, or WEBP.
+ *
+ * @param ext The file extension that determines the format of the encoded data.
+ * @param animation A constant reference to an Animation struct containing the
+ * frames and metadata to be encoded.
+ * @param buf A reference to a vector of unsigned chars where the encoded data will
+ * be stored.
+ * paramValue_1, paramId_2, paramValue_2, ...). These parameters are used to
+ * specify additional options for the encoding process. Refer to `cv::ImwriteFlags`
+ * for details on possible parameters.
+ *
+ * @return Returns true if the animation was successfully encoded; returns false otherwise.
+ */
++ (BOOL)imencodeanimation:(NSString*)ext animation:(Animation*)animation buf:(ByteVector*)buf NS_SWIFT_NAME(imencodeanimation(ext:animation:buf:));
 
 
 //
@@ -529,13 +665,13 @@ CV_EXPORTS @interface Imgcodecs : NSObject
  * - With JPEG 2000 encoder, 8-bit unsigned (CV_8U) and 16-bit unsigned (CV_16U) images can be saved.
  * - With JPEG XL encoder, 8-bit unsigned (CV_8U), 16-bit unsigned (CV_16U) and 32-bit float(CV_32F) images can be saved.
  *   - JPEG XL images with an alpha channel can be saved using this function.
- *     To do this, create 8-bit (or 16-bit, 32-bit float) 4-channel image BGRA, where the alpha channel goes last.
- *     Fully transparent pixels should have alpha set to 0, fully opaque pixels should have alpha set to 255/65535/1.0.
+ *     To achieve this, create an 8-bit 4-channel (CV_8UC4) / 16-bit 4-channel (CV_16UC4) / 32-bit float 4-channel (CV_32FC4) BGRA image, ensuring the alpha channel is the last component.
+ *     Fully transparent pixels should have an alpha value of 0, while fully opaque pixels should have an alpha value of 255/65535/1.0.
  * - With PAM encoder, 8-bit unsigned (CV_8U) and 16-bit unsigned (CV_16U) images can be saved.
  * - With PNG encoder, 8-bit unsigned (CV_8U) and 16-bit unsigned (CV_16U) images can be saved.
- *   - PNG images with an alpha channel can be saved using this function. To do this, create
- *     8-bit (or 16-bit) 4-channel image BGRA, where the alpha channel goes last. Fully transparent pixels
- *     should have alpha set to 0, fully opaque pixels should have alpha set to 255/65535 (see the code sample below).
+ *   - PNG images with an alpha channel can be saved using this function.
+ *     To achieve this, create an 8-bit 4-channel (CV_8UC4) / 16-bit 4-channel (CV_16UC4) BGRA image, ensuring the alpha channel is the last component.
+ *     Fully transparent pixels should have an alpha value of 0, while fully opaque pixels should have an alpha value of 255/65535(see the code sample below).
  * - With PGM/PPM encoder, 8-bit unsigned (CV_8U) and 16-bit unsigned (CV_16U) images can be saved.
  * - With TIFF encoder, 8-bit unsigned (CV_8U), 8-bit signed (CV_8S),
  *                      16-bit unsigned (CV_16U), 16-bit signed (CV_16S),
@@ -544,6 +680,11 @@ CV_EXPORTS @interface Imgcodecs : NSObject
  *   - Multiple images (vector of Mat) can be saved in TIFF format (see the code sample below).
  *   - 32-bit float 3-channel (CV_32FC3) TIFF images will be saved
  *     using the LogLuv high dynamic range encoding (4 bytes per pixel)
+ * - With GIF encoder, 8-bit unsigned (CV_8U) images can be saved.
+ *   - GIF images with an alpha channel can be saved using this function.
+ *     To achieve this, create an 8-bit 4-channel (CV_8UC4) BGRA image, ensuring the alpha channel is the last component.
+ *     Fully transparent pixels should have an alpha value of 0, while fully opaque pixels should have an alpha value of 255.
+ *   - 8-bit single-channel images (CV_8UC1) are not supported due to GIF's limitation to indexed color formats.
  *
  * If the image format is not supported, the image will be converted to 8-bit unsigned (CV_8U) and saved that way.
  *
@@ -575,13 +716,13 @@ CV_EXPORTS @interface Imgcodecs : NSObject
  * - With JPEG 2000 encoder, 8-bit unsigned (CV_8U) and 16-bit unsigned (CV_16U) images can be saved.
  * - With JPEG XL encoder, 8-bit unsigned (CV_8U), 16-bit unsigned (CV_16U) and 32-bit float(CV_32F) images can be saved.
  *   - JPEG XL images with an alpha channel can be saved using this function.
- *     To do this, create 8-bit (or 16-bit, 32-bit float) 4-channel image BGRA, where the alpha channel goes last.
- *     Fully transparent pixels should have alpha set to 0, fully opaque pixels should have alpha set to 255/65535/1.0.
+ *     To achieve this, create an 8-bit 4-channel (CV_8UC4) / 16-bit 4-channel (CV_16UC4) / 32-bit float 4-channel (CV_32FC4) BGRA image, ensuring the alpha channel is the last component.
+ *     Fully transparent pixels should have an alpha value of 0, while fully opaque pixels should have an alpha value of 255/65535/1.0.
  * - With PAM encoder, 8-bit unsigned (CV_8U) and 16-bit unsigned (CV_16U) images can be saved.
  * - With PNG encoder, 8-bit unsigned (CV_8U) and 16-bit unsigned (CV_16U) images can be saved.
- *   - PNG images with an alpha channel can be saved using this function. To do this, create
- *     8-bit (or 16-bit) 4-channel image BGRA, where the alpha channel goes last. Fully transparent pixels
- *     should have alpha set to 0, fully opaque pixels should have alpha set to 255/65535 (see the code sample below).
+ *   - PNG images with an alpha channel can be saved using this function.
+ *     To achieve this, create an 8-bit 4-channel (CV_8UC4) / 16-bit 4-channel (CV_16UC4) BGRA image, ensuring the alpha channel is the last component.
+ *     Fully transparent pixels should have an alpha value of 0, while fully opaque pixels should have an alpha value of 255/65535(see the code sample below).
  * - With PGM/PPM encoder, 8-bit unsigned (CV_8U) and 16-bit unsigned (CV_16U) images can be saved.
  * - With TIFF encoder, 8-bit unsigned (CV_8U), 8-bit signed (CV_8S),
  *                      16-bit unsigned (CV_16U), 16-bit signed (CV_16S),
@@ -590,6 +731,11 @@ CV_EXPORTS @interface Imgcodecs : NSObject
  *   - Multiple images (vector of Mat) can be saved in TIFF format (see the code sample below).
  *   - 32-bit float 3-channel (CV_32FC3) TIFF images will be saved
  *     using the LogLuv high dynamic range encoding (4 bytes per pixel)
+ * - With GIF encoder, 8-bit unsigned (CV_8U) images can be saved.
+ *   - GIF images with an alpha channel can be saved using this function.
+ *     To achieve this, create an 8-bit 4-channel (CV_8UC4) BGRA image, ensuring the alpha channel is the last component.
+ *     Fully transparent pixels should have an alpha value of 0, while fully opaque pixels should have an alpha value of 255.
+ *   - 8-bit single-channel images (CV_8UC1) are not supported due to GIF's limitation to indexed color formats.
  *
  * If the image format is not supported, the image will be converted to 8-bit unsigned (CV_8U) and saved that way.
  *
@@ -604,6 +750,33 @@ CV_EXPORTS @interface Imgcodecs : NSObject
  * @param img (Mat or vector of Mat) Image or Images to be saved.
  */
 + (BOOL)imwrite:(NSString*)filename img:(Mat*)img NS_SWIFT_NAME(imwrite(filename:img:));
+
+
+//
+//  bool cv::imwriteWithMetadata(String filename, Mat img, vector_int metadataTypes, vector_Mat metadata, vector_int params = std::vector<int>())
+//
+/**
+ * Saves an image to a specified file with metadata
+ *
+ * The function imwriteWithMetadata saves the image to the specified file. It does the same thing as imwrite, but additionally writes metadata if the corresponding format supports it.
+ * @param filename Name of the file. As with imwrite, image format is determined by the file extension.
+ * @param img (Mat or vector of Mat) Image or Images to be saved.
+ * @param metadataTypes Vector with types of metadata chucks stored in metadata to write, see ImageMetadataType.
+ * @param metadata Vector of vectors or vector of matrices with chunks of metadata to store into the file
+ * @param params Format-specific parameters encoded as pairs (paramId_1, paramValue_1, paramId_2, paramValue_2, ... .) see cv::ImwriteFlags
+ */
++ (BOOL)imwriteWithMetadata:(NSString*)filename img:(Mat*)img metadataTypes:(IntVector*)metadataTypes metadata:(NSArray<Mat*>*)metadata params:(IntVector*)params NS_SWIFT_NAME(imwriteWithMetadata(filename:img:metadataTypes:metadata:params:));
+
+/**
+ * Saves an image to a specified file with metadata
+ *
+ * The function imwriteWithMetadata saves the image to the specified file. It does the same thing as imwrite, but additionally writes metadata if the corresponding format supports it.
+ * @param filename Name of the file. As with imwrite, image format is determined by the file extension.
+ * @param img (Mat or vector of Mat) Image or Images to be saved.
+ * @param metadataTypes Vector with types of metadata chucks stored in metadata to write, see ImageMetadataType.
+ * @param metadata Vector of vectors or vector of matrices with chunks of metadata to store into the file
+ */
++ (BOOL)imwriteWithMetadata:(NSString*)filename img:(Mat*)img metadataTypes:(IntVector*)metadataTypes metadata:(NSArray<Mat*>*)metadata NS_SWIFT_NAME(imwriteWithMetadata(filename:img:metadataTypes:metadata:));
 
 
 //
@@ -630,6 +803,41 @@ CV_EXPORTS @interface Imgcodecs : NSObject
  * @param flags The same flags as in cv::imread, see cv::ImreadModes.
  */
 + (Mat*)imdecode:(Mat*)buf flags:(int)flags NS_SWIFT_NAME(imdecode(buf:flags:));
+
+
+//
+//  Mat cv::imdecodeWithMetadata(Mat buf, vector_int& metadataTypes, vector_Mat& metadata, int flags = IMREAD_ANYCOLOR)
+//
+/**
+ * Reads an image from a buffer in memory together with associated metadata.
+ *
+ * The function imdecode reads an image from the specified buffer in the memory. If the buffer is too short or
+ * contains invalid data, the function returns an empty matrix ( Mat::data==NULL ).
+ *
+ * See cv::imread for the list of supported formats and flags description.
+ *
+ * NOTE: In the case of color images, the decoded images will have the channels stored in **B G R** order.
+ * @param buf Input array or vector of bytes.
+ * @param metadataTypes Output vector with types of metadata chucks returned in metadata, see ImageMetadataType.
+ * @param metadata Output vector of vectors or vector of matrices to store the retrieved metadata
+ * @param flags The same flags as in cv::imread, see cv::ImreadModes.
+ */
++ (Mat*)imdecodeWithMetadata:(Mat*)buf metadataTypes:(IntVector*)metadataTypes metadata:(NSMutableArray<Mat*>*)metadata flags:(int)flags NS_SWIFT_NAME(imdecodeWithMetadata(buf:metadataTypes:metadata:flags:));
+
+/**
+ * Reads an image from a buffer in memory together with associated metadata.
+ *
+ * The function imdecode reads an image from the specified buffer in the memory. If the buffer is too short or
+ * contains invalid data, the function returns an empty matrix ( Mat::data==NULL ).
+ *
+ * See cv::imread for the list of supported formats and flags description.
+ *
+ * NOTE: In the case of color images, the decoded images will have the channels stored in **B G R** order.
+ * @param buf Input array or vector of bytes.
+ * @param metadataTypes Output vector with types of metadata chucks returned in metadata, see ImageMetadataType.
+ * @param metadata Output vector of vectors or vector of matrices to store the retrieved metadata
+ */
++ (Mat*)imdecodeWithMetadata:(Mat*)buf metadataTypes:(IntVector*)metadataTypes metadata:(NSMutableArray<Mat*>*)metadata NS_SWIFT_NAME(imdecodeWithMetadata(buf:metadataTypes:metadata:));
 
 
 //
@@ -697,6 +905,39 @@ CV_EXPORTS @interface Imgcodecs : NSObject
 
 
 //
+//  bool cv::imencodeWithMetadata(String ext, Mat img, vector_int metadataTypes, vector_Mat metadata, vector_uchar& buf, vector_int params = std::vector<int>())
+//
+/**
+ * Encodes an image into a memory buffer.
+ *
+ * The function imencode compresses the image and stores it in the memory buffer that is resized to fit the
+ * result. See cv::imwrite for the list of supported formats and flags description.
+ *
+ * @param ext File extension that defines the output format. Must include a leading period.
+ * @param img Image to be compressed.
+ * @param metadataTypes Vector with types of metadata chucks stored in metadata to write, see ImageMetadataType.
+ * @param metadata Vector of vectors or vector of matrices with chunks of metadata to store into the file
+ * @param buf Output buffer resized to fit the compressed image.
+ * @param params Format-specific parameters. See cv::imwrite and cv::ImwriteFlags.
+ */
++ (BOOL)imencodeWithMetadata:(NSString*)ext img:(Mat*)img metadataTypes:(IntVector*)metadataTypes metadata:(NSArray<Mat*>*)metadata buf:(ByteVector*)buf params:(IntVector*)params NS_SWIFT_NAME(imencodeWithMetadata(ext:img:metadataTypes:metadata:buf:params:));
+
+/**
+ * Encodes an image into a memory buffer.
+ *
+ * The function imencode compresses the image and stores it in the memory buffer that is resized to fit the
+ * result. See cv::imwrite for the list of supported formats and flags description.
+ *
+ * @param ext File extension that defines the output format. Must include a leading period.
+ * @param img Image to be compressed.
+ * @param metadataTypes Vector with types of metadata chucks stored in metadata to write, see ImageMetadataType.
+ * @param metadata Vector of vectors or vector of matrices with chunks of metadata to store into the file
+ * @param buf Output buffer resized to fit the compressed image.
+ */
++ (BOOL)imencodeWithMetadata:(NSString*)ext img:(Mat*)img metadataTypes:(IntVector*)metadataTypes metadata:(NSArray<Mat*>*)metadata buf:(ByteVector*)buf NS_SWIFT_NAME(imencodeWithMetadata(ext:img:metadataTypes:metadata:buf:));
+
+
+//
 //  bool cv::imencodemulti(String ext, vector_Mat imgs, vector_uchar& buf, vector_int params = std::vector<int>())
 //
 /**
@@ -738,7 +979,7 @@ CV_EXPORTS @interface Imgcodecs : NSObject
  * @return true if an image reader for the specified file is available and the file can be opened, false otherwise.
  *
  * NOTE: The function checks the availability of image codecs that are either built into OpenCV or dynamically loaded.
- * It does not check for the actual existence of the file but rather the ability to read the specified file type.
+ * It does not load the image codec implementation and decode data, but uses signature check.
  * If the file cannot be opened or the format is unsupported, the function will return false.
  *
  * @see `cv::haveImageWriter`, `cv::imread`, `cv::imdecode`

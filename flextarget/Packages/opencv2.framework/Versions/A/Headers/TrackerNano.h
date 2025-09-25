@@ -64,6 +64,12 @@ CV_EXPORTS @interface TrackerNano : Tracker
 
 
 //
+// static Ptr_TrackerNano cv::TrackerNano::create(dnn_Net backbone, dnn_Net neckhead)
+//
+// Unknown type 'dnn_Net' (I), skipping the function
+
+
+//
 //  float cv::TrackerNano::getTrackingScore()
 //
 /**

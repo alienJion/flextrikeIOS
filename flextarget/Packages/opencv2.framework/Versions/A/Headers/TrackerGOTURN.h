@@ -70,6 +70,12 @@ CV_EXPORTS @interface TrackerGOTURN : Tracker
 + (TrackerGOTURN*)create NS_SWIFT_NAME(create());
 
 
+//
+// static Ptr_TrackerGOTURN cv::TrackerGOTURN::create(dnn_Net model)
+//
+// Unknown type 'dnn_Net' (I), skipping the function
+
+
 
 @end
 

@@ -521,7 +521,8 @@ typedef NS_ENUM(int, MarkerTypes) {
 typedef NS_ENUM(int, MorphShapes) {
     MORPH_RECT = 0,
     MORPH_CROSS = 1,
-    MORPH_ELLIPSE = 2
+    MORPH_ELLIPSE = 2,
+    MORPH_DIAMOND = 3
 };
 
 
@@ -590,7 +591,8 @@ typedef NS_ENUM(int, ThresholdTypes) {
     THRESH_TOZERO_INV = 4,
     THRESH_MASK = 7,
     THRESH_OTSU = 8,
-    THRESH_TRIANGLE = 16
+    THRESH_TRIANGLE = 16,
+    THRESH_DRYRUN = 128
 };
 
 
@@ -872,7 +874,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * Returns Gabor filter coefficients.
  *
  * For more details about gabor filter equations and parameters, see: [Gabor
- * Filter](http://en.wikipedia.org/wiki/Gabor_filter).
+ * Filter](https://en.wikipedia.org/wiki/Gabor_filter).
  *
  * @param ksize Size of the filter returned.
  * @param sigma Standard deviation of the gaussian envelope.
@@ -888,7 +890,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * Returns Gabor filter coefficients.
  *
  * For more details about gabor filter equations and parameters, see: [Gabor
- * Filter](http://en.wikipedia.org/wiki/Gabor_filter).
+ * Filter](https://en.wikipedia.org/wiki/Gabor_filter).
  *
  * @param ksize Size of the filter returned.
  * @param sigma Standard deviation of the gaussian envelope.
@@ -903,7 +905,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * Returns Gabor filter coefficients.
  *
  * For more details about gabor filter equations and parameters, see: [Gabor
- * Filter](http://en.wikipedia.org/wiki/Gabor_filter).
+ * Filter](https://en.wikipedia.org/wiki/Gabor_filter).
  *
  * @param ksize Size of the filter returned.
  * @param sigma Standard deviation of the gaussian envelope.
@@ -1071,7 +1073,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * Applies the bilateral filter to an image.
  *
  * The function applies bilateral filtering to the input image, as described in
- * http://www.dai.ed.ac.uk/CVonline/LOCAL_COPIES/MANDUCHI1/Bilateral_Filtering.html
+ * https://homepages.inf.ed.ac.uk/rbf/CVonline/LOCAL_COPIES/MANDUCHI1/Bilateral_Filtering.html
  * bilateralFilter can reduce unwanted noise very well while keeping edges fairly sharp. However, it is
  * very slow compared to most filters.
  *
@@ -1102,7 +1104,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * Applies the bilateral filter to an image.
  *
  * The function applies bilateral filtering to the input image, as described in
- * http://www.dai.ed.ac.uk/CVonline/LOCAL_COPIES/MANDUCHI1/Bilateral_Filtering.html
+ * https://homepages.inf.ed.ac.uk/rbf/CVonline/LOCAL_COPIES/MANDUCHI1/Bilateral_Filtering.html
  * bilateralFilter can reduce unwanted noise very well while keeping edges fairly sharp. However, it is
  * very slow compared to most filters.
  *
@@ -1392,7 +1394,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * It creates a kind of moving stack of colors whilst scanning through the image. Thereby it just has to add one new block of color to the right side
  * of the stack and remove the leftmost color. The remaining colors on the topmost layer of the stack are either added on or reduced by one,
  * depending on if they are on the right or on the left side of the stack. The only supported borderType is BORDER_REPLICATE.
- * Original paper was proposed by Mario Klingemann, which can be found http://underdestruction.com/2004/02/25/stackblur-2004.
+ * Original paper was proposed by Mario Klingemann, which can be found https://underdestruction.com/2004/02/25/stackblur-2004.
  *
  * @param src input image. The number of channels can be arbitrary, but the depth should be one of
  * CV_8U, CV_16U, CV_16S or CV_32F.
@@ -2125,7 +2127,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * The function finds edges in the input image and marks them in the output map edges using the
  * Canny algorithm. The smallest value between threshold1 and threshold2 is used for edge linking. The
  * largest value is used to find initial segments of strong edges. See
- * <http://en.wikipedia.org/wiki/Canny_edge_detector>
+ * <https://en.wikipedia.org/wiki/Canny_edge_detector>
  *
  * @param image 8-bit input image.
  * @param edges output edge map; single channels 8-bit image, which has the same size as image .
@@ -2145,7 +2147,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * The function finds edges in the input image and marks them in the output map edges using the
  * Canny algorithm. The smallest value between threshold1 and threshold2 is used for edge linking. The
  * largest value is used to find initial segments of strong edges. See
- * <http://en.wikipedia.org/wiki/Canny_edge_detector>
+ * <https://en.wikipedia.org/wiki/Canny_edge_detector>
  *
  * @param image 8-bit input image.
  * @param edges output edge map; single channels 8-bit image, which has the same size as image .
@@ -2164,7 +2166,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * The function finds edges in the input image and marks them in the output map edges using the
  * Canny algorithm. The smallest value between threshold1 and threshold2 is used for edge linking. The
  * largest value is used to find initial segments of strong edges. See
- * <http://en.wikipedia.org/wiki/Canny_edge_detector>
+ * <https://en.wikipedia.org/wiki/Canny_edge_detector>
  *
  * @param image 8-bit input image.
  * @param edges output edge map; single channels 8-bit image, which has the same size as image .
@@ -2848,7 +2850,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * Finds lines in a binary image using the standard Hough transform.
  *
  * The function implements the standard or standard multi-scale Hough transform algorithm for line
- * detection. See <http://homepages.inf.ed.ac.uk/rbf/HIPR2/hough.htm> for a good explanation of Hough
+ * detection. See <https://homepages.inf.ed.ac.uk/rbf/HIPR2/hough.htm> for a good explanation of Hough
  * transform.
  *
  * @param image 8-bit, single-channel binary source image. The image may be modified by the function.
@@ -2879,7 +2881,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * Finds lines in a binary image using the standard Hough transform.
  *
  * The function implements the standard or standard multi-scale Hough transform algorithm for line
- * detection. See <http://homepages.inf.ed.ac.uk/rbf/HIPR2/hough.htm> for a good explanation of Hough
+ * detection. See <https://homepages.inf.ed.ac.uk/rbf/HIPR2/hough.htm> for a good explanation of Hough
  * transform.
  *
  * @param image 8-bit, single-channel binary source image. The image may be modified by the function.
@@ -2909,7 +2911,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * Finds lines in a binary image using the standard Hough transform.
  *
  * The function implements the standard or standard multi-scale Hough transform algorithm for line
- * detection. See <http://homepages.inf.ed.ac.uk/rbf/HIPR2/hough.htm> for a good explanation of Hough
+ * detection. See <https://homepages.inf.ed.ac.uk/rbf/HIPR2/hough.htm> for a good explanation of Hough
  * transform.
  *
  * @param image 8-bit, single-channel binary source image. The image may be modified by the function.
@@ -2938,7 +2940,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * Finds lines in a binary image using the standard Hough transform.
  *
  * The function implements the standard or standard multi-scale Hough transform algorithm for line
- * detection. See <http://homepages.inf.ed.ac.uk/rbf/HIPR2/hough.htm> for a good explanation of Hough
+ * detection. See <https://homepages.inf.ed.ac.uk/rbf/HIPR2/hough.htm> for a good explanation of Hough
  * transform.
  *
  * @param image 8-bit, single-channel binary source image. The image may be modified by the function.
@@ -2966,7 +2968,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * Finds lines in a binary image using the standard Hough transform.
  *
  * The function implements the standard or standard multi-scale Hough transform algorithm for line
- * detection. See <http://homepages.inf.ed.ac.uk/rbf/HIPR2/hough.htm> for a good explanation of Hough
+ * detection. See <https://homepages.inf.ed.ac.uk/rbf/HIPR2/hough.htm> for a good explanation of Hough
  * transform.
  *
  * @param image 8-bit, single-channel binary source image. The image may be modified by the function.
@@ -2993,7 +2995,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * Finds lines in a binary image using the standard Hough transform.
  *
  * The function implements the standard or standard multi-scale Hough transform algorithm for line
- * detection. See <http://homepages.inf.ed.ac.uk/rbf/HIPR2/hough.htm> for a good explanation of Hough
+ * detection. See <https://homepages.inf.ed.ac.uk/rbf/HIPR2/hough.htm> for a good explanation of Hough
  * transform.
  *
  * @param image 8-bit, single-channel binary source image. The image may be modified by the function.
@@ -4895,15 +4897,15 @@ CV_EXPORTS @interface Imgproc : NSObject
  *
  * The operation takes advantage of the Fourier shift theorem for detecting the translational shift in
  * the frequency domain. It can be used for fast image registration as well as motion estimation. For
- * more information please see <http://en.wikipedia.org/wiki/Phase_correlation>
+ * more information please see <https://en.wikipedia.org/wiki/Phase_correlation>
  *
  * Calculates the cross-power spectrum of two supplied source arrays. The arrays are padded if needed
  * with getOptimalDFTSize.
  *
  * The function performs the following equations:
- * - First it applies a Hanning window (see <http://en.wikipedia.org/wiki/Hann_function>) to each
- * image to remove possible edge effects. This window is cached until the array size changes to speed
- * up processing time.
+ * - First it applies a Hanning window to each image to remove possible edge effects, if it's provided
+ * by user. See REF: createHanningWindow and <https://en.wikipedia.org/wiki/Hann_function>. This window may
+ * be cached until the array size changes to speed up processing time.
  * - Next it computes the forward DFTs of each source array:
  * `$$\mathbf{G}_a = \mathcal{F}\{src_1\}, \; \mathbf{G}_b = \mathcal{F}\{src_2\}$$`
  * where `$$\mathcal{F}$$` is the forward DFT.
@@ -4933,15 +4935,15 @@ CV_EXPORTS @interface Imgproc : NSObject
  *
  * The operation takes advantage of the Fourier shift theorem for detecting the translational shift in
  * the frequency domain. It can be used for fast image registration as well as motion estimation. For
- * more information please see <http://en.wikipedia.org/wiki/Phase_correlation>
+ * more information please see <https://en.wikipedia.org/wiki/Phase_correlation>
  *
  * Calculates the cross-power spectrum of two supplied source arrays. The arrays are padded if needed
  * with getOptimalDFTSize.
  *
  * The function performs the following equations:
- * - First it applies a Hanning window (see <http://en.wikipedia.org/wiki/Hann_function>) to each
- * image to remove possible edge effects. This window is cached until the array size changes to speed
- * up processing time.
+ * - First it applies a Hanning window to each image to remove possible edge effects, if it's provided
+ * by user. See REF: createHanningWindow and <https://en.wikipedia.org/wiki/Hann_function>. This window may
+ * be cached until the array size changes to speed up processing time.
  * - Next it computes the forward DFTs of each source array:
  * `$$\mathbf{G}_a = \mathcal{F}\{src_1\}, \; \mathbf{G}_b = \mathcal{F}\{src_2\}$$`
  * where `$$\mathcal{F}$$` is the forward DFT.
@@ -4970,15 +4972,15 @@ CV_EXPORTS @interface Imgproc : NSObject
  *
  * The operation takes advantage of the Fourier shift theorem for detecting the translational shift in
  * the frequency domain. It can be used for fast image registration as well as motion estimation. For
- * more information please see <http://en.wikipedia.org/wiki/Phase_correlation>
+ * more information please see <https://en.wikipedia.org/wiki/Phase_correlation>
  *
  * Calculates the cross-power spectrum of two supplied source arrays. The arrays are padded if needed
  * with getOptimalDFTSize.
  *
  * The function performs the following equations:
- * - First it applies a Hanning window (see <http://en.wikipedia.org/wiki/Hann_function>) to each
- * image to remove possible edge effects. This window is cached until the array size changes to speed
- * up processing time.
+ * - First it applies a Hanning window to each image to remove possible edge effects, if it's provided
+ * by user. See REF: createHanningWindow and <https://en.wikipedia.org/wiki/Hann_function>. This window may
+ * be cached until the array size changes to speed up processing time.
  * - Next it computes the forward DFTs of each source array:
  * `$$\mathbf{G}_a = \mathcal{F}\{src_1\}, \; \mathbf{G}_b = \mathcal{F}\{src_2\}$$`
  * where `$$\mathcal{F}$$` is the forward DFT.
@@ -5008,7 +5010,7 @@ CV_EXPORTS @interface Imgproc : NSObject
 /**
  * This function computes a Hanning window coefficients in two dimensions.
  *
- * See (http://en.wikipedia.org/wiki/Hann_function) and (http://en.wikipedia.org/wiki/Window_function)
+ * See (https://en.wikipedia.org/wiki/Hann_function) and (https://en.wikipedia.org/wiki/Window_function)
  * for more information.
  *
  * An example is shown below:
@@ -5075,9 +5077,10 @@ CV_EXPORTS @interface Imgproc : NSObject
  * above values. In these cases, the function determines the optimal threshold value using the Otsu's
  * or Triangle algorithm and uses it instead of the specified thresh.
  *
- * NOTE: Currently, the Otsu's and Triangle methods are implemented only for 8-bit single-channel images.
+ * NOTE: Currently, the Otsu's method is implemented only for CV_8UC1 and CV_16UC1 images,
+ * and the Triangle's method is implemented only for CV_8UC1 images.
  *
- * @param src input array (multiple-channel, 8-bit or 32-bit floating point).
+ * @param src input array (multiple-channel, CV_8U, CV_16S, CV_16U, CV_32F or CV_64F).
  * @param dst output array of the same size  and type and the same number of channels as src.
  * @param thresh threshold value.
  * @param maxval maximum value to use with the #THRESH_BINARY and #THRESH_BINARY_INV thresholding
@@ -5085,9 +5088,33 @@ CV_EXPORTS @interface Imgproc : NSObject
  * @param type thresholding type (see #ThresholdTypes).
  * @return the computed threshold value if Otsu's or Triangle methods used.
  *
- * @see `+adaptiveThreshold:dst:maxValue:adaptiveMethod:thresholdType:blockSize:C:`, `+findContours:contours:hierarchy:mode:method:offset:`, `compare`, `min`, `max`
+ * @see `+thresholdWithMask:dst:mask:thresh:maxval:type:`, `+adaptiveThreshold:dst:maxValue:adaptiveMethod:thresholdType:blockSize:C:`, `+findContours:contours:hierarchy:mode:method:offset:`, `compare`, `min`, `max`
  */
 + (double)threshold:(Mat*)src dst:(Mat*)dst thresh:(double)thresh maxval:(double)maxval type:(ThresholdTypes)type NS_SWIFT_NAME(threshold(src:dst:thresh:maxval:type:));
+
+
+//
+//  double cv::thresholdWithMask(Mat src, Mat& dst, Mat mask, double thresh, double maxval, int type)
+//
+/**
+ * Same as #threshold, but with an optional mask
+ *
+ * NOTE: If the mask is empty, #thresholdWithMask is equivalent to #threshold.
+ * If the mask is not empty, dst *must* be of the same size and type as src, so that
+ * outliers pixels are left as-is
+ *
+ * @param src input array (multiple-channel, 8-bit or 32-bit floating point).
+ * @param dst output array of the same size  and type and the same number of channels as src.
+ * @param mask optional mask (same size as src, 8-bit).
+ * @param thresh threshold value.
+ * @param maxval maximum value to use with the #THRESH_BINARY and #THRESH_BINARY_INV thresholding
+ * types.
+ * @param type thresholding type (see #ThresholdTypes).
+ * @return the computed threshold value if Otsu's or Triangle methods used.
+ *
+ * @see `+threshold:dst:thresh:maxval:type:`, `+adaptiveThreshold:dst:maxValue:adaptiveMethod:thresholdType:blockSize:C:`, `+findContours:contours:hierarchy:mode:method:offset:`, `compare`, `min`, `max`
+ */
++ (double)thresholdWithMask:(Mat*)src dst:(Mat*)dst mask:(Mat*)mask thresh:(double)thresh maxval:(double)maxval type:(int)type NS_SWIFT_NAME(thresholdWithMask(src:dst:mask:thresh:maxval:type:));
 
 
 //
@@ -5620,7 +5647,7 @@ CV_EXPORTS @interface Imgproc : NSObject
 /**
  * Runs the GrabCut algorithm.
  *
- * The function implements the [GrabCut image segmentation algorithm](http://en.wikipedia.org/wiki/GrabCut).
+ * The function implements the [GrabCut image segmentation algorithm](https://en.wikipedia.org/wiki/GrabCut).
  *
  * @param img Input 8-bit 3-channel image.
  * @param mask Input/output 8-bit single-channel mask. The mask is initialized by the function when
@@ -5641,7 +5668,7 @@ CV_EXPORTS @interface Imgproc : NSObject
 /**
  * Runs the GrabCut algorithm.
  *
- * The function implements the [GrabCut image segmentation algorithm](http://en.wikipedia.org/wiki/GrabCut).
+ * The function implements the [GrabCut image segmentation algorithm](https://en.wikipedia.org/wiki/GrabCut).
  *
  * @param img Input 8-bit 3-channel image.
  * @param mask Input/output 8-bit single-channel mask. The mask is initialized by the function when
@@ -6513,7 +6540,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  *             of channels as template or only one channel, which is then used for all template and
  *             image channels. If the data type is #CV_8U, the mask is interpreted as a binary mask,
  *             meaning only elements where mask is nonzero are used and are kept unchanged independent
- *             of the actual mask value (weight equals 1). For data tpye #CV_32F, the mask values are
+ *             of the actual mask value (weight equals 1). For data type #CV_32F, the mask values are
  *             used as weights. The exact formulas are documented in #TemplateMatchModes.
  */
 + (void)matchTemplate:(Mat*)image templ:(Mat*)templ result:(Mat*)result method:(TemplateMatchModes)method mask:(Mat*)mask NS_SWIFT_NAME(matchTemplate(image:templ:result:method:mask:));
@@ -6543,7 +6570,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  *             of channels as template or only one channel, which is then used for all template and
  *             image channels. If the data type is #CV_8U, the mask is interpreted as a binary mask,
  *             meaning only elements where mask is nonzero are used and are kept unchanged independent
- *             of the actual mask value (weight equals 1). For data tpye #CV_32F, the mask values are
+ *             of the actual mask value (weight equals 1). For data type #CV_32F, the mask values are
  *             used as weights. The exact formulas are documented in #TemplateMatchModes.
  */
 + (void)matchTemplate:(Mat*)image templ:(Mat*)templ result:(Mat*)result method:(TemplateMatchModes)method NS_SWIFT_NAME(matchTemplate(image:templ:result:method:));
@@ -6759,7 +6786,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  *
  * The function cv::approxPolyDP approximates a curve or a polygon with another curve/polygon with less
  * vertices so that the distance between them is less or equal to the specified precision. It uses the
- * Douglas-Peucker algorithm <http://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm>
+ * Douglas-Peucker algorithm <https://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm>
  *
  * @param curve Input vector of a 2D point stored in std::vector or Mat
  * @param approxCurve Result of the approximation. The type should match the type of the input curve.
@@ -6939,7 +6966,11 @@ CV_EXPORTS @interface Imgproc : NSObject
  * Finds a rotated rectangle of the minimum area enclosing the input 2D point set.
  *
  * The function calculates and returns the minimum-area bounding rectangle (possibly rotated) for a
- * specified point set. Developer should keep in mind that the returned RotatedRect can contain negative
+ * specified point set. The angle of rotation represents the angle between the line connecting the starting
+ * and ending points (based on the clockwise order with greatest index for the corner with greatest `$$y$$`)
+ * and the horizontal axis. This angle always falls between `$$[-90, 0)$$` because, if the object
+ * rotates more than a rect angle, the next edge is used to measure the angle. The starting and ending points change
+ * as the object rotates.Developer should keep in mind that the returned RotatedRect can contain negative
  * indices when data is close to the containing Mat element boundary.
  *
  * @param points Input vector of 2D points, stored in std::vector\<\> or Mat
@@ -6953,7 +6984,9 @@ CV_EXPORTS @interface Imgproc : NSObject
 /**
  * Finds the four vertices of a rotated rect. Useful to draw the rotated rectangle.
  *
- * The function finds the four vertices of a rotated rectangle. This function is useful to draw the
+ * The function finds the four vertices of a rotated rectangle. The four vertices are returned
+ * in clockwise order starting from the point with greatest `$$y$$`. If two points have the
+ * same `$$y$$` coordinate the rightmost is the starting point. This function is useful to draw the
  * rectangle. In C++, instead of using this function, you can directly use RotatedRect::points method. Please
  * visit the REF: tutorial_bounding_rotated_ellipses "tutorial on Creating Bounding rotated boxes and ellipses for contours" for more information.
  *
@@ -7168,6 +7201,9 @@ CV_EXPORTS @interface Imgproc : NSObject
  * border of the containing Mat element.
  *
  * @param points Input 2D point set, stored in std::vector\<\> or Mat
+ *
+ * NOTE: Input point types are REF: Point2i or REF: Point2f and at least 5 points are required.
+ * NOTE: REF: getClosestEllipsePoints function can be used to compute the ellipse fitting error.
  */
 + (RotatedRect*)fitEllipse:(NSArray<Point2f*>*)points NS_SWIFT_NAME(fitEllipse(points:));
 
@@ -7210,6 +7246,9 @@ CV_EXPORTS @interface Imgproc : NSObject
  *   \end{aligned}$$`
  *
  * @param points Input 2D point set, stored in std::vector\<\> or Mat
+ *
+ *  NOTE: Input point types are REF: Point2i or REF: Point2f and at least 5 points are required.
+ *  NOTE: REF: getClosestEllipsePoints function can be used to compute the ellipse fitting error.
  */
 + (RotatedRect*)fitEllipseAMS:(Mat*)points NS_SWIFT_NAME(fitEllipseAMS(points:));
 
@@ -7259,8 +7298,30 @@ CV_EXPORTS @interface Imgproc : NSObject
  *  The scaling factor guarantees that  `$$A^T C A =1$$`.
  *
  * @param points Input 2D point set, stored in std::vector\<\> or Mat
+ *
+ *  NOTE: Input point types are REF: Point2i or REF: Point2f and at least 5 points are required.
+ *  NOTE: REF: getClosestEllipsePoints function can be used to compute the ellipse fitting error.
  */
 + (RotatedRect*)fitEllipseDirect:(Mat*)points NS_SWIFT_NAME(fitEllipseDirect(points:));
+
+
+//
+//  void cv::getClosestEllipsePoints(RotatedRect ellipse_params, Mat points, Mat& closest_pts)
+//
+/**
+ * Compute for each 2d point the nearest 2d point located on a given ellipse.
+ *
+ *  The function computes the nearest 2d location on a given ellipse for a vector of 2d points and is based on CITE: Chatfield2017 code.
+ *  This function can be used to compute for instance the ellipse fitting error.
+ *
+ * @param ellipse_params Ellipse parameters
+ * @param points Input 2d points
+ * @param closest_pts For each 2d point, their corresponding closest 2d point located on a given ellipse
+ *
+ *  NOTE: Input point types are REF: Point2i or REF: Point2f
+ *  @see `+fitEllipse:`, `+fitEllipseAMS:`, `+fitEllipseDirect:`
+ */
++ (void)getClosestEllipsePoints:(RotatedRect*)ellipse_params points:(Mat*)points closest_pts:(Mat*)closest_pts NS_SWIFT_NAME(getClosestEllipsePoints(ellipse_params:points:closest_pts:));
 
 
 //
@@ -7285,7 +7346,7 @@ CV_EXPORTS @interface Imgproc : NSObject
  * - DIST_HUBER
  * `$$\newcommand{\fork}[4]{ \left\{ \begin{array}{l l} #1 & \text{#2}\\\\ #3 & \text{#4}\\\\ \end{array} \right.} \rho (r) =  \fork{r^2/2}{if \(r < C\)}{C \cdot (r-C/2)}{otherwise} \quad \text{where} \quad C=1.345$$`
  *
- * The algorithm is based on the M-estimator ( <http://en.wikipedia.org/wiki/M-estimator> ) technique
+ * The algorithm is based on the M-estimator ( <https://en.wikipedia.org/wiki/M-estimator> ) technique
  * that iteratively fits the line using the weighted least-squares algorithm. After each iteration the
  * weights `$$w_i$$` are adjusted to be inversely proportional to `$$\rho(r_i)$$` .
  *
@@ -8309,6 +8370,11 @@ CV_EXPORTS @interface Imgproc : NSObject
  * using the specified font are replaced by question marks. See #getTextSize for a text rendering code
  * example.
  *
+ * The `fontScale` parameter is a scale factor that is multiplied by the base font size:
+ * - When scale > 1, the text is magnified.
+ * - When 0 < scale < 1, the text is minimized.
+ * - When scale < 0, the text is mirrored or reversed.
+ *
  * @param img Image.
  * @param text Text string to be drawn.
  * @param org Bottom-left corner of the text string in the image.
@@ -8329,6 +8395,11 @@ CV_EXPORTS @interface Imgproc : NSObject
  * using the specified font are replaced by question marks. See #getTextSize for a text rendering code
  * example.
  *
+ * The `fontScale` parameter is a scale factor that is multiplied by the base font size:
+ * - When scale > 1, the text is magnified.
+ * - When 0 < scale < 1, the text is minimized.
+ * - When scale < 0, the text is mirrored or reversed.
+ *
  * @param img Image.
  * @param text Text string to be drawn.
  * @param org Bottom-left corner of the text string in the image.
@@ -8348,6 +8419,11 @@ CV_EXPORTS @interface Imgproc : NSObject
  * using the specified font are replaced by question marks. See #getTextSize for a text rendering code
  * example.
  *
+ * The `fontScale` parameter is a scale factor that is multiplied by the base font size:
+ * - When scale > 1, the text is magnified.
+ * - When 0 < scale < 1, the text is minimized.
+ * - When scale < 0, the text is mirrored or reversed.
+ *
  * @param img Image.
  * @param text Text string to be drawn.
  * @param org Bottom-left corner of the text string in the image.
@@ -8365,6 +8441,11 @@ CV_EXPORTS @interface Imgproc : NSObject
  * The function cv::putText renders the specified text string in the image. Symbols that cannot be rendered
  * using the specified font are replaced by question marks. See #getTextSize for a text rendering code
  * example.
+ *
+ * The `fontScale` parameter is a scale factor that is multiplied by the base font size:
+ * - When scale > 1, the text is magnified.
+ * - When 0 < scale < 1, the text is minimized.
+ * - When scale < 0, the text is mirrored or reversed.
  *
  * @param img Image.
  * @param text Text string to be drawn.
@@ -8457,8 +8538,17 @@ CV_EXPORTS @interface Imgproc : NSObject
 
 
 //
-//  void cv::HoughLinesWithAccumulator(Mat image, Mat& lines, double rho, double theta, int threshold, double srn = 0, double stn = 0, double min_theta = 0, double max_theta = CV_PI)
+//  void cv::HoughLinesWithAccumulator(Mat image, Mat& lines, double rho, double theta, int threshold, double srn = 0, double stn = 0, double min_theta = 0, double max_theta = CV_PI, bool use_edgeval = false)
 //
+/**
+ * Finds lines in a binary image using the standard Hough transform and get accumulator.
+ *
+ * NOTE: This function is for bindings use only. Use original function in C++ code
+ *
+ * @see `+HoughLines:lines:rho:theta:threshold:srn:stn:min_theta:max_theta:use_edgeval:`
+ */
++ (void)HoughLinesWithAccumulator:(Mat*)image lines:(Mat*)lines rho:(double)rho theta:(double)theta threshold:(int)threshold srn:(double)srn stn:(double)stn min_theta:(double)min_theta max_theta:(double)max_theta use_edgeval:(BOOL)use_edgeval NS_SWIFT_NAME(HoughLinesWithAccumulator(image:lines:rho:theta:threshold:srn:stn:min_theta:max_theta:use_edgeval:));
+
 /**
  * Finds lines in a binary image using the standard Hough transform and get accumulator.
  *
@@ -8503,6 +8593,55 @@ CV_EXPORTS @interface Imgproc : NSObject
  * @see `+HoughLines:lines:rho:theta:threshold:srn:stn:min_theta:max_theta:use_edgeval:`
  */
 + (void)HoughLinesWithAccumulator:(Mat*)image lines:(Mat*)lines rho:(double)rho theta:(double)theta threshold:(int)threshold NS_SWIFT_NAME(HoughLinesWithAccumulator(image:lines:rho:theta:threshold:));
+
+
+//
+//  void cv::HoughCirclesWithAccumulator(Mat image, Mat& circles, int method, double dp, double minDist, double param1 = 100, double param2 = 100, int minRadius = 0, int maxRadius = 0)
+//
+/**
+ * Finds circles in a grayscale image using the Hough transform and get accumulator.
+ *
+ * NOTE: This function is for bindings use only. Use original function in C++ code
+ *
+ * @see `+HoughCircles:circles:method:dp:minDist:param1:param2:minRadius:maxRadius:`
+ */
++ (void)HoughCirclesWithAccumulator:(Mat*)image circles:(Mat*)circles method:(int)method dp:(double)dp minDist:(double)minDist param1:(double)param1 param2:(double)param2 minRadius:(int)minRadius maxRadius:(int)maxRadius NS_SWIFT_NAME(HoughCirclesWithAccumulator(image:circles:method:dp:minDist:param1:param2:minRadius:maxRadius:));
+
+/**
+ * Finds circles in a grayscale image using the Hough transform and get accumulator.
+ *
+ * NOTE: This function is for bindings use only. Use original function in C++ code
+ *
+ * @see `+HoughCircles:circles:method:dp:minDist:param1:param2:minRadius:maxRadius:`
+ */
++ (void)HoughCirclesWithAccumulator:(Mat*)image circles:(Mat*)circles method:(int)method dp:(double)dp minDist:(double)minDist param1:(double)param1 param2:(double)param2 minRadius:(int)minRadius NS_SWIFT_NAME(HoughCirclesWithAccumulator(image:circles:method:dp:minDist:param1:param2:minRadius:));
+
+/**
+ * Finds circles in a grayscale image using the Hough transform and get accumulator.
+ *
+ * NOTE: This function is for bindings use only. Use original function in C++ code
+ *
+ * @see `+HoughCircles:circles:method:dp:minDist:param1:param2:minRadius:maxRadius:`
+ */
++ (void)HoughCirclesWithAccumulator:(Mat*)image circles:(Mat*)circles method:(int)method dp:(double)dp minDist:(double)minDist param1:(double)param1 param2:(double)param2 NS_SWIFT_NAME(HoughCirclesWithAccumulator(image:circles:method:dp:minDist:param1:param2:));
+
+/**
+ * Finds circles in a grayscale image using the Hough transform and get accumulator.
+ *
+ * NOTE: This function is for bindings use only. Use original function in C++ code
+ *
+ * @see `+HoughCircles:circles:method:dp:minDist:param1:param2:minRadius:maxRadius:`
+ */
++ (void)HoughCirclesWithAccumulator:(Mat*)image circles:(Mat*)circles method:(int)method dp:(double)dp minDist:(double)minDist param1:(double)param1 NS_SWIFT_NAME(HoughCirclesWithAccumulator(image:circles:method:dp:minDist:param1:));
+
+/**
+ * Finds circles in a grayscale image using the Hough transform and get accumulator.
+ *
+ * NOTE: This function is for bindings use only. Use original function in C++ code
+ *
+ * @see `+HoughCircles:circles:method:dp:minDist:param1:param2:minRadius:maxRadius:`
+ */
++ (void)HoughCirclesWithAccumulator:(Mat*)image circles:(Mat*)circles method:(int)method dp:(double)dp minDist:(double)minDist NS_SWIFT_NAME(HoughCirclesWithAccumulator(image:circles:method:dp:minDist:));
 
 
 

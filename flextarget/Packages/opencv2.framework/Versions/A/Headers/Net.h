@@ -210,6 +210,23 @@ CV_EXPORTS @interface Net : NSObject
 
 
 //
+//  int cv::dnn::Net::registerOutput(string outputName, int layerId, int outputPort)
+//
+/**
+ * Registers network output with name
+ *
+ * Function may create additional 'Identity' layer.
+ *
+ * @param outputName identifier of the output
+ * @param layerId identifier of the second layer
+ * @param outputPort number of the second layer input
+ *
+ * @return index of bound layer (the same as layerId or newly created)
+ */
+- (int)registerOutput:(NSString*)outputName layerId:(int)layerId outputPort:(int)outputPort NS_SWIFT_NAME(registerOutput(outputName:layerId:outputPort:));
+
+
+//
 //  void cv::dnn::Net::setInputsNames(vector_String inputBlobNames)
 //
 /**

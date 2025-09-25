@@ -45,6 +45,52 @@ CV_EXPORTS @interface Animation : NSObject
 #pragma mark - Methods
 
 
+//
+//   cv::Animation::Animation(int loopCount = 0, Scalar bgColor = Scalar())
+//
+/**
+ * Constructs an Animation object with optional loop count and background color.
+ *
+ * @param loopCount An integer representing the number of times the animation should loop:
+ *     - `0` (default) indicates infinite looping, meaning the animation will replay continuously.
+ *     - Positive values denote finite repeat counts, allowing the animation to play a limited number of times.
+ *     - If a negative value or a value beyond the maximum of `0xffff` (65535) is provided, it is reset to `0`
+ *     (infinite looping) to maintain valid bounds.
+ *
+ * @param bgColor A `Scalar` object representing the background color in BGR format:
+ *     - Defaults to `Scalar()`, indicating an empty color (usually transparent if supported).
+ *     - This background color provides a solid fill behind frames that have transparency, ensuring a consistent display appearance.
+ */
+- (instancetype)initWithLoopCount:(int)loopCount bgColor:(Scalar*)bgColor;
+
+/**
+ * Constructs an Animation object with optional loop count and background color.
+ *
+ * @param loopCount An integer representing the number of times the animation should loop:
+ *     - `0` (default) indicates infinite looping, meaning the animation will replay continuously.
+ *     - Positive values denote finite repeat counts, allowing the animation to play a limited number of times.
+ *     - If a negative value or a value beyond the maximum of `0xffff` (65535) is provided, it is reset to `0`
+ *     (infinite looping) to maintain valid bounds.
+ *
+ *     - Defaults to `Scalar()`, indicating an empty color (usually transparent if supported).
+ *     - This background color provides a solid fill behind frames that have transparency, ensuring a consistent display appearance.
+ */
+- (instancetype)initWithLoopCount:(int)loopCount;
+
+/**
+ * Constructs an Animation object with optional loop count and background color.
+ *
+ *     - `0` (default) indicates infinite looping, meaning the animation will replay continuously.
+ *     - Positive values denote finite repeat counts, allowing the animation to play a limited number of times.
+ *     - If a negative value or a value beyond the maximum of `0xffff` (65535) is provided, it is reset to `0`
+ *     (infinite looping) to maintain valid bounds.
+ *
+ *     - Defaults to `Scalar()`, indicating an empty color (usually transparent if supported).
+ *     - This background color provides a solid fill behind frames that have transparency, ensuring a consistent display appearance.
+ */
+- (instancetype)init;
+
+
     //
     // C++: int cv::Animation::loop_count
     //
@@ -68,6 +114,12 @@ CV_EXPORTS @interface Animation : NSObject
     //
 
 @property Mat* frames;
+
+    //
+    // C++: Mat cv::Animation::still_image
+    //
+
+@property Mat* still_image;
 
 
 @end

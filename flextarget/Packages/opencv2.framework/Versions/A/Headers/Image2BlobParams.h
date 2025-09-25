@@ -61,7 +61,7 @@ CV_EXPORTS @interface Image2BlobParams : NSObject
 
 
 //
-//   cv::dnn::Image2BlobParams::Image2BlobParams(Scalar scalefactor, Size size = Size(), Scalar mean = Scalar(), bool swapRB = false, int ddepth = CV_32F, DataLayout datalayout = DNN_LAYOUT_NCHW, ImagePaddingMode mode = DNN_PMODE_NULL, Scalar borderValue = 0.0)
+//   cv::dnn::Image2BlobParams::Image2BlobParams(Scalar scalefactor, Size size = Size(), Scalar mean = Scalar(), bool swapRB = false, int ddepth = CV_32F, dnn_DataLayout datalayout = DNN_LAYOUT_NCHW, ImagePaddingMode mode = dnn::DNN_PMODE_NULL, Scalar borderValue = 0.0)
 //
 - (instancetype)initWithScalefactor:(Scalar*)scalefactor size:(Size2i*)size mean:(Scalar*)mean swapRB:(BOOL)swapRB ddepth:(int)ddepth datalayout:(DataLayout)datalayout mode:(ImagePaddingMode)mode borderValue:(Scalar*)borderValue;
 
@@ -135,13 +135,13 @@ CV_EXPORTS @interface Image2BlobParams : NSObject
 @property int ddepth;
 
     //
-    // C++: DataLayout cv::dnn::Image2BlobParams::datalayout
+    // C++: dnn_DataLayout cv::dnn::Image2BlobParams::datalayout
     //
 
 @property DataLayout datalayout;
 
     //
-    // C++: ImagePaddingMode cv::dnn::Image2BlobParams::paddingmode
+    // C++: dnn_ImagePaddingMode cv::dnn::Image2BlobParams::paddingmode
     //
 
 @property ImagePaddingMode paddingmode;

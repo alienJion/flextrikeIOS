@@ -62,6 +62,12 @@ CV_EXPORTS @interface TrackerVit : Tracker
 
 
 //
+// static Ptr_TrackerVit cv::TrackerVit::create(dnn_Net model, Scalar meanvalue = Scalar(0.485, 0.456, 0.406), Scalar stdvalue = Scalar(0.229, 0.224, 0.225), float tracking_score_threshold = 0.20f)
+//
+// Unknown type 'dnn_Net' (I), skipping the function
+
+
+//
 //  float cv::TrackerVit::getTrackingScore()
 //
 /**

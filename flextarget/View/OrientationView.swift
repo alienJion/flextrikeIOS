@@ -4,7 +4,9 @@ struct OrientationView: View {
     @State var steps: [OrientationStep] = []
     @State var selectedStep: Int = 0
     @State private var navigateToConnect = false
-    @StateObject var bleManager = BLEManager()
+    
+    // Use environment-injected BLEManager
+    @EnvironmentObject var bleManager: BLEManager
     
     // Add parameter to track entry source
     let isFromInfoItem: Bool

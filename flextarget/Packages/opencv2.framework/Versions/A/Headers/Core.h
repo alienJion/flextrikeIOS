@@ -1588,6 +1588,11 @@ CV_EXPORTS @interface Core : NSObject
  *     normalize(positiveData, normalizedData_minmax, 1.0, 0.0, NORM_MINMAX);
  *
  *
+ * NOTE: Due to rounding issues, min-max normalization can result in values outside provided boundaries.
+ * If exact range conformity is needed, following workarounds can be used:
+ * - use double floating point precision (dtype = CV_64F)
+ * - manually clip values (`cv::max(res, left_bound, res)`, `cv::min(res, right_bound, res)` or `np.clip`)
+ *
  * @param src input array.
  * @param dst output array of the same size as src .
  * @param alpha norm value to normalize to or the lower range boundary in case of the range
@@ -1649,6 +1654,11 @@ CV_EXPORTS @interface Core : NSObject
  *     normalize(positiveData, normalizedData_minmax, 1.0, 0.0, NORM_MINMAX);
  *
  *
+ * NOTE: Due to rounding issues, min-max normalization can result in values outside provided boundaries.
+ * If exact range conformity is needed, following workarounds can be used:
+ * - use double floating point precision (dtype = CV_64F)
+ * - manually clip values (`cv::max(res, left_bound, res)`, `cv::min(res, right_bound, res)` or `np.clip`)
+ *
  * @param src input array.
  * @param dst output array of the same size as src .
  * @param alpha norm value to normalize to or the lower range boundary in case of the range
@@ -1709,6 +1719,11 @@ CV_EXPORTS @interface Core : NSObject
  *     normalize(positiveData, normalizedData_minmax, 1.0, 0.0, NORM_MINMAX);
  *
  *
+ * NOTE: Due to rounding issues, min-max normalization can result in values outside provided boundaries.
+ * If exact range conformity is needed, following workarounds can be used:
+ * - use double floating point precision (dtype = CV_64F)
+ * - manually clip values (`cv::max(res, left_bound, res)`, `cv::min(res, right_bound, res)` or `np.clip`)
+ *
  * @param src input array.
  * @param dst output array of the same size as src .
  * @param alpha norm value to normalize to or the lower range boundary in case of the range
@@ -1768,6 +1783,11 @@ CV_EXPORTS @interface Core : NSObject
  *     normalize(positiveData, normalizedData_minmax, 1.0, 0.0, NORM_MINMAX);
  *
  *
+ * NOTE: Due to rounding issues, min-max normalization can result in values outside provided boundaries.
+ * If exact range conformity is needed, following workarounds can be used:
+ * - use double floating point precision (dtype = CV_64F)
+ * - manually clip values (`cv::max(res, left_bound, res)`, `cv::min(res, right_bound, res)` or `np.clip`)
+ *
  * @param src input array.
  * @param dst output array of the same size as src .
  * @param alpha norm value to normalize to or the lower range boundary in case of the range
@@ -1826,6 +1846,11 @@ CV_EXPORTS @interface Core : NSObject
  *     normalize(positiveData, normalizedData_minmax, 1.0, 0.0, NORM_MINMAX);
  *
  *
+ * NOTE: Due to rounding issues, min-max normalization can result in values outside provided boundaries.
+ * If exact range conformity is needed, following workarounds can be used:
+ * - use double floating point precision (dtype = CV_64F)
+ * - manually clip values (`cv::max(res, left_bound, res)`, `cv::min(res, right_bound, res)` or `np.clip`)
+ *
  * @param src input array.
  * @param dst output array of the same size as src .
  * @param alpha norm value to normalize to or the lower range boundary in case of the range
@@ -1882,6 +1907,11 @@ CV_EXPORTS @interface Core : NSObject
  *     // 10.0     1.0     (shift to right border)
  *     normalize(positiveData, normalizedData_minmax, 1.0, 0.0, NORM_MINMAX);
  *
+ *
+ * NOTE: Due to rounding issues, min-max normalization can result in values outside provided boundaries.
+ * If exact range conformity is needed, following workarounds can be used:
+ * - use double floating point precision (dtype = CV_64F)
+ * - manually clip values (`cv::max(res, left_bound, res)`, `cv::min(res, right_bound, res)` or `np.clip`)
  *
  * @param src input array.
  * @param dst output array of the same size as src .
@@ -3510,8 +3540,8 @@ CV_EXPORTS @interface Core : NSObject
  *
  * The roots are stored in the roots array.
  * @param coeffs equation coefficients, an array of 3 or 4 elements.
- * @param roots output array of real roots that has 1 or 3 elements.
- * @return number of real roots. It can be 0, 1 or 2.
+ * @param roots output array of real roots that has 0, 1, 2 or 3 elements.
+ * @return number of real roots. It can be -1 (all real numbers), 0, 1, 2 or 3.
  */
 + (int)solveCubic:(Mat*)coeffs roots:(Mat*)roots NS_SWIFT_NAME(solveCubic(coeffs:roots:));
 

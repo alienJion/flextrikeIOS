@@ -80,6 +80,12 @@ CV_EXPORTS @interface ArucoDetector : Algorithm
 
 
 //
+//   cv::aruco::ArucoDetector::ArucoDetector(vector_Dictionary dictionaries, DetectorParameters detectorParams = DetectorParameters(), RefineParameters refineParams = RefineParameters())
+//
+// Unknown type 'vector_Dictionary' (I), skipping the function
+
+
+//
 //  void cv::aruco::ArucoDetector::detectMarkers(Mat image, vector_Mat& corners, Mat& ids, vector_Mat& rejectedImgPoints = vector_Mat())
 //
 /**
@@ -95,7 +101,7 @@ CV_EXPORTS @interface ArucoDetector : Algorithm
  * @param rejectedImgPoints contains the imgPoints of those squares whose inner code has not a
  * correct codification. Useful for debugging purposes.
  *
- * Performs marker detection in the input image. Only markers included in the specific dictionary
+ * Performs marker detection in the input image. Only markers included in the first specified dictionary
  * are searched. For each detected marker, it returns the 2D position of its corner in the image
  * and its corresponding identifier.
  * Note that this function does not perform pose estimation.
@@ -117,7 +123,7 @@ CV_EXPORTS @interface ArucoDetector : Algorithm
  * The identifiers have the same order than the markers in the imgPoints array.
  * correct codification. Useful for debugging purposes.
  *
- * Performs marker detection in the input image. Only markers included in the specific dictionary
+ * Performs marker detection in the input image. Only markers included in the first specified dictionary
  * are searched. For each detected marker, it returns the 2D position of its corner in the image
  * and its corresponding identifier.
  * Note that this function does not perform pose estimation.
@@ -153,6 +159,8 @@ CV_EXPORTS @interface ArucoDetector : Algorithm
  * If camera parameters and distortion coefficients are provided, missing markers are reprojected
  * using projectPoint function. If not, missing marker projections are interpolated using global
  * homography, and all the marker corners in the board must have the same Z coordinate.
+ * NOTE: This function assumes that the board only contains markers from one dictionary, so only the
+ * first configured dictionary is used. It has to match the dictionary of the board to work properly.
  */
 - (void)refineDetectedMarkers:(Mat*)image board:(Board*)board detectedCorners:(NSMutableArray<Mat*>*)detectedCorners detectedIds:(Mat*)detectedIds rejectedCorners:(NSMutableArray<Mat*>*)rejectedCorners cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs recoveredIdxs:(Mat*)recoveredIdxs NS_SWIFT_NAME(refineDetectedMarkers(image:board:detectedCorners:detectedIds:rejectedCorners:cameraMatrix:distCoeffs:recoveredIdxs:));
 
@@ -177,6 +185,8 @@ CV_EXPORTS @interface ArucoDetector : Algorithm
  * If camera parameters and distortion coefficients are provided, missing markers are reprojected
  * using projectPoint function. If not, missing marker projections are interpolated using global
  * homography, and all the marker corners in the board must have the same Z coordinate.
+ * NOTE: This function assumes that the board only contains markers from one dictionary, so only the
+ * first configured dictionary is used. It has to match the dictionary of the board to work properly.
  */
 - (void)refineDetectedMarkers:(Mat*)image board:(Board*)board detectedCorners:(NSMutableArray<Mat*>*)detectedCorners detectedIds:(Mat*)detectedIds rejectedCorners:(NSMutableArray<Mat*>*)rejectedCorners cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs NS_SWIFT_NAME(refineDetectedMarkers(image:board:detectedCorners:detectedIds:rejectedCorners:cameraMatrix:distCoeffs:));
 
@@ -200,6 +210,8 @@ CV_EXPORTS @interface ArucoDetector : Algorithm
  * If camera parameters and distortion coefficients are provided, missing markers are reprojected
  * using projectPoint function. If not, missing marker projections are interpolated using global
  * homography, and all the marker corners in the board must have the same Z coordinate.
+ * NOTE: This function assumes that the board only contains markers from one dictionary, so only the
+ * first configured dictionary is used. It has to match the dictionary of the board to work properly.
  */
 - (void)refineDetectedMarkers:(Mat*)image board:(Board*)board detectedCorners:(NSMutableArray<Mat*>*)detectedCorners detectedIds:(Mat*)detectedIds rejectedCorners:(NSMutableArray<Mat*>*)rejectedCorners cameraMatrix:(Mat*)cameraMatrix NS_SWIFT_NAME(refineDetectedMarkers(image:board:detectedCorners:detectedIds:rejectedCorners:cameraMatrix:));
 
@@ -222,20 +234,120 @@ CV_EXPORTS @interface ArucoDetector : Algorithm
  * If camera parameters and distortion coefficients are provided, missing markers are reprojected
  * using projectPoint function. If not, missing marker projections are interpolated using global
  * homography, and all the marker corners in the board must have the same Z coordinate.
+ * NOTE: This function assumes that the board only contains markers from one dictionary, so only the
+ * first configured dictionary is used. It has to match the dictionary of the board to work properly.
  */
 - (void)refineDetectedMarkers:(Mat*)image board:(Board*)board detectedCorners:(NSMutableArray<Mat*>*)detectedCorners detectedIds:(Mat*)detectedIds rejectedCorners:(NSMutableArray<Mat*>*)rejectedCorners NS_SWIFT_NAME(refineDetectedMarkers(image:board:detectedCorners:detectedIds:rejectedCorners:));
 
 
 //
+//  void cv::aruco::ArucoDetector::detectMarkersMultiDict(Mat image, vector_Mat& corners, Mat& ids, vector_Mat& rejectedImgPoints = vector_Mat(), Mat& dictIndices = Mat())
+//
+/**
+ * Basic marker detection
+ *
+ * @param image input image
+ * @param corners vector of detected marker corners. For each marker, its four corners
+ * are provided, (e.g std::vector<std::vector<cv::Point2f> > ). For N detected markers,
+ * the dimensions of this array is Nx4. The order of the corners is clockwise.
+ * @param ids vector of identifiers of the detected markers. The identifier is of type int
+ * (e.g. std::vector<int>). For N detected markers, the size of ids is also N.
+ * The identifiers have the same order than the markers in the imgPoints array.
+ * @param rejectedImgPoints contains the imgPoints of those squares whose inner code has not a
+ * correct codification. Useful for debugging purposes.
+ * @param dictIndices vector of dictionary indices for each detected marker. Use getDictionaries() to get the
+ * list of corresponding dictionaries.
+ *
+ * Performs marker detection in the input image. Only markers included in the specific dictionaries
+ * are searched. For each detected marker, it returns the 2D position of its corner in the image
+ * and its corresponding identifier.
+ * Note that this function does not perform pose estimation.
+ * NOTE: The function does not correct lens distortion or takes it into account. It's recommended to undistort
+ * input image with corresponding camera model, if camera parameters are known
+ * @see `undistort`, `estimatePoseSingleMarkers`, `estimatePoseBoard`
+ */
+- (void)detectMarkersMultiDict:(Mat*)image corners:(NSMutableArray<Mat*>*)corners ids:(Mat*)ids rejectedImgPoints:(NSMutableArray<Mat*>*)rejectedImgPoints dictIndices:(Mat*)dictIndices NS_SWIFT_NAME(detectMarkersMultiDict(image:corners:ids:rejectedImgPoints:dictIndices:));
+
+/**
+ * Basic marker detection
+ *
+ * @param image input image
+ * @param corners vector of detected marker corners. For each marker, its four corners
+ * are provided, (e.g std::vector<std::vector<cv::Point2f> > ). For N detected markers,
+ * the dimensions of this array is Nx4. The order of the corners is clockwise.
+ * @param ids vector of identifiers of the detected markers. The identifier is of type int
+ * (e.g. std::vector<int>). For N detected markers, the size of ids is also N.
+ * The identifiers have the same order than the markers in the imgPoints array.
+ * @param rejectedImgPoints contains the imgPoints of those squares whose inner code has not a
+ * correct codification. Useful for debugging purposes.
+ * list of corresponding dictionaries.
+ *
+ * Performs marker detection in the input image. Only markers included in the specific dictionaries
+ * are searched. For each detected marker, it returns the 2D position of its corner in the image
+ * and its corresponding identifier.
+ * Note that this function does not perform pose estimation.
+ * NOTE: The function does not correct lens distortion or takes it into account. It's recommended to undistort
+ * input image with corresponding camera model, if camera parameters are known
+ * @see `undistort`, `estimatePoseSingleMarkers`, `estimatePoseBoard`
+ */
+- (void)detectMarkersMultiDict:(Mat*)image corners:(NSMutableArray<Mat*>*)corners ids:(Mat*)ids rejectedImgPoints:(NSMutableArray<Mat*>*)rejectedImgPoints NS_SWIFT_NAME(detectMarkersMultiDict(image:corners:ids:rejectedImgPoints:));
+
+/**
+ * Basic marker detection
+ *
+ * @param image input image
+ * @param corners vector of detected marker corners. For each marker, its four corners
+ * are provided, (e.g std::vector<std::vector<cv::Point2f> > ). For N detected markers,
+ * the dimensions of this array is Nx4. The order of the corners is clockwise.
+ * @param ids vector of identifiers of the detected markers. The identifier is of type int
+ * (e.g. std::vector<int>). For N detected markers, the size of ids is also N.
+ * The identifiers have the same order than the markers in the imgPoints array.
+ * correct codification. Useful for debugging purposes.
+ * list of corresponding dictionaries.
+ *
+ * Performs marker detection in the input image. Only markers included in the specific dictionaries
+ * are searched. For each detected marker, it returns the 2D position of its corner in the image
+ * and its corresponding identifier.
+ * Note that this function does not perform pose estimation.
+ * NOTE: The function does not correct lens distortion or takes it into account. It's recommended to undistort
+ * input image with corresponding camera model, if camera parameters are known
+ * @see `undistort`, `estimatePoseSingleMarkers`, `estimatePoseBoard`
+ */
+- (void)detectMarkersMultiDict:(Mat*)image corners:(NSMutableArray<Mat*>*)corners ids:(Mat*)ids NS_SWIFT_NAME(detectMarkersMultiDict(image:corners:ids:));
+
+
+//
 //  Dictionary cv::aruco::ArucoDetector::getDictionary()
 //
+/**
+ * Returns first dictionary from internal list used for marker detection.
+ *
+ * @return The first dictionary from the configured ArucoDetector.
+ */
 - (Dictionary*)getDictionary NS_SWIFT_NAME(getDictionary());
 
 
 //
 //  void cv::aruco::ArucoDetector::setDictionary(Dictionary dictionary)
 //
+/**
+ * Sets and replaces the first dictionary in internal list to be used for marker detection.
+ *
+ * @param dictionary The new dictionary that will replace the first dictionary in the internal list.
+ */
 - (void)setDictionary:(Dictionary*)dictionary NS_SWIFT_NAME(setDictionary(dictionary:));
+
+
+//
+//  vector_Dictionary cv::aruco::ArucoDetector::getDictionaries()
+//
+    // Return type 'vector_Dictionary' is not supported, skipping the function
+
+
+//
+//  void cv::aruco::ArucoDetector::setDictionaries(vector_Dictionary dictionaries)
+//
+// Unknown type 'vector_Dictionary' (I), skipping the function
 
 
 //
