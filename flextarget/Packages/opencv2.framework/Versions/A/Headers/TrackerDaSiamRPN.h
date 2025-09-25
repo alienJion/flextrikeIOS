@@ -58,6 +58,12 @@ CV_EXPORTS @interface TrackerDaSiamRPN : Tracker
 
 
 //
+// static Ptr_TrackerDaSiamRPN cv::TrackerDaSiamRPN::create(dnn_Net siam_rpn, dnn_Net kernel_cls1, dnn_Net kernel_r1)
+//
+// Unknown type 'dnn_Net' (I), skipping the function
+
+
+//
 //  float cv::TrackerDaSiamRPN::getTrackingScore()
 //
 /**

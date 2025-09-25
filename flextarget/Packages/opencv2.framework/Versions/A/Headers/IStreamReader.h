@@ -41,6 +41,18 @@ CV_EXPORTS @interface IStreamReader : NSObject
 #pragma mark - Methods
 
 
+//
+//  long long cv::IStreamReader::read(c_string buffer, long long size)
+//
+    // Return type 'long long' is not supported, skipping the function
+
+
+//
+//  long long cv::IStreamReader::seek(long long offset, int origin)
+//
+    // Return type 'long long' is not supported, skipping the function
+
+
 
 @end
 

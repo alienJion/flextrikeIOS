@@ -54,13 +54,13 @@ CV_EXPORTS @interface QRCodeEncoderParams : NSObject
 @property int version;
 
     //
-    // C++: CorrectionLevel cv::QRCodeEncoder::Params::correction_level
+    // C++: QRCodeEncoder_CorrectionLevel cv::QRCodeEncoder::Params::correction_level
     //
 
 @property CorrectionLevel correction_level;
 
     //
-    // C++: EncodeMode cv::QRCodeEncoder::Params::mode
+    // C++: QRCodeEncoder_EncodeMode cv::QRCodeEncoder::Params::mode
     //
 
 @property EncodeMode mode;

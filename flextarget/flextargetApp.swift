@@ -20,7 +20,7 @@ struct flextargetApp: App {
     }
 
     @State private var showLaunchScreen = true
-    @StateObject var bleManager = BLEManager()
+    @StateObject var bleManager = BLEManager.shared
 
     var body: some Scene {
         WindowGroup {
@@ -35,8 +35,9 @@ struct flextargetApp: App {
                         }
                     }
             } else {
-                /*OrientationView() */ // Replace with your main view
-                MainPageView()
+                OrientationView() // Replace with your main view
+                    .environmentObject(bleManager)
+//                MainPageView()
             }
         }
     }

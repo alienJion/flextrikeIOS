@@ -684,6 +684,12 @@ extension MSER {
   @nonobjc public func detectRegions(image: opencv2.Mat, msers: inout [[opencv2.Point2i]], bboxes: inout [opencv2.Rect2i])
 }
 extension Imgcodecs {
+  @nonobjc public class func imreadWithMetadata(filename: Swift.String, metadataTypes: inout [Swift.Int32], metadata: inout [opencv2.Mat], flags: Swift.Int32) -> opencv2.Mat
+}
+extension Imgcodecs {
+  @nonobjc public class func imreadWithMetadata(filename: Swift.String, metadataTypes: inout [Swift.Int32], metadata: inout [opencv2.Mat]) -> opencv2.Mat
+}
+extension Imgcodecs {
   @nonobjc public class func imreadmulti(filename: Swift.String, mats: inout [opencv2.Mat], flags: Swift.Int32) -> Swift.Bool
 }
 extension Imgcodecs {
@@ -699,10 +705,28 @@ extension Imgcodecs {
   @nonobjc public class func imwriteanimation(filename: Swift.String, animation: opencv2.Animation, params: [Swift.Int32]) -> Swift.Bool
 }
 extension Imgcodecs {
+  @nonobjc public class func imencodeanimation(ext: Swift.String, animation: opencv2.Animation, buf: inout [Swift.UInt8], params: [Swift.Int32]) -> Swift.Bool
+}
+extension Imgcodecs {
+  @nonobjc public class func imencodeanimation(ext: Swift.String, animation: opencv2.Animation, buf: inout [Swift.UInt8]) -> Swift.Bool
+}
+extension Imgcodecs {
   @nonobjc public class func imwrite(filename: Swift.String, img: opencv2.Mat, params: [Swift.Int32]) -> Swift.Bool
 }
 extension Imgcodecs {
+  @nonobjc public class func imwriteWithMetadata(filename: Swift.String, img: opencv2.Mat, metadataTypes: [Swift.Int32], metadata: [opencv2.Mat], params: [Swift.Int32]) -> Swift.Bool
+}
+extension Imgcodecs {
+  @nonobjc public class func imwriteWithMetadata(filename: Swift.String, img: opencv2.Mat, metadataTypes: [Swift.Int32], metadata: [opencv2.Mat]) -> Swift.Bool
+}
+extension Imgcodecs {
   @nonobjc public class func imwritemulti(filename: Swift.String, img: [opencv2.Mat], params: [Swift.Int32]) -> Swift.Bool
+}
+extension Imgcodecs {
+  @nonobjc public class func imdecodeWithMetadata(buf: opencv2.Mat, metadataTypes: inout [Swift.Int32], metadata: inout [opencv2.Mat], flags: Swift.Int32) -> opencv2.Mat
+}
+extension Imgcodecs {
+  @nonobjc public class func imdecodeWithMetadata(buf: opencv2.Mat, metadataTypes: inout [Swift.Int32], metadata: inout [opencv2.Mat]) -> opencv2.Mat
 }
 extension Imgcodecs {
   @nonobjc public class func imdecodemulti(buf: opencv2.Mat, flags: Swift.Int32, mats: inout [opencv2.Mat], range: opencv2.Range) -> Swift.Bool
@@ -715,6 +739,12 @@ extension Imgcodecs {
 }
 extension Imgcodecs {
   @nonobjc public class func imencode(ext: Swift.String, img: opencv2.Mat, buf: inout [Swift.UInt8]) -> Swift.Bool
+}
+extension Imgcodecs {
+  @nonobjc public class func imencodeWithMetadata(ext: Swift.String, img: opencv2.Mat, metadataTypes: [Swift.Int32], metadata: [opencv2.Mat], buf: inout [Swift.UInt8], params: [Swift.Int32]) -> Swift.Bool
+}
+extension Imgcodecs {
+  @nonobjc public class func imencodeWithMetadata(ext: Swift.String, img: opencv2.Mat, metadataTypes: [Swift.Int32], metadata: [opencv2.Mat], buf: inout [Swift.UInt8]) -> Swift.Bool
 }
 extension Imgcodecs {
   @nonobjc public class func imencodemulti(ext: Swift.String, imgs: [opencv2.Mat], buf: inout [Swift.UInt8], params: [Swift.Int32]) -> Swift.Bool
@@ -970,6 +1000,15 @@ extension ArucoDetector {
 }
 extension ArucoDetector {
   @nonobjc public func refineDetectedMarkers(image: opencv2.Mat, board: opencv2.Board, detectedCorners: inout [opencv2.Mat], detectedIds: opencv2.Mat, rejectedCorners: inout [opencv2.Mat])
+}
+extension ArucoDetector {
+  @nonobjc public func detectMarkersMultiDict(image: opencv2.Mat, corners: inout [opencv2.Mat], ids: opencv2.Mat, rejectedImgPoints: inout [opencv2.Mat], dictIndices: opencv2.Mat)
+}
+extension ArucoDetector {
+  @nonobjc public func detectMarkersMultiDict(image: opencv2.Mat, corners: inout [opencv2.Mat], ids: opencv2.Mat, rejectedImgPoints: inout [opencv2.Mat])
+}
+extension ArucoDetector {
+  @nonobjc public func detectMarkersMultiDict(image: opencv2.Mat, corners: inout [opencv2.Mat], ids: opencv2.Mat)
 }
 extension CharucoDetector {
   @nonobjc public func detectBoard(image: opencv2.Mat, charucoCorners: opencv2.Mat, charucoIds: opencv2.Mat, markerCorners: inout [opencv2.Mat], markerIds: opencv2.Mat)

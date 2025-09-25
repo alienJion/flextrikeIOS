@@ -13,6 +13,7 @@
 #import <Foundation/Foundation.h>
 #import "GraphicalCodeDetector.h"
 
+#import "QRCodeEncoder.h"
 @class Mat;
 
 
@@ -129,6 +130,25 @@ CV_EXPORTS @interface QRCodeDetector : GraphicalCodeDetector
  * @param img grayscale or color (BGR) image containing QR code.
  */
 - (NSString*)detectAndDecodeCurved:(Mat*)img NS_SWIFT_NAME(detectAndDecodeCurved(img:));
+
+
+//
+//  QRCodeEncoder_ECIEncodings cv::QRCodeDetector::getEncoding(int codeIdx = 0)
+//
+/**
+ * Returns a kind of encoding for the decoded info from the latest REF: decode or REF: detectAndDecode call
+ * @param codeIdx an index of the previously decoded QR code.
+ *                    When REF: decode or REF: detectAndDecode is used, valid value is zero.
+ *                    For REF: decodeMulti or REF: detectAndDecodeMulti use indices corresponding to the output order.
+ */
+- (ECIEncodings)getEncoding:(int)codeIdx NS_SWIFT_NAME(getEncoding(codeIdx:));
+
+/**
+ * Returns a kind of encoding for the decoded info from the latest REF: decode or REF: detectAndDecode call
+ *                    When REF: decode or REF: detectAndDecode is used, valid value is zero.
+ *                    For REF: decodeMulti or REF: detectAndDecodeMulti use indices corresponding to the output order.
+ */
+- (ECIEncodings)getEncoding NS_SWIFT_NAME(getEncoding());
 
 
 

@@ -6,7 +6,7 @@ struct ConnectSmartTargetView: View {
     @State private var showReconnect: Bool = false
     @State private var isShaking: Bool = true
     @State private var showProgress: Bool = false
-    @State private var navigateToCamera = false
+    @State private var navigateToMain = false
     @State private var showInfo = false
 
     var body: some View {
@@ -86,11 +86,11 @@ struct ConnectSmartTargetView: View {
                     isShaking = false
                     showReconnect = false
                     showProgress = false
-                    navigateToCamera = true
+                    navigateToMain = true
                 }
             }
-            .navigationDestination(isPresented: $navigateToCamera) {
-                CameraView(bleManager: bleManager)
+            .navigationDestination(isPresented: $navigateToMain) {
+                MainPageView()
                     .toolbar(.hidden, for: .navigationBar)
                     .navigationBarBackButtonHidden(true)
             }
@@ -103,7 +103,7 @@ struct ConnectSmartTargetView: View {
         showReconnect = false
         bleManager.startScan()
         showProgress = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
             if !bleManager.isConnected {
                 statusText = "TARGET NOT FOUND"
                 isShaking = false

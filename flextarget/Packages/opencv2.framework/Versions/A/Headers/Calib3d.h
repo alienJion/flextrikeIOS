@@ -1219,7 +1219,9 @@ CV_EXPORTS @interface Calib3d : NSObject
 //  bool cv::solvePnP(Mat objectPoints, Mat imagePoints, Mat cameraMatrix, Mat distCoeffs, Mat& rvec, Mat& tvec, bool useExtrinsicGuess = false, int flags = SOLVEPNP_ITERATIVE)
 //
 /**
- * Finds an object pose from 3D-2D point correspondences.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences:
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -1282,12 +1284,14 @@ CV_EXPORTS @interface Calib3d : NSObject
  *          - point 1: [ squareLength / 2,  squareLength / 2, 0]
  *          - point 2: [ squareLength / 2, -squareLength / 2, 0]
  *          - point 3: [-squareLength / 2, -squareLength / 2, 0]
- *     -  With REF: SOLVEPNP_SQPNP input points must be >= 3
+ *    -   With REF: SOLVEPNP_SQPNP input points must be >= 3
  */
 + (BOOL)solvePnP:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess flags:(int)flags NS_SWIFT_NAME(solvePnP(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:flags:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences:
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -1349,12 +1353,14 @@ CV_EXPORTS @interface Calib3d : NSObject
  *          - point 1: [ squareLength / 2,  squareLength / 2, 0]
  *          - point 2: [ squareLength / 2, -squareLength / 2, 0]
  *          - point 3: [-squareLength / 2, -squareLength / 2, 0]
- *     -  With REF: SOLVEPNP_SQPNP input points must be >= 3
+ *    -   With REF: SOLVEPNP_SQPNP input points must be >= 3
  */
 + (BOOL)solvePnP:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess NS_SWIFT_NAME(solvePnP(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences:
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -1415,7 +1421,7 @@ CV_EXPORTS @interface Calib3d : NSObject
  *          - point 1: [ squareLength / 2,  squareLength / 2, 0]
  *          - point 2: [ squareLength / 2, -squareLength / 2, 0]
  *          - point 3: [-squareLength / 2, -squareLength / 2, 0]
- *     -  With REF: SOLVEPNP_SQPNP input points must be >= 3
+ *    -   With REF: SOLVEPNP_SQPNP input points must be >= 3
  */
 + (BOOL)solvePnP:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec NS_SWIFT_NAME(solvePnP(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:));
 
@@ -1424,7 +1430,9 @@ CV_EXPORTS @interface Calib3d : NSObject
 //  bool cv::solvePnPRansac(Mat objectPoints, Mat imagePoints, Mat cameraMatrix, Mat distCoeffs, Mat& rvec, Mat& tvec, bool useExtrinsicGuess = false, int iterationsCount = 100, float reprojectionError = 8.0, double confidence = 0.99, Mat& inliers = Mat(), int flags = SOLVEPNP_ITERATIVE)
 //
 /**
- * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences using the RANSAC scheme to deal with bad matches.
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -1457,8 +1465,8 @@ CV_EXPORTS @interface Calib3d : NSObject
  * makes the function resistant to outliers.
  *
  * NOTE:
- *    -   An example of how to use solvePNPRansac for object detection can be found at
- *         opencv_source_code/samples/cpp/tutorial_code/calib3d/real_time_pose_estimation/
+ *    -   An example of how to use solvePnPRansac for object detection can be found at
+ *         REF: tutorial_real_time_pose
  *    -   The default method used to estimate the camera pose for the Minimal Sample Sets step
  *        is #SOLVEPNP_EPNP. Exceptions are:
  *          - if you choose #SOLVEPNP_P3P or #SOLVEPNP_AP3P, these methods will be used.
@@ -1470,7 +1478,9 @@ CV_EXPORTS @interface Calib3d : NSObject
 + (BOOL)solvePnPRansac:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess iterationsCount:(int)iterationsCount reprojectionError:(float)reprojectionError confidence:(double)confidence inliers:(Mat*)inliers flags:(int)flags NS_SWIFT_NAME(solvePnPRansac(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:iterationsCount:reprojectionError:confidence:inliers:flags:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences using the RANSAC scheme to deal with bad matches.
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -1502,8 +1512,8 @@ CV_EXPORTS @interface Calib3d : NSObject
  * makes the function resistant to outliers.
  *
  * NOTE:
- *    -   An example of how to use solvePNPRansac for object detection can be found at
- *         opencv_source_code/samples/cpp/tutorial_code/calib3d/real_time_pose_estimation/
+ *    -   An example of how to use solvePnPRansac for object detection can be found at
+ *         REF: tutorial_real_time_pose
  *    -   The default method used to estimate the camera pose for the Minimal Sample Sets step
  *        is #SOLVEPNP_EPNP. Exceptions are:
  *          - if you choose #SOLVEPNP_P3P or #SOLVEPNP_AP3P, these methods will be used.
@@ -1515,7 +1525,9 @@ CV_EXPORTS @interface Calib3d : NSObject
 + (BOOL)solvePnPRansac:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess iterationsCount:(int)iterationsCount reprojectionError:(float)reprojectionError confidence:(double)confidence inliers:(Mat*)inliers NS_SWIFT_NAME(solvePnPRansac(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:iterationsCount:reprojectionError:confidence:inliers:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences using the RANSAC scheme to deal with bad matches.
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -1546,8 +1558,8 @@ CV_EXPORTS @interface Calib3d : NSObject
  * makes the function resistant to outliers.
  *
  * NOTE:
- *    -   An example of how to use solvePNPRansac for object detection can be found at
- *         opencv_source_code/samples/cpp/tutorial_code/calib3d/real_time_pose_estimation/
+ *    -   An example of how to use solvePnPRansac for object detection can be found at
+ *         REF: tutorial_real_time_pose
  *    -   The default method used to estimate the camera pose for the Minimal Sample Sets step
  *        is #SOLVEPNP_EPNP. Exceptions are:
  *          - if you choose #SOLVEPNP_P3P or #SOLVEPNP_AP3P, these methods will be used.
@@ -1559,7 +1571,9 @@ CV_EXPORTS @interface Calib3d : NSObject
 + (BOOL)solvePnPRansac:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess iterationsCount:(int)iterationsCount reprojectionError:(float)reprojectionError confidence:(double)confidence NS_SWIFT_NAME(solvePnPRansac(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:iterationsCount:reprojectionError:confidence:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences using the RANSAC scheme to deal with bad matches.
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -1589,8 +1603,8 @@ CV_EXPORTS @interface Calib3d : NSObject
  * makes the function resistant to outliers.
  *
  * NOTE:
- *    -   An example of how to use solvePNPRansac for object detection can be found at
- *         opencv_source_code/samples/cpp/tutorial_code/calib3d/real_time_pose_estimation/
+ *    -   An example of how to use solvePnPRansac for object detection can be found at
+ *         REF: tutorial_real_time_pose
  *    -   The default method used to estimate the camera pose for the Minimal Sample Sets step
  *        is #SOLVEPNP_EPNP. Exceptions are:
  *          - if you choose #SOLVEPNP_P3P or #SOLVEPNP_AP3P, these methods will be used.
@@ -1602,7 +1616,9 @@ CV_EXPORTS @interface Calib3d : NSObject
 + (BOOL)solvePnPRansac:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess iterationsCount:(int)iterationsCount reprojectionError:(float)reprojectionError NS_SWIFT_NAME(solvePnPRansac(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:iterationsCount:reprojectionError:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences using the RANSAC scheme to deal with bad matches.
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -1631,8 +1647,8 @@ CV_EXPORTS @interface Calib3d : NSObject
  * makes the function resistant to outliers.
  *
  * NOTE:
- *    -   An example of how to use solvePNPRansac for object detection can be found at
- *         opencv_source_code/samples/cpp/tutorial_code/calib3d/real_time_pose_estimation/
+ *    -   An example of how to use solvePnPRansac for object detection can be found at
+ *         REF: tutorial_real_time_pose
  *    -   The default method used to estimate the camera pose for the Minimal Sample Sets step
  *        is #SOLVEPNP_EPNP. Exceptions are:
  *          - if you choose #SOLVEPNP_P3P or #SOLVEPNP_AP3P, these methods will be used.
@@ -1644,7 +1660,9 @@ CV_EXPORTS @interface Calib3d : NSObject
 + (BOOL)solvePnPRansac:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess iterationsCount:(int)iterationsCount NS_SWIFT_NAME(solvePnPRansac(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:iterationsCount:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences using the RANSAC scheme to deal with bad matches.
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -1672,8 +1690,8 @@ CV_EXPORTS @interface Calib3d : NSObject
  * makes the function resistant to outliers.
  *
  * NOTE:
- *    -   An example of how to use solvePNPRansac for object detection can be found at
- *         opencv_source_code/samples/cpp/tutorial_code/calib3d/real_time_pose_estimation/
+ *    -   An example of how to use solvePnPRansac for object detection can be found at
+ *         REF: tutorial_real_time_pose
  *    -   The default method used to estimate the camera pose for the Minimal Sample Sets step
  *        is #SOLVEPNP_EPNP. Exceptions are:
  *          - if you choose #SOLVEPNP_P3P or #SOLVEPNP_AP3P, these methods will be used.
@@ -1685,7 +1703,9 @@ CV_EXPORTS @interface Calib3d : NSObject
 + (BOOL)solvePnPRansac:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess NS_SWIFT_NAME(solvePnPRansac(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences using the RANSAC scheme to deal with bad matches.
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -1712,8 +1732,8 @@ CV_EXPORTS @interface Calib3d : NSObject
  * makes the function resistant to outliers.
  *
  * NOTE:
- *    -   An example of how to use solvePNPRansac for object detection can be found at
- *         opencv_source_code/samples/cpp/tutorial_code/calib3d/real_time_pose_estimation/
+ *    -   An example of how to use solvePnPRansac for object detection can be found at
+ *         REF: tutorial_real_time_pose
  *    -   The default method used to estimate the camera pose for the Minimal Sample Sets step
  *        is #SOLVEPNP_EPNP. Exceptions are:
  *          - if you choose #SOLVEPNP_P3P or #SOLVEPNP_AP3P, these methods will be used.
@@ -1737,7 +1757,9 @@ CV_EXPORTS @interface Calib3d : NSObject
 //  int cv::solveP3P(Mat objectPoints, Mat imagePoints, Mat cameraMatrix, Mat distCoeffs, vector_Mat& rvecs, vector_Mat& tvecs, int flags)
 //
 /**
- * Finds an object pose from 3 3D-2D point correspondences.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from **3** 3D-2D point correspondences.
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -1916,7 +1938,9 @@ CV_EXPORTS @interface Calib3d : NSObject
 //  int cv::solvePnPGeneric(Mat objectPoints, Mat imagePoints, Mat cameraMatrix, Mat distCoeffs, vector_Mat& rvecs, vector_Mat& tvecs, bool useExtrinsicGuess = false, SolvePnPMethod flags = SOLVEPNP_ITERATIVE, Mat rvec = Mat(), Mat tvec = Mat(), Mat& reprojectionError = Mat())
 //
 /**
- * Finds an object pose from 3D-2D point correspondences.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences.
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -1987,11 +2011,14 @@ CV_EXPORTS @interface Calib3d : NSObject
  *          - point 1: [ squareLength / 2,  squareLength / 2, 0]
  *          - point 2: [ squareLength / 2, -squareLength / 2, 0]
  *          - point 3: [-squareLength / 2, -squareLength / 2, 0]
+ *    -   With REF: SOLVEPNP_SQPNP input points must be >= 3
  */
 + (int)solvePnPGeneric:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvecs:(NSMutableArray<Mat*>*)rvecs tvecs:(NSMutableArray<Mat*>*)tvecs useExtrinsicGuess:(BOOL)useExtrinsicGuess flags:(SolvePnPMethod)flags rvec:(Mat*)rvec tvec:(Mat*)tvec reprojectionError:(Mat*)reprojectionError NS_SWIFT_NAME(solvePnPGeneric(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvecs:tvecs:useExtrinsicGuess:flags:rvec:tvec:reprojectionError:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences.
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -2061,11 +2088,14 @@ CV_EXPORTS @interface Calib3d : NSObject
  *          - point 1: [ squareLength / 2,  squareLength / 2, 0]
  *          - point 2: [ squareLength / 2, -squareLength / 2, 0]
  *          - point 3: [-squareLength / 2, -squareLength / 2, 0]
+ *    -   With REF: SOLVEPNP_SQPNP input points must be >= 3
  */
 + (int)solvePnPGeneric:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvecs:(NSMutableArray<Mat*>*)rvecs tvecs:(NSMutableArray<Mat*>*)tvecs useExtrinsicGuess:(BOOL)useExtrinsicGuess flags:(SolvePnPMethod)flags rvec:(Mat*)rvec tvec:(Mat*)tvec NS_SWIFT_NAME(solvePnPGeneric(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvecs:tvecs:useExtrinsicGuess:flags:rvec:tvec:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences.
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -2134,11 +2164,14 @@ CV_EXPORTS @interface Calib3d : NSObject
  *          - point 1: [ squareLength / 2,  squareLength / 2, 0]
  *          - point 2: [ squareLength / 2, -squareLength / 2, 0]
  *          - point 3: [-squareLength / 2, -squareLength / 2, 0]
+ *    -   With REF: SOLVEPNP_SQPNP input points must be >= 3
  */
 + (int)solvePnPGeneric:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvecs:(NSMutableArray<Mat*>*)rvecs tvecs:(NSMutableArray<Mat*>*)tvecs useExtrinsicGuess:(BOOL)useExtrinsicGuess flags:(SolvePnPMethod)flags rvec:(Mat*)rvec NS_SWIFT_NAME(solvePnPGeneric(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvecs:tvecs:useExtrinsicGuess:flags:rvec:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences.
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -2206,11 +2239,14 @@ CV_EXPORTS @interface Calib3d : NSObject
  *          - point 1: [ squareLength / 2,  squareLength / 2, 0]
  *          - point 2: [ squareLength / 2, -squareLength / 2, 0]
  *          - point 3: [-squareLength / 2, -squareLength / 2, 0]
+ *    -   With REF: SOLVEPNP_SQPNP input points must be >= 3
  */
 + (int)solvePnPGeneric:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvecs:(NSMutableArray<Mat*>*)rvecs tvecs:(NSMutableArray<Mat*>*)tvecs useExtrinsicGuess:(BOOL)useExtrinsicGuess flags:(SolvePnPMethod)flags NS_SWIFT_NAME(solvePnPGeneric(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvecs:tvecs:useExtrinsicGuess:flags:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences.
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -2277,11 +2313,14 @@ CV_EXPORTS @interface Calib3d : NSObject
  *          - point 1: [ squareLength / 2,  squareLength / 2, 0]
  *          - point 2: [ squareLength / 2, -squareLength / 2, 0]
  *          - point 3: [-squareLength / 2, -squareLength / 2, 0]
+ *    -   With REF: SOLVEPNP_SQPNP input points must be >= 3
  */
 + (int)solvePnPGeneric:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvecs:(NSMutableArray<Mat*>*)rvecs tvecs:(NSMutableArray<Mat*>*)tvecs useExtrinsicGuess:(BOOL)useExtrinsicGuess NS_SWIFT_NAME(solvePnPGeneric(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvecs:tvecs:useExtrinsicGuess:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences.
+ * Finds an object pose `$$ {}^{c}\mathbf{T}_o $$` from 3D-2D point correspondences.
+ *
+ * ![Perspective projection, from object to camera frame](pics/pinhole_homogeneous_transformation.png){ width=50% }
  *
  * @see `REF: calib3d_solvePnP`
  *
@@ -2347,6 +2386,7 @@ CV_EXPORTS @interface Calib3d : NSObject
  *          - point 1: [ squareLength / 2,  squareLength / 2, 0]
  *          - point 2: [ squareLength / 2, -squareLength / 2, 0]
  *          - point 3: [-squareLength / 2, -squareLength / 2, 0]
+ *    -   With REF: SOLVEPNP_SQPNP input points must be >= 3
  */
 + (int)solvePnPGeneric:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvecs:(NSMutableArray<Mat*>*)rvecs tvecs:(NSMutableArray<Mat*>*)tvecs NS_SWIFT_NAME(solvePnPGeneric(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvecs:tvecs:));
 
@@ -2447,7 +2487,8 @@ CV_EXPORTS @interface Calib3d : NSObject
  * border and the background is dark, the outer black squares cannot be segmented properly and so the
  * square grouping and ordering algorithm fails.
  *
- * Use gen_pattern.py (REF: tutorial_camera_calibration_pattern) to create checkerboard.
+ * Use the `gen_pattern.py` Python script (REF: tutorial_camera_calibration_pattern)
+ * to create the desired checkerboard pattern.
  */
 + (BOOL)findChessboardCorners:(Mat*)image patternSize:(Size2i*)patternSize corners:(Mat*)corners flags:(int)flags NS_SWIFT_NAME(findChessboardCorners(image:patternSize:corners:flags:));
 
@@ -2504,7 +2545,8 @@ CV_EXPORTS @interface Calib3d : NSObject
  * border and the background is dark, the outer black squares cannot be segmented properly and so the
  * square grouping and ordering algorithm fails.
  *
- * Use gen_pattern.py (REF: tutorial_camera_calibration_pattern) to create checkerboard.
+ * Use the `gen_pattern.py` Python script (REF: tutorial_camera_calibration_pattern)
+ * to create the desired checkerboard pattern.
  */
 + (BOOL)findChessboardCorners:(Mat*)image patternSize:(Size2i*)patternSize corners:(Mat*)corners NS_SWIFT_NAME(findChessboardCorners(image:patternSize:corners:));
 
@@ -2566,8 +2608,9 @@ CV_EXPORTS @interface Calib3d : NSObject
  * a sample checkerboard optimized for the detection. However, any other checkerboard
  * can be used as well.
  *
- * Use gen_pattern.py (REF: tutorial_camera_calibration_pattern) to create checkerboard.
- * ![Checkerboard](pics/checkerboard_radon.png)
+ * Use the `gen_pattern.py` Python script (REF: tutorial_camera_calibration_pattern)
+ * to create the corresponding checkerboard pattern:
+ * \image html pics/checkerboard_radon.png width=60%
  */
 + (BOOL)findChessboardCornersSBWithMeta:(Mat*)image patternSize:(Size2i*)patternSize corners:(Mat*)corners flags:(int)flags meta:(Mat*)meta NS_SWIFT_NAME(findChessboardCornersSB(image:patternSize:corners:flags:meta:));
 
@@ -9420,6 +9463,96 @@ CV_EXPORTS @interface Calib3d : NSObject
  * Finds an object pose from 3D-2D point correspondences for fisheye camera moodel.
  *
  * @param objectPoints Array of object points in the object coordinate space, Nx3 1-channel or
+ *     1xN/Nx1 3-channel, where N is the number of points. vector\<Point3d\> can also be passed here.
+ * @param imagePoints Array of corresponding image points, Nx2 1-channel or 1xN/Nx1 2-channel,
+ *     where N is the number of points. vector\<Point2d\> can also be passed here.
+ * @param cameraMatrix Input camera intrinsic matrix `$$\cameramatrix{A}$$` .
+ * @param distCoeffs Input vector of distortion coefficients (4x1/1x4).
+ * @param rvec Output rotation vector (see REF: Rodrigues ) that, together with tvec, brings points from
+ *     the model coordinate system to the camera coordinate system.
+ * @param tvec Output translation vector.
+ * @param useExtrinsicGuess Parameter used for #SOLVEPNP_ITERATIVE. If true (1), the function uses
+ *     the provided rvec and tvec values as initial approximations of the rotation and translation
+ *     vectors, respectively, and further optimizes them.
+ * @param flags Method for solving a PnP problem: see REF: calib3d_solvePnP_flags
+ * @param criteria Termination criteria for internal undistortPoints call.
+ *     The function interally undistorts points with REF: undistortPoints and call REF: cv::solvePnP,
+ *     thus the input are very similar. More information about Perspective-n-Points is described in REF: calib3d_solvePnP
+ *     for more information.
+ */
++ (BOOL)fisheye_solvePnP:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess flags:(int)flags criteria:(TermCriteria*)criteria NS_SWIFT_NAME(fisheye_solvePnP(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:flags:criteria:));
+
+/**
+ * Finds an object pose from 3D-2D point correspondences for fisheye camera moodel.
+ *
+ * @param objectPoints Array of object points in the object coordinate space, Nx3 1-channel or
+ *     1xN/Nx1 3-channel, where N is the number of points. vector\<Point3d\> can also be passed here.
+ * @param imagePoints Array of corresponding image points, Nx2 1-channel or 1xN/Nx1 2-channel,
+ *     where N is the number of points. vector\<Point2d\> can also be passed here.
+ * @param cameraMatrix Input camera intrinsic matrix `$$\cameramatrix{A}$$` .
+ * @param distCoeffs Input vector of distortion coefficients (4x1/1x4).
+ * @param rvec Output rotation vector (see REF: Rodrigues ) that, together with tvec, brings points from
+ *     the model coordinate system to the camera coordinate system.
+ * @param tvec Output translation vector.
+ * @param useExtrinsicGuess Parameter used for #SOLVEPNP_ITERATIVE. If true (1), the function uses
+ *     the provided rvec and tvec values as initial approximations of the rotation and translation
+ *     vectors, respectively, and further optimizes them.
+ * @param flags Method for solving a PnP problem: see REF: calib3d_solvePnP_flags
+ *     The function interally undistorts points with REF: undistortPoints and call REF: cv::solvePnP,
+ *     thus the input are very similar. More information about Perspective-n-Points is described in REF: calib3d_solvePnP
+ *     for more information.
+ */
++ (BOOL)fisheye_solvePnP:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess flags:(int)flags NS_SWIFT_NAME(fisheye_solvePnP(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:flags:));
+
+/**
+ * Finds an object pose from 3D-2D point correspondences for fisheye camera moodel.
+ *
+ * @param objectPoints Array of object points in the object coordinate space, Nx3 1-channel or
+ *     1xN/Nx1 3-channel, where N is the number of points. vector\<Point3d\> can also be passed here.
+ * @param imagePoints Array of corresponding image points, Nx2 1-channel or 1xN/Nx1 2-channel,
+ *     where N is the number of points. vector\<Point2d\> can also be passed here.
+ * @param cameraMatrix Input camera intrinsic matrix `$$\cameramatrix{A}$$` .
+ * @param distCoeffs Input vector of distortion coefficients (4x1/1x4).
+ * @param rvec Output rotation vector (see REF: Rodrigues ) that, together with tvec, brings points from
+ *     the model coordinate system to the camera coordinate system.
+ * @param tvec Output translation vector.
+ * @param useExtrinsicGuess Parameter used for #SOLVEPNP_ITERATIVE. If true (1), the function uses
+ *     the provided rvec and tvec values as initial approximations of the rotation and translation
+ *     vectors, respectively, and further optimizes them.
+ *     The function interally undistorts points with REF: undistortPoints and call REF: cv::solvePnP,
+ *     thus the input are very similar. More information about Perspective-n-Points is described in REF: calib3d_solvePnP
+ *     for more information.
+ */
++ (BOOL)fisheye_solvePnP:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess NS_SWIFT_NAME(fisheye_solvePnP(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:));
+
+/**
+ * Finds an object pose from 3D-2D point correspondences for fisheye camera moodel.
+ *
+ * @param objectPoints Array of object points in the object coordinate space, Nx3 1-channel or
+ *     1xN/Nx1 3-channel, where N is the number of points. vector\<Point3d\> can also be passed here.
+ * @param imagePoints Array of corresponding image points, Nx2 1-channel or 1xN/Nx1 2-channel,
+ *     where N is the number of points. vector\<Point2d\> can also be passed here.
+ * @param cameraMatrix Input camera intrinsic matrix `$$\cameramatrix{A}$$` .
+ * @param distCoeffs Input vector of distortion coefficients (4x1/1x4).
+ * @param rvec Output rotation vector (see REF: Rodrigues ) that, together with tvec, brings points from
+ *     the model coordinate system to the camera coordinate system.
+ * @param tvec Output translation vector.
+ *     the provided rvec and tvec values as initial approximations of the rotation and translation
+ *     vectors, respectively, and further optimizes them.
+ *     The function interally undistorts points with REF: undistortPoints and call REF: cv::solvePnP,
+ *     thus the input are very similar. More information about Perspective-n-Points is described in REF: calib3d_solvePnP
+ *     for more information.
+ */
++ (BOOL)fisheye_solvePnP:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec NS_SWIFT_NAME(fisheye_solvePnP(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:));
+
+
+//
+//  bool cv::fisheye::solvePnPRansac(Mat objectPoints, Mat imagePoints, Mat cameraMatrix, Mat distCoeffs, Mat& rvec, Mat& tvec, bool useExtrinsicGuess = false, int iterationsCount = 100, float reprojectionError = 8.0, double confidence = 0.99, Mat& inliers = Mat(), int flags = SOLVEPNP_ITERATIVE, TermCriteria criteria = TermCriteria(TermCriteria::MAX_ITER + TermCriteria::EPS, 10, 1e-8))
+//
+/**
+ * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme for fisheye camera moodel.
+ *
+ * @param objectPoints Array of object points in the object coordinate space, Nx3 1-channel or
  *     1xN/Nx1 3-channel, where N is the number of points. vector\<Point3d\> can be also passed here.
  * @param imagePoints Array of corresponding image points, Nx2 1-channel or 1xN/Nx1 2-channel,
  *     where N is the number of points. vector\<Point2d\> can be also passed here.
@@ -9431,6 +9564,12 @@ CV_EXPORTS @interface Calib3d : NSObject
  * @param useExtrinsicGuess Parameter used for #SOLVEPNP_ITERATIVE. If true (1), the function uses
  *     the provided rvec and tvec values as initial approximations of the rotation and translation
  *     vectors, respectively, and further optimizes them.
+ * @param iterationsCount Number of iterations.
+ * @param reprojectionError Inlier threshold value used by the RANSAC procedure. The parameter value
+ *     is the maximum allowed distance between the observed and computed point projections to consider it
+ *     an inlier.
+ * @param confidence The probability that the algorithm produces a useful result.
+ * @param inliers Output vector that contains indices of inliers in objectPoints and imagePoints .
  * @param flags Method for solving a PnP problem: see REF: calib3d_solvePnP_flags
  *     This function returns the rotation and the translation vectors that transform a 3D point expressed in the object
  *     coordinate frame to the camera coordinate frame, using different methods:
@@ -9448,10 +9587,10 @@ CV_EXPORTS @interface Calib3d : NSObject
  *     thus the input are very similar. More information about Perspective-n-Points is described in REF: calib3d_solvePnP
  *     for more information.
  */
-+ (BOOL)fisheye_solvePnP:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess flags:(int)flags criteria:(TermCriteria*)criteria NS_SWIFT_NAME(fisheye_solvePnP(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:flags:criteria:));
++ (BOOL)fisheye_solvePnPRansac:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess iterationsCount:(int)iterationsCount reprojectionError:(float)reprojectionError confidence:(double)confidence inliers:(Mat*)inliers flags:(int)flags criteria:(TermCriteria*)criteria NS_SWIFT_NAME(fisheye_solvePnPRansac(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:iterationsCount:reprojectionError:confidence:inliers:flags:criteria:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences for fisheye camera moodel.
+ * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme for fisheye camera moodel.
  *
  * @param objectPoints Array of object points in the object coordinate space, Nx3 1-channel or
  *     1xN/Nx1 3-channel, where N is the number of points. vector\<Point3d\> can be also passed here.
@@ -9465,6 +9604,12 @@ CV_EXPORTS @interface Calib3d : NSObject
  * @param useExtrinsicGuess Parameter used for #SOLVEPNP_ITERATIVE. If true (1), the function uses
  *     the provided rvec and tvec values as initial approximations of the rotation and translation
  *     vectors, respectively, and further optimizes them.
+ * @param iterationsCount Number of iterations.
+ * @param reprojectionError Inlier threshold value used by the RANSAC procedure. The parameter value
+ *     is the maximum allowed distance between the observed and computed point projections to consider it
+ *     an inlier.
+ * @param confidence The probability that the algorithm produces a useful result.
+ * @param inliers Output vector that contains indices of inliers in objectPoints and imagePoints .
  * @param flags Method for solving a PnP problem: see REF: calib3d_solvePnP_flags
  *     This function returns the rotation and the translation vectors that transform a 3D point expressed in the object
  *     coordinate frame to the camera coordinate frame, using different methods:
@@ -9481,10 +9626,10 @@ CV_EXPORTS @interface Calib3d : NSObject
  *     thus the input are very similar. More information about Perspective-n-Points is described in REF: calib3d_solvePnP
  *     for more information.
  */
-+ (BOOL)fisheye_solvePnP:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess flags:(int)flags NS_SWIFT_NAME(fisheye_solvePnP(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:flags:));
++ (BOOL)fisheye_solvePnPRansac:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess iterationsCount:(int)iterationsCount reprojectionError:(float)reprojectionError confidence:(double)confidence inliers:(Mat*)inliers flags:(int)flags NS_SWIFT_NAME(fisheye_solvePnPRansac(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:iterationsCount:reprojectionError:confidence:inliers:flags:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences for fisheye camera moodel.
+ * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme for fisheye camera moodel.
  *
  * @param objectPoints Array of object points in the object coordinate space, Nx3 1-channel or
  *     1xN/Nx1 3-channel, where N is the number of points. vector\<Point3d\> can be also passed here.
@@ -9498,6 +9643,12 @@ CV_EXPORTS @interface Calib3d : NSObject
  * @param useExtrinsicGuess Parameter used for #SOLVEPNP_ITERATIVE. If true (1), the function uses
  *     the provided rvec and tvec values as initial approximations of the rotation and translation
  *     vectors, respectively, and further optimizes them.
+ * @param iterationsCount Number of iterations.
+ * @param reprojectionError Inlier threshold value used by the RANSAC procedure. The parameter value
+ *     is the maximum allowed distance between the observed and computed point projections to consider it
+ *     an inlier.
+ * @param confidence The probability that the algorithm produces a useful result.
+ * @param inliers Output vector that contains indices of inliers in objectPoints and imagePoints .
  *     This function returns the rotation and the translation vectors that transform a 3D point expressed in the object
  *     coordinate frame to the camera coordinate frame, using different methods:
  *     - P3P methods (REF: SOLVEPNP_P3P, REF: SOLVEPNP_AP3P): need 4 input points to return a unique solution.
@@ -9513,10 +9664,152 @@ CV_EXPORTS @interface Calib3d : NSObject
  *     thus the input are very similar. More information about Perspective-n-Points is described in REF: calib3d_solvePnP
  *     for more information.
  */
-+ (BOOL)fisheye_solvePnP:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess NS_SWIFT_NAME(fisheye_solvePnP(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:));
++ (BOOL)fisheye_solvePnPRansac:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess iterationsCount:(int)iterationsCount reprojectionError:(float)reprojectionError confidence:(double)confidence inliers:(Mat*)inliers NS_SWIFT_NAME(fisheye_solvePnPRansac(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:iterationsCount:reprojectionError:confidence:inliers:));
 
 /**
- * Finds an object pose from 3D-2D point correspondences for fisheye camera moodel.
+ * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme for fisheye camera moodel.
+ *
+ * @param objectPoints Array of object points in the object coordinate space, Nx3 1-channel or
+ *     1xN/Nx1 3-channel, where N is the number of points. vector\<Point3d\> can be also passed here.
+ * @param imagePoints Array of corresponding image points, Nx2 1-channel or 1xN/Nx1 2-channel,
+ *     where N is the number of points. vector\<Point2d\> can be also passed here.
+ * @param cameraMatrix Input camera intrinsic matrix `$$\cameramatrix{A}$$` .
+ * @param distCoeffs Input vector of distortion coefficients (4x1/1x4).
+ * @param rvec Output rotation vector (see REF: Rodrigues ) that, together with tvec, brings points from
+ *     the model coordinate system to the camera coordinate system.
+ * @param tvec Output translation vector.
+ * @param useExtrinsicGuess Parameter used for #SOLVEPNP_ITERATIVE. If true (1), the function uses
+ *     the provided rvec and tvec values as initial approximations of the rotation and translation
+ *     vectors, respectively, and further optimizes them.
+ * @param iterationsCount Number of iterations.
+ * @param reprojectionError Inlier threshold value used by the RANSAC procedure. The parameter value
+ *     is the maximum allowed distance between the observed and computed point projections to consider it
+ *     an inlier.
+ * @param confidence The probability that the algorithm produces a useful result.
+ *     This function returns the rotation and the translation vectors that transform a 3D point expressed in the object
+ *     coordinate frame to the camera coordinate frame, using different methods:
+ *     - P3P methods (REF: SOLVEPNP_P3P, REF: SOLVEPNP_AP3P): need 4 input points to return a unique solution.
+ *     - REF: SOLVEPNP_IPPE Input points must be >= 4 and object points must be coplanar.
+ *     - REF: SOLVEPNP_IPPE_SQUARE Special case suitable for marker pose estimation.
+ *     Number of input points must be 4. Object points must be defined in the following order:
+ *     - point 0: [-squareLength / 2,  squareLength / 2, 0]
+ *     - point 1: [ squareLength / 2,  squareLength / 2, 0]
+ *     - point 2: [ squareLength / 2, -squareLength / 2, 0]
+ *     - point 3: [-squareLength / 2, -squareLength / 2, 0]
+ *     - for all the other flags, number of input points must be >= 4 and object points can be in any configuration.
+ *     The function interally undistorts points with REF: undistortPoints and call REF: cv::solvePnP,
+ *     thus the input are very similar. More information about Perspective-n-Points is described in REF: calib3d_solvePnP
+ *     for more information.
+ */
++ (BOOL)fisheye_solvePnPRansac:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess iterationsCount:(int)iterationsCount reprojectionError:(float)reprojectionError confidence:(double)confidence NS_SWIFT_NAME(fisheye_solvePnPRansac(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:iterationsCount:reprojectionError:confidence:));
+
+/**
+ * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme for fisheye camera moodel.
+ *
+ * @param objectPoints Array of object points in the object coordinate space, Nx3 1-channel or
+ *     1xN/Nx1 3-channel, where N is the number of points. vector\<Point3d\> can be also passed here.
+ * @param imagePoints Array of corresponding image points, Nx2 1-channel or 1xN/Nx1 2-channel,
+ *     where N is the number of points. vector\<Point2d\> can be also passed here.
+ * @param cameraMatrix Input camera intrinsic matrix `$$\cameramatrix{A}$$` .
+ * @param distCoeffs Input vector of distortion coefficients (4x1/1x4).
+ * @param rvec Output rotation vector (see REF: Rodrigues ) that, together with tvec, brings points from
+ *     the model coordinate system to the camera coordinate system.
+ * @param tvec Output translation vector.
+ * @param useExtrinsicGuess Parameter used for #SOLVEPNP_ITERATIVE. If true (1), the function uses
+ *     the provided rvec and tvec values as initial approximations of the rotation and translation
+ *     vectors, respectively, and further optimizes them.
+ * @param iterationsCount Number of iterations.
+ * @param reprojectionError Inlier threshold value used by the RANSAC procedure. The parameter value
+ *     is the maximum allowed distance between the observed and computed point projections to consider it
+ *     an inlier.
+ *     This function returns the rotation and the translation vectors that transform a 3D point expressed in the object
+ *     coordinate frame to the camera coordinate frame, using different methods:
+ *     - P3P methods (REF: SOLVEPNP_P3P, REF: SOLVEPNP_AP3P): need 4 input points to return a unique solution.
+ *     - REF: SOLVEPNP_IPPE Input points must be >= 4 and object points must be coplanar.
+ *     - REF: SOLVEPNP_IPPE_SQUARE Special case suitable for marker pose estimation.
+ *     Number of input points must be 4. Object points must be defined in the following order:
+ *     - point 0: [-squareLength / 2,  squareLength / 2, 0]
+ *     - point 1: [ squareLength / 2,  squareLength / 2, 0]
+ *     - point 2: [ squareLength / 2, -squareLength / 2, 0]
+ *     - point 3: [-squareLength / 2, -squareLength / 2, 0]
+ *     - for all the other flags, number of input points must be >= 4 and object points can be in any configuration.
+ *     The function interally undistorts points with REF: undistortPoints and call REF: cv::solvePnP,
+ *     thus the input are very similar. More information about Perspective-n-Points is described in REF: calib3d_solvePnP
+ *     for more information.
+ */
++ (BOOL)fisheye_solvePnPRansac:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess iterationsCount:(int)iterationsCount reprojectionError:(float)reprojectionError NS_SWIFT_NAME(fisheye_solvePnPRansac(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:iterationsCount:reprojectionError:));
+
+/**
+ * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme for fisheye camera moodel.
+ *
+ * @param objectPoints Array of object points in the object coordinate space, Nx3 1-channel or
+ *     1xN/Nx1 3-channel, where N is the number of points. vector\<Point3d\> can be also passed here.
+ * @param imagePoints Array of corresponding image points, Nx2 1-channel or 1xN/Nx1 2-channel,
+ *     where N is the number of points. vector\<Point2d\> can be also passed here.
+ * @param cameraMatrix Input camera intrinsic matrix `$$\cameramatrix{A}$$` .
+ * @param distCoeffs Input vector of distortion coefficients (4x1/1x4).
+ * @param rvec Output rotation vector (see REF: Rodrigues ) that, together with tvec, brings points from
+ *     the model coordinate system to the camera coordinate system.
+ * @param tvec Output translation vector.
+ * @param useExtrinsicGuess Parameter used for #SOLVEPNP_ITERATIVE. If true (1), the function uses
+ *     the provided rvec and tvec values as initial approximations of the rotation and translation
+ *     vectors, respectively, and further optimizes them.
+ * @param iterationsCount Number of iterations.
+ *     is the maximum allowed distance between the observed and computed point projections to consider it
+ *     an inlier.
+ *     This function returns the rotation and the translation vectors that transform a 3D point expressed in the object
+ *     coordinate frame to the camera coordinate frame, using different methods:
+ *     - P3P methods (REF: SOLVEPNP_P3P, REF: SOLVEPNP_AP3P): need 4 input points to return a unique solution.
+ *     - REF: SOLVEPNP_IPPE Input points must be >= 4 and object points must be coplanar.
+ *     - REF: SOLVEPNP_IPPE_SQUARE Special case suitable for marker pose estimation.
+ *     Number of input points must be 4. Object points must be defined in the following order:
+ *     - point 0: [-squareLength / 2,  squareLength / 2, 0]
+ *     - point 1: [ squareLength / 2,  squareLength / 2, 0]
+ *     - point 2: [ squareLength / 2, -squareLength / 2, 0]
+ *     - point 3: [-squareLength / 2, -squareLength / 2, 0]
+ *     - for all the other flags, number of input points must be >= 4 and object points can be in any configuration.
+ *     The function interally undistorts points with REF: undistortPoints and call REF: cv::solvePnP,
+ *     thus the input are very similar. More information about Perspective-n-Points is described in REF: calib3d_solvePnP
+ *     for more information.
+ */
++ (BOOL)fisheye_solvePnPRansac:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess iterationsCount:(int)iterationsCount NS_SWIFT_NAME(fisheye_solvePnPRansac(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:iterationsCount:));
+
+/**
+ * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme for fisheye camera moodel.
+ *
+ * @param objectPoints Array of object points in the object coordinate space, Nx3 1-channel or
+ *     1xN/Nx1 3-channel, where N is the number of points. vector\<Point3d\> can be also passed here.
+ * @param imagePoints Array of corresponding image points, Nx2 1-channel or 1xN/Nx1 2-channel,
+ *     where N is the number of points. vector\<Point2d\> can be also passed here.
+ * @param cameraMatrix Input camera intrinsic matrix `$$\cameramatrix{A}$$` .
+ * @param distCoeffs Input vector of distortion coefficients (4x1/1x4).
+ * @param rvec Output rotation vector (see REF: Rodrigues ) that, together with tvec, brings points from
+ *     the model coordinate system to the camera coordinate system.
+ * @param tvec Output translation vector.
+ * @param useExtrinsicGuess Parameter used for #SOLVEPNP_ITERATIVE. If true (1), the function uses
+ *     the provided rvec and tvec values as initial approximations of the rotation and translation
+ *     vectors, respectively, and further optimizes them.
+ *     is the maximum allowed distance between the observed and computed point projections to consider it
+ *     an inlier.
+ *     This function returns the rotation and the translation vectors that transform a 3D point expressed in the object
+ *     coordinate frame to the camera coordinate frame, using different methods:
+ *     - P3P methods (REF: SOLVEPNP_P3P, REF: SOLVEPNP_AP3P): need 4 input points to return a unique solution.
+ *     - REF: SOLVEPNP_IPPE Input points must be >= 4 and object points must be coplanar.
+ *     - REF: SOLVEPNP_IPPE_SQUARE Special case suitable for marker pose estimation.
+ *     Number of input points must be 4. Object points must be defined in the following order:
+ *     - point 0: [-squareLength / 2,  squareLength / 2, 0]
+ *     - point 1: [ squareLength / 2,  squareLength / 2, 0]
+ *     - point 2: [ squareLength / 2, -squareLength / 2, 0]
+ *     - point 3: [-squareLength / 2, -squareLength / 2, 0]
+ *     - for all the other flags, number of input points must be >= 4 and object points can be in any configuration.
+ *     The function interally undistorts points with REF: undistortPoints and call REF: cv::solvePnP,
+ *     thus the input are very similar. More information about Perspective-n-Points is described in REF: calib3d_solvePnP
+ *     for more information.
+ */
++ (BOOL)fisheye_solvePnPRansac:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec useExtrinsicGuess:(BOOL)useExtrinsicGuess NS_SWIFT_NAME(fisheye_solvePnPRansac(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:useExtrinsicGuess:));
+
+/**
+ * Finds an object pose from 3D-2D point correspondences using the RANSAC scheme for fisheye camera moodel.
  *
  * @param objectPoints Array of object points in the object coordinate space, Nx3 1-channel or
  *     1xN/Nx1 3-channel, where N is the number of points. vector\<Point3d\> can be also passed here.
@@ -9529,6 +9822,8 @@ CV_EXPORTS @interface Calib3d : NSObject
  * @param tvec Output translation vector.
  *     the provided rvec and tvec values as initial approximations of the rotation and translation
  *     vectors, respectively, and further optimizes them.
+ *     is the maximum allowed distance between the observed and computed point projections to consider it
+ *     an inlier.
  *     This function returns the rotation and the translation vectors that transform a 3D point expressed in the object
  *     coordinate frame to the camera coordinate frame, using different methods:
  *     - P3P methods (REF: SOLVEPNP_P3P, REF: SOLVEPNP_AP3P): need 4 input points to return a unique solution.
@@ -9544,7 +9839,7 @@ CV_EXPORTS @interface Calib3d : NSObject
  *     thus the input are very similar. More information about Perspective-n-Points is described in REF: calib3d_solvePnP
  *     for more information.
  */
-+ (BOOL)fisheye_solvePnP:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec NS_SWIFT_NAME(fisheye_solvePnP(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:));
++ (BOOL)fisheye_solvePnPRansac:(Mat*)objectPoints imagePoints:(Mat*)imagePoints cameraMatrix:(Mat*)cameraMatrix distCoeffs:(Mat*)distCoeffs rvec:(Mat*)rvec tvec:(Mat*)tvec NS_SWIFT_NAME(fisheye_solvePnPRansac(objectPoints:imagePoints:cameraMatrix:distCoeffs:rvec:tvec:));
 
 
 

@@ -72,6 +72,12 @@ CV_EXPORTS @interface CharucoParameters : NSObject
 
 @property BOOL tryRefineMarkers;
 
+    //
+    // C++: bool cv::aruco::CharucoParameters::checkMarkers
+    //
+
+@property BOOL checkMarkers;
+
 
 @end
 
