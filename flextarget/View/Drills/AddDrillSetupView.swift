@@ -4,48 +4,6 @@ import UIKit
 import PhotosUI
 
 /**
- `AddDrillConfigView` is a SwiftUI view for creating and configuring a new drill in the FlexTarget app.
-
- This view allows users to:
- - Enter a drill name and description.
- - Optionally add a demo video from the camera roll, with thumbnail preview, play, and delete functionality.
- - Configure drill parameters such as delay, sets, gun type, and target type.
- - Save the configured drill.
-
- ## Features
-
- - **Drill Name**: Editable text field with a pencil icon for editing and a clear button.
- - **Description**: Collapsible/expandable section with a single-line preview or a 5-line editor.
- - **Demo Video**:
-    - Add a video from the camera roll using `PhotosPicker`.
-    - Shows a progress indicator while generating a thumbnail.
-    - Displays a cropped thumbnail with a play icon overlay and a delete button.
-    - Tapping the thumbnail opens a video player sheet; tapping delete resets the video state.
- - **Drill Setup**: Button to configure sets, duration, and shots.
- - **Gun/Target Type**: Radio toggle for selecting gun and target types.
- - **Save**: Button to save the drill configuration.
-
- ## State Variables
-
- - `drillName`, `description`: User input for drill details.
- - `demoVideoURL`, `demoVideoThumbnail`: Video file URL and its thumbnail.
- - `selectedVideoItem`: The selected video from the picker.
- - `isGeneratingThumbnail`: Shows a progress view while generating the thumbnail.
- - `showVideoPlayer`: Controls the presentation of the video player sheet.
- - `isDescriptionExpanded`: Controls the expand/collapse state of the description and video section.
- - Other state variables for drill configuration.
-
- ## Helper Methods
-
- - `buildDrillConfig()`: Constructs a `DrillConfig` object from the current state.
- - `validateFields()`: Enables/disables the save button based on input validation.
- - `generateThumbnail(for:)`: Asynchronously generates a cropped thumbnail from a video URL.
- - `cropToAspect(image:aspectWidth:aspectHeight:)`: Crops a UIImage to a specified aspect ratio.
-
- ## Usage
-
- This view is typically presented as part of the drill creation workflow. It uses SwiftUI's state management and leverages system components like `PhotosPicker` and a custom `VideoPlayerView` for video playback.
-
  */
 
 struct AddDrillSetupView: View {
@@ -63,6 +21,7 @@ struct AddDrillSetupView: View {
     @State private var isTargetListReceived: Bool = false
     @EnvironmentObject private var bleManager: BLEManager
     @Environment(\.presentationMode) var presentationMode
+    @State private var targetConfigs: [DrillTargetsConfig] = []
     
     private func buildDrillSetup() -> DrillSetup {
         return DrillSetup(
@@ -148,8 +107,8 @@ struct AddDrillSetupView: View {
                             
                             // Drill Setup Field
                             DrillSetupSectionView(
-                                targets: $targets,
-                                isTargetListReceived: $isTargetListReceived
+                                isTargetListReceived: $isTargetListReceived,
+                                targetConfigs: $targetConfigs
                             )
                             .padding(.horizontal)
                             Spacer()
