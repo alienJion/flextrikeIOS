@@ -17,12 +17,12 @@ import SwiftUI
  */
 
 struct DrillSetupSectionView: View {
-    @Binding var targets: [DrillTargetsConfig]
     @Binding var isTargetListReceived: Bool
     @EnvironmentObject private var bleManager: BLEManager
+    @Binding var targetConfigs: [DrillTargetsConfig]
 
     var body: some View {
-        NavigationLink(destination: TargetConfigView(deviceList: bleManager.networkDevices)) {
+        NavigationLink(destination: TargetConfigView(deviceList: bleManager.networkDevices, targetConfigs: $targetConfigs)) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 8) {
                     Image(systemName: "slider.horizontal.3")
@@ -37,7 +37,7 @@ struct DrillSetupSectionView: View {
                 
                 HStack(alignment: .center, spacing: 0) {
                     VStack {
-                        Text("\(targets.count)")
+                        Text("\(targetConfigs.count)")
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
@@ -55,7 +55,7 @@ struct DrillSetupSectionView: View {
                     Spacer(minLength: 0)
                     
                     VStack {
-                        Text("\(Int(targets.first?.timeout ?? 0))")
+                        Text("\(Int(targetConfigs.first?.timeout ?? 0))")
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
@@ -73,7 +73,7 @@ struct DrillSetupSectionView: View {
                     Spacer(minLength: 0)
                     
                     VStack {
-                        Text("\(targets.first?.countedShots ?? 0  )")
+                        Text("\(targetConfigs.first?.countedShots ?? 0  )")
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
@@ -84,7 +84,7 @@ struct DrillSetupSectionView: View {
                 }
             }
             .padding()
-            .background(Color.gray.opacity(targets.count > 0 ? 0.2 : 0.1))
+            .background(Color.gray.opacity(targetConfigs.count > 0 ? 0.2 : 0.1))
             .cornerRadius(16)
             .opacity(isTargetListReceived ? 1.0 : 0.6)
         }
@@ -98,12 +98,12 @@ struct DrillSetupSectionView_Previews: PreviewProvider {
             Color.black.ignoresSafeArea()
             VStack(spacing: 20) {
                 DrillSetupSectionView(
-                    targets: .constant([
+                    isTargetListReceived: .constant(true),
+                    targetConfigs: .constant([
                         DrillTargetsConfig(seqNo: 1, targetName: "Target A", targetType: "Standard", timeout: 30, countedShots: 5),
                         DrillTargetsConfig(seqNo: 2, targetName: "Target B", targetType: "Paper", timeout: 25, countedShots: 3),
                         DrillTargetsConfig(seqNo: 3, targetName: "Target C", targetType: "Electronic", timeout: 20, countedShots: 10)
-                    ]),
-                    isTargetListReceived: .constant(true)
+                    ])
                 )
             }
             .padding()

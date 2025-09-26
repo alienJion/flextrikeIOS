@@ -10,13 +10,14 @@ struct TargetConfigView: View {
     @Environment(\.dismiss) private var dismiss
     // Placeholder for DrillTargetsConfig usage
 
-    var targetConfig: DrillTargetsConfig? = nil
     var deviceList: [NetworkDevice] = []
+    @Binding var targetConfigs: [DrillTargetsConfig]
 
     @State private var availableDevices: [NetworkDevice] = []
     @State private var selectedDevice: NetworkDevice? = nil
     @State private var availableIcons: [String] = []
     @State private var selectedIcon: String? = nil
+    @State private var targetSeqno: Int = 0
 
     var body: some View {
         GeometryReader { geometry in
@@ -36,16 +37,32 @@ struct TargetConfigView: View {
                     
                     Spacer()
                     
-                    Text("Target A")
+                    Text("Target #\(targetSeqno + 1)")
                         .font(.title2)
                         .foregroundColor(.white)
                     
                     Spacer()
                     
-                    // Invisible spacer to center the title
-                    Image(systemName: "arrow.left")
-                        .font(.title2)
-                        .opacity(0)
+                    Button(action: {
+                        if let device = selectedDevice, let icon = selectedIcon {
+                            let config = DrillTargetsConfig(seqNo: targetSeqno, targetName: device.name, targetType: icon, timeout: 10, countedShots: 2)
+                            targetConfigs.append(config)
+                            if saveTargetConfigs() {
+                                selectedDevice = nil
+                                selectedIcon = nil
+                                targetSeqno += 1
+                            }
+                        }
+                    }) {
+                        Text("Add Next")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.blue)
+                            .cornerRadius(8)
+                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
@@ -160,23 +177,10 @@ struct TargetConfigView: View {
                 }
                 .frame(height: 100)
                 
-                // Two buttons below the horizontal scroller
+                // Complete button action
                 HStack(spacing: 20) {
                     Button(action: {
-                        // Add Next button action
-                    }) {
-                        Text("Add Next")
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 44)
-                            .background(Color.blue)
-                            .cornerRadius(8)
-                    }
-                    
-                    Button(action: {
-                        // Complete button action
+                        dismiss()
                     }) {
                         Text("Complete")
                             .font(.title3)
@@ -221,8 +225,20 @@ struct TargetConfigView: View {
             availableIcons = iconNames
         }
     }
+
+    private func saveTargetConfigs() -> Bool {
+        let userDefaults = UserDefaults.standard
+        do {
+            let data = try JSONEncoder().encode(targetConfigs)
+            userDefaults.set(data, forKey: "targetConfigs")
+            return true
+        } catch {
+            print("Failed to save targetConfigs: \(error)")
+            return false
+        }
+    }
 }
 
 #Preview {
-    TargetConfigView()
+    TargetConfigView(targetConfigs: .constant([]))
 }
