@@ -126,8 +126,8 @@ struct MainPageView: View {
                 }
             }
             .navigationDestination(isPresented: $showDrillList) {
-//                DrillListView()
-                DrillSetupEntryView()
+                DrillListView()
+                /*DrillSetupEntryView()*/
             }
         }
     }
