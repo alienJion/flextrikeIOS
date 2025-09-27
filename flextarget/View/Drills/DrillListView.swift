@@ -1,18 +1,75 @@
+//
+//  DrillListView.swift
+//  Flex Target
+//
+//  Created by Kai Yang on 2025/9/27.
+//
+
+
 import SwiftUI
 
 struct DrillListView: View {
     @State private var searchText: String = ""
-    @State private var drills: [DrillConfig] = []
+    @State private var drills: [DrillSetup] = []
     @Environment(\.dismiss) private var dismiss
     // For showing alerts
     @State private var showDeleteAlert = false
-    @State private var drillToDelete: DrillConfig?
+    @State private var drillToDelete: DrillSetup?
 
-    var filteredDrills: [DrillConfig] {
+    var filteredDrills: [DrillSetup] {
         if searchText.isEmpty {
             return drills
         } else {
             return drills.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        }
+    }
+
+    private func drillRow(for drill: DrillSetup, at index: Int) -> some View {
+        ZStack {
+            NavigationLink(destination: EditDrillView(drillSetup: drill)) {
+                EmptyView()
+            }
+            .opacity(0)
+            
+            let itemView = DrillListItemView(drill: drill, index: index + 1)
+                .listRowInsets(EdgeInsets())
+            
+            itemView
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    copyButton(for: drill)
+                    deleteButton(for: drill)
+                }
+        }
+        .listRowBackground(Color.clear)
+        .background(Color.clear)
+    }
+    
+    private func copyButton(for drill: DrillSetup) -> some View {
+        Button {
+            var newDrill = drill
+            newDrill = DrillSetup(
+                id: UUID(),
+                name: drill.name + " Copy",
+                description: drill.description,
+                demoVideoURL: drill.demoVideoURL,
+                thumbnailURL: drill.thumbnailURL,
+                delay: drill.delay,
+                targets: drill.targets
+            )
+            DrillSetupStorage.shared.addDrillSetup(newDrill)
+            drills = DrillSetupStorage.shared.drillSetups
+        } label: {
+            Label("Copy", systemImage: "doc.on.doc")
+        }
+        .tint(Color.gray)
+    }
+    
+    private func deleteButton(for drill: DrillSetup) -> some View {
+        Button(role: .destructive) {
+            drillToDelete = drill
+            showDeleteAlert = true
+        } label: {
+            Label("Delete", systemImage: "trash")
         }
     }
 
@@ -34,57 +91,17 @@ struct DrillListView: View {
                 .cornerRadius(24)
                 .padding([.top, .horizontal])
 
-                // Drill List using List
+                // Drill List
                 List {
                     ForEach(Array(filteredDrills.enumerated()), id: \.element.id) { (index, drill) in
-                        ZStack {
-                            DrillListItemView(drill: drill, index: index + 1)
-                                .listRowInsets(EdgeInsets())
-                                .listRowBackground(Color.clear)
-                            NavigationLink(destination: EditDrillConfigView(drill: drill)) {
-                                EmptyView()
-                            }
-                            .opacity(0) // Make the link invisible but still tappable
-                        }
-                        .listRowBackground(Color.clear) // Clear the default row background
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button {
-                                // Copy logic: duplicate drill, assign new UUID, add to storage and refresh
-                                var newDrill = drill
-                                newDrill = DrillConfig(
-                                    id: UUID(),
-                                    name: drill.name + " Copy",
-                                    description: drill.description,
-                                    demoVideoURL: drill.demoVideoURL,
-                                    thumbnailURL: drill.thumbnailURL,
-                                    numberOfSets: drill.numberOfSets,
-                                    startDelay: drill.startDelay,
-                                    pauseBetweenSets: drill.pauseBetweenSets,
-                                    sets: drill.sets,
-                                    targetType: drill.targetType,
-                                    gunType: drill.gunType
-                                )
-                                DrillConfigStorage.shared.add(newDrill)
-                                drills = DrillConfigStorage.shared.getAll()
-                            } label: {
-                                Label("Copy", systemImage: "doc.on.doc")
-                            }
-                            .tint(Color.gray)
-                            Button(role: .destructive) {
-                                // Show delete alert
-                                drillToDelete = drill
-                                showDeleteAlert = true
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
+                        drillRow(for: drill, at: index)
                     }
                 }
                 .listStyle(PlainListStyle())
                 .scrollContentBackground(.hidden)
                 Spacer()
                 // Add New Drill Button (unchanged)
-                NavigationLink(destination: AddDrillConfigView()) {
+                NavigationLink(destination: AddDrillView()) {
                     Text("Add New Drill")
                         .font(.headline)
                         .foregroundColor(.white)
@@ -104,13 +121,13 @@ struct DrillListView: View {
                 }
             }
             .onAppear {
-                drills = DrillConfigStorage.shared.getAll()
+                drills = DrillSetupStorage.shared.drillSetups
             }
         }
         .alert("Delete Drill?", isPresented: $showDeleteAlert, presenting: drillToDelete) { drill in
             Button("Delete", role: .destructive) {
-                DrillConfigStorage.shared.delete(drill)
-                drills = DrillConfigStorage.shared.getAll()
+                DrillSetupStorage.shared.deleteDrillSetup(withId: drill.id)
+                drills = DrillSetupStorage.shared.drillSetups
             }
             Button("Cancel", role: .cancel) {}
         } message: { drill in
@@ -121,23 +138,19 @@ struct DrillListView: View {
     
     
 struct DrillListItemView: View {
-    let drill: DrillConfig
+    let drill: DrillSetup
     let index: Int
     
     var totalSets: Int {
-        drill.sets.count
+        drill.targets.count
     }
+    
     var totalDuration: Int {
-        Int(drill.sets.reduce(0) { $0 + $1.duration })
+        Int(drill.targets.reduce(0) { $0 + $1.timeout })
     }
-    var totalShots: Int? {
-        // Fix: check if numberOfShots is optional, otherwise just sum
-        let shots = drill.sets.map { $0.numberOfShots }
-        // If numberOfShots is optional Int?
-        if let firstNil = shots.first(where: { ($0 as Any?) == nil }) {
-            return nil // Infinite
-        }
-        return shots.compactMap { $0 }.reduce(0, +)
+    
+    var totalShots: Int {
+        drill.targets.reduce(0) { $0 + $1.countedShots }
     }
     
     var body: some View {
@@ -187,15 +200,9 @@ struct DrillListItemView: View {
                             .foregroundColor(.gray)
                         Spacer()
                         VStack {
-                            if let shots = totalShots {
-                                Text("\(shots)")
-                                    .font(.title3.bold())
-                                    .foregroundColor(.white)
-                            } else {
-                                Image(systemName: "infinity")
-                                    .font(.title3.bold())
-                                    .foregroundColor(.white)
-                            }
+                            Text("\(totalShots)")
+                                .font(.title3.bold())
+                                .foregroundColor(.white)
                             Text("Shots")
                                 .font(.caption2)
                                 .foregroundColor(.gray)
