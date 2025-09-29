@@ -22,6 +22,7 @@ struct EditDrillView: View {
     @EnvironmentObject private var bleManager: BLEManager
     @Environment(\.presentationMode) var presentationMode
     @State private var targetConfigs: [DrillTargetsConfig] = []
+    @State private var navigateToDrillResult: Bool = false
     
     init(drillSetup: DrillSetup) {
         self.drillSetup = drillSetup
@@ -182,6 +183,9 @@ struct EditDrillView: View {
                 }
             }
         }
+        .navigationDestination(isPresented: $navigateToDrillResult) {
+            DrillResultView(drillSetup: buildDrillSetup())
+        }
     }
     
     private func sendStartDrillMessages() {
@@ -191,11 +195,12 @@ struct EditDrillView: View {
         }
         let setup = buildDrillSetup()
         targets = targetConfigs
-        for target in setup.targets {
+        for (index, target) in setup.targets.enumerated() {
             do {
+                let delay = index == 0 ? setup.delay : 0
                 let content: [String: Any] = [
                     "command": "ready",
-                    "delay": setup.delay,
+                    "delay": delay,
                     "targetType": target.targetType,
                     "timeout": target.timeout,
                     "countedShots": target.countedShots
@@ -209,6 +214,8 @@ struct EditDrillView: View {
                 print("Failed to send start drill message for target \(target.targetName): \(error)")
             }
         }
+        // Navigate to DrillResultView after starting the drill
+        navigateToDrillResult = true
     }
     
     // MARK: - Device List Query Methods

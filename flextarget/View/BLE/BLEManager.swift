@@ -383,6 +383,16 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
                 print("Failed to decode netlink device_list: \(error.localizedDescription)")
             }
         }
+
+        // Handle incoming shot data
+        if let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+           let type = json["type"] as? String, type == "netlink",
+           let action = json["action"] as? String, action == "forward",
+           let content = json["content"] as? [String: Any],
+           let command = content["command"] as? String, command == "shot" {
+            print("Received shot data: \(json)")
+            NotificationCenter.default.post(name: .bleShotReceived, object: nil, userInfo: ["shot_data": json])
+        }
     }
     
     @objc private func handleAppWillTerminate() {
@@ -424,4 +434,5 @@ extension BLEManager: BLEManagerProtocol {
 extension Notification.Name {
     static let bleStateNotificationReceived = Notification.Name("bleStateNotificationReceived")
     static let bleDeviceListUpdated = Notification.Name("bleDeviceListUpdated")
+    static let bleShotReceived = Notification.Name("bleShotReceived")
 }

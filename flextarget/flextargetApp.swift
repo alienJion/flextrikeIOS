@@ -6,9 +6,12 @@
 //
 
 import SwiftUI
+import CoreData
 
 @main
 struct flextargetApp: App {
+    let persistenceController = PersistenceController.shared
+    
     init() {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithTransparentBackground()
@@ -39,6 +42,7 @@ struct flextargetApp: App {
 //                    .environmentObject(bleManager)
                 ConnectSmartTargetView(bleManager: bleManager)
                     .environmentObject(bleManager)
+                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
             }
         }
     }
