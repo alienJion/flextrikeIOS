@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1" systemVersion="11A491" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="DrillResult" representedClassName="DrillResult" syncable="YES">
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="drillId" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <relationship name="shots" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Shot" inverseName="drillResult" inverseEntity="Shot"/>
+    </entity>
+    <entity name="Shot" representedClassName="Shot" syncable="YES">
+        <attribute name="data" optional="YES" attributeType="String" usesScalarValueType="NO"/>
+        <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="drillResult" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DrillResult" inverseName="shots" inverseEntity="DrillResult"/>
+    </entity>
+    <elements>
+        <element name="DrillResult" positionX="-63" positionY="-18" width="128" height="75"/>
+        <element name="Shot" positionX="-36" positionY="99" width="128" height="60"/>
+    </elements>
+</model>
