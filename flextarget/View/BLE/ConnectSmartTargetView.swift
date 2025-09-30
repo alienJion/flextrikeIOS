@@ -30,6 +30,9 @@ struct ConnectSmartTargetView: View {
             let frameHeight = geometry.size.height * 0.35
             let dotPadding: CGFloat = 100
             let dotRadius: CGFloat = 6
+            // Corner sensor icon configuration
+            let sensorIconSize: CGFloat = 24
+            let sensorOffsetAdjustment: CGFloat = -4 // how far outside the rectangle the icons sit
 
             VStack(spacing: 0) {
                 //Information Button
@@ -53,6 +56,38 @@ struct ConnectSmartTargetView: View {
                         .fill(Color.red)
                         .frame(width: dotRadius * 2, height: dotRadius * 2)
                         .offset(x: dotPadding, y: dotPadding)
+
+                    // Bottom-left sensor icon (45° clockwise)
+                    Image(systemName: "dot.radiowaves.forward")
+                        .font(.system(size: sensorIconSize))
+                        .foregroundColor(.white)
+                        .symbolEffect(.bounce)
+                        .rotationEffect(.degrees(-45)) // clockwise
+                        .offset(x: -sensorOffsetAdjustment, y: frameHeight - sensorIconSize + sensorOffsetAdjustment)
+
+                    // Bottom-right sensor icon (135° clockwise)
+                    Image(systemName: "dot.radiowaves.forward")
+                        .font(.system(size: sensorIconSize))
+                        .foregroundColor(.white)
+                        .symbolEffect(.bounce)
+                        .rotationEffect(.degrees(-135)) // clockwise
+                        .offset(x: frameWidth - sensorIconSize + sensorOffsetAdjustment, y: frameHeight - sensorIconSize + sensorOffsetAdjustment)
+
+                    // Top-right sensor icon (135° counter-clockwise)
+                    Image(systemName: "dot.radiowaves.forward")
+                        .font(.system(size: sensorIconSize))
+                        .foregroundColor(.white)
+                        .symbolEffect(.bounce)
+                        .rotationEffect(.degrees(135)) // counter-clockwise
+                        .offset(x: frameWidth - sensorIconSize + sensorOffsetAdjustment, y: -sensorOffsetAdjustment)
+
+                    // Top-left sensor icon (45° counter-clockwise)
+                    Image(systemName: "dot.radiowaves.forward")
+                        .font(.system(size: sensorIconSize))
+                        .foregroundColor(.white)
+                        .symbolEffect(.bounce)
+                        .rotationEffect(.degrees(45)) // counter-clockwise
+                        .offset(x: -sensorOffsetAdjustment, y: -sensorOffsetAdjustment)
                 }
                 //.frame(width: .infinity, height: frameHeight, alignment: .top)
                 .padding(.top, geometry.size.height * 0.15)
@@ -91,7 +126,7 @@ struct ConnectSmartTargetView: View {
                                 .font(.custom("SFPro-Medium", size: 20))
                                 .foregroundColor(.white)
                                 .frame(width: geometry.size.width * 0.75, height: 44)
-                                .background(Color(red: 223/255, green: 13/255, blue: 13/255))
+                                .background(Color.red)
                                 .cornerRadius(8)
                         }
                         .padding(.horizontal)
@@ -221,3 +256,15 @@ struct ConnectSmartTargetView: View {
         }
     }
 }
+
+// MARK: - Preview
+#if DEBUG
+struct ConnectSmartTargetView_Previews: PreviewProvider {
+    static var previews: some View {
+        // Provide a constant binding for navigateToMain. Use shared BLEManager for preview.
+        ConnectSmartTargetView(bleManager: BLEManager.shared, navigateToMain: .constant(false))
+            .previewLayout(.fixed(width: 375, height: 700))
+            .background(Color.black)
+    }
+}
+#endif
