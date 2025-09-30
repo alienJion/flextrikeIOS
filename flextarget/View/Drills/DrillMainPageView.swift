@@ -43,87 +43,18 @@ struct DrillMainPageView: View {
                     }
                     .padding(.horizontal)
                     .padding(.top, 24)
-                    // Recent Training
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Latest Drills")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                        ZStack(alignment: .topLeading) {
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.gray.opacity(0.3))
-                            VStack(alignment: .leading, spacing: 0) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "scope")
-                                        .foregroundColor(.orange)
-                                    Text("#3 Bill Drill")
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                    Spacer()
-                                }
-                                .padding(.top, 12)
-                                .padding(.horizontal, 16)
-                                // Demo Image
-                                Image(systemName: "photo")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(height: 160)
-                                    .clipped()
-                                    .cornerRadius(12)
-                                    .padding(.horizontal, 8)
-                                    .padding(.top, 8)
-                                // Info Row
-                                HStack {
-                                    VStack {
-                                        Text("2")
-                                            .font(.title3)
-                                            .foregroundColor(.white)
-                                        Text("Set")
-                                            .font(.caption)
-                                            .foregroundColor(.gray)
-                                    }
-                                    Spacer()
-                                    VStack {
-                                        Text("10.000s")
-                                            .font(.title3)
-                                            .foregroundColor(.white)
-                                        Text("Duration")
-                                            .font(.caption)
-                                            .foregroundColor(.gray)
-                                    }
-                                    Spacer()
-                                    VStack {
-                                        Text("5")
-                                            .font(.title3)
-                                            .foregroundColor(.white)
-                                        Text("Shots")
-                                            .font(.caption)
-                                            .foregroundColor(.gray)
-                                    }
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 12)
-                                // Page Indicator
-                                HStack(spacing: 8) {
-                                    Circle().fill(Color.orange).frame(width: 8, height: 8)
-                                    Circle().fill(Color.gray.opacity(0.5)).frame(width: 8, height: 8)
-                                    Circle().fill(Color.gray.opacity(0.5)).frame(width: 8, height: 8)
-                                }
-                                .padding(.bottom, 12)
-                                .frame(maxWidth: .infinity)
-                            }
-                        }
-                        .frame(height: 260)
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 16)
+                    // Recent Training (moved to subview)
+                    RecentTrainingView()
+                        .padding(.horizontal)
+                        .padding(.top, 16)
                     // Menu Buttons
                     VStack(spacing: 20) {
-                        MainMenuButton(icon: "target", text: "Drills", color: .orange)
+                        MainMenuButton(icon: "target", text: "Drills", color: .red)
                             .onTapGesture {
                                 showDrillList = true
                             }
-                        MainMenuButton(icon: "scope", text: "IPSC Questionaries", color: .orange)
-                        MainMenuButton(icon: "shield", text: "IDPA Questionaries", color: .orange)
+                        MainMenuButton(icon: "scope", text: "IPSC Questionaries", color: .red)
+                        MainMenuButton(icon: "shield", text: "IDPA Questionaries", color: .red)
                     }
                     .padding(.top, 24)
                     Spacer()
