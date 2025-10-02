@@ -110,8 +110,8 @@ struct DrillListView: View {
     
     private var listView: some View {
         List {
-            ForEach(filteredDrills.indices, id: \.self) { index in
-                drillRow(for: filteredDrills[index], at: index)
+            ForEach(Array(filteredDrills.enumerated()), id: \.element.objectID) { (index, drill) in
+                drillRow(for: drill, at: index)
             }
         }
         .listStyle(.plain)
@@ -152,6 +152,13 @@ struct DrillListView: View {
             }
         }
         .tint(.red)
+        .onReceive(NotificationCenter.default.publisher(for: .drillRepositoryDidChange)) { _ in
+            do {
+                drills = try repository.fetchAllDrillSetupsAsCoreData()
+            } catch {
+                print("Failed to reload drills after notification: \(error)")
+            }
+        }
         .onAppear {
             do {
                 drills = try repository.fetchAllDrillSetupsAsCoreData()
@@ -160,8 +167,7 @@ struct DrillListView: View {
             }
         }
     }
-}
-    
+}    
     
 struct DrillListItemView: View {
     let drill: DrillSetup
@@ -305,8 +311,8 @@ struct PreviewDrillListView: View {
     
     private var listView: some View {
         List {
-            ForEach(filteredDrills.indices, id: \.self) { index in
-                drillRow(for: filteredDrills[index], at: index)
+            ForEach(Array(filteredDrills.enumerated()), id: \.element.objectID) { (index, drill) in
+                drillRow(for: drill, at: index)
             }
         }
         .listStyle(.plain)

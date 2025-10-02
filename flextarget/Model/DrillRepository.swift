@@ -77,6 +77,10 @@ class DrillRepository: ObservableObject, DrillRepositoryProtocol {
         
         try context.save()
         print("DrillSetup saved to CoreData: \(setup.name)")
+        // Notify listeners that the repository changed (so UI can refresh)
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .drillRepositoryDidChange, object: nil)
+        }
     }
     
     func fetchDrillSetup(by id: UUID) throws -> DrillSetupData? {
@@ -115,6 +119,10 @@ class DrillRepository: ObservableObject, DrillRepositoryProtocol {
         }
         
         try context.save()
+        // Notify listeners that the repository changed (so UI can refresh)
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .drillRepositoryDidChange, object: nil)
+        }
     }
     
     // MARK: - DrillResult Operations

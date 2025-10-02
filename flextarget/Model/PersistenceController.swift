@@ -47,3 +47,7 @@ class PersistenceController {
         })
     }
 }
+
+extension Notification.Name {
+    static let drillRepositoryDidChange = Notification.Name("drillRepositoryDidChange")
+}

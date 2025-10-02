@@ -22,35 +22,19 @@ struct TargetConfigListView: View {
             ZStack {
                 Color.black.ignoresSafeArea()
                 VStack(spacing: 0) {
-                    headerView
                     listView
-                    completeButton
+                    AddButton
                 }
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
+                    Button("Save") {
                         onDone()
                         dismiss()
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(.red)
                 }
             }
-        }
-    }
-
-    private var headerView: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Spacer()
-                Text("Target Configuration")
-                    .font(.title2)
-                    .foregroundColor(.white)
-                Spacer()
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 16)
-            .frame(height: 60)
         }
     }
 
@@ -81,7 +65,7 @@ struct TargetConfigListView: View {
         }
     }
 
-    private var completeButton: some View {
+    private var AddButton: some View {
         HStack(spacing: 20) {
             Button(action: {
                 addNewTarget()
@@ -92,7 +76,7 @@ struct TargetConfigListView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 44)
-                    .background(Color.green)
+                    .background(Color.red)
                     .cornerRadius(8)
             }
             .disabled(targetConfigs.count >= deviceList.count)
@@ -112,7 +96,7 @@ struct TargetConfigListView: View {
         let newConfig = DrillTargetsConfigData(
             seqNo: nextSeqNo,
             targetName: "",
-            targetType: "hostage",
+            targetType: "ipsc",
             timeout: 30.0,
             countedShots: 5
         )
@@ -147,6 +131,16 @@ struct TargetRowView: View {
     @Binding var config: DrillTargetsConfigData
     let availableDevices: [NetworkDevice]
 
+    // Single active sheet state
+    @State private var activeSheet: ActiveSheet? = nil
+
+    private enum ActiveSheet: Identifiable {
+        case name
+        case type
+
+        var id: Int { self == .name ? 0 : 1 }
+    }
+
     private let iconNames = [
         "hostage",
         "ipsc",
@@ -158,47 +152,230 @@ struct TargetRowView: View {
     ]
 
     var body: some View {
-        HStack {
+        HStack(spacing: 16) {
+            // 1) seqNo
             Text("\(config.seqNo)")
                 .foregroundColor(.white)
                 .frame(width: 40, alignment: .leading)
+                .font(.system(size: 16, weight: .medium))
 
-            Picker("Target Name", selection: $config.targetName) {
-                ForEach(availableDevices, id: \.name) { device in
-                    Text(device.name).tag(device.name)
+            // 2) Device (targetName)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Device")
+                    .foregroundColor(.gray)
+                    .font(.system(size: 12))
+                
+                HStack {
+                    Text(config.targetName.isEmpty ? "Select Device" : config.targetName)
+                        .foregroundColor(.red)
+                        .font(.system(size: 14))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .layoutPriority(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    // chevron button only
+                    Button(action: {
+                        activeSheet = .name
+                    }) {
+                        Image(systemName: "chevron.down")
+                            .foregroundColor(.red)
+                            .font(.system(size: 12))
+                            .frame(width: 36, height: 24)
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                    .disabled(activeSheet != nil)
                 }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(6)
             }
-            .pickerStyle(.menu)
-            .foregroundColor(.white)
-            .tint(.white)
+            .frame(maxWidth: .infinity)
 
-            Spacer()
+            // Link icon
+            Image(systemName: "link")
+                .foregroundColor(.gray)
+                .font(.system(size: 16))
 
-            Image(config.targetType)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 24, height: 24)
-                .foregroundColor(.white)
+            // 3) TargetType (icon)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Type")
+                    .foregroundColor(.gray)
+                    .font(.system(size: 12))
+                
+                HStack {
+                    Image(config.targetType)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                        .foregroundColor(.white)
 
-            Picker("Target Type", selection: $config.targetType) {
-                ForEach(iconNames, id: \.self) { icon in
-                    HStack {
-                        Image(icon)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 24, height: 24)
-                        Text(icon)
-                    }.tag(icon)
+                    Text(config.targetType)
+                        .foregroundColor(.white)
+                        .font(.system(size: 14))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .layoutPriority(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    // chevron button only
+                    Button(action: {
+                        activeSheet = .type
+                    }) {
+                        Image(systemName: "chevron.down")
+                            .foregroundColor(.white)
+                            .font(.system(size: 12))
+                            .frame(width: 36, height: 24)
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                    .disabled(activeSheet != nil)
                 }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(6)
             }
-            .pickerStyle(.menu)
-            .foregroundColor(.white)
-            .tint(.white)
+            .frame(maxWidth: .infinity)
         }
-        .listRowBackground(Color.gray.opacity(0.2))
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .listRowBackground(Color.black.opacity(0.8))
+        .listRowInsets(EdgeInsets())
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .name:
+                TargetNamePickerView(
+                    availableDevices: availableDevices,
+                    selectedDevice: $config.targetName,
+                    onDone: { activeSheet = nil }
+                )
+            case .type:
+                TargetTypePickerView(
+                    iconNames: iconNames,
+                    selectedType: $config.targetType,
+                    onDone: { activeSheet = nil }
+                )
+            }
+        }
+    }
+}
+struct TargetNamePickerView: View {
+    let availableDevices: [NetworkDevice]
+    @Binding var selectedDevice: String
+    var onDone: (() -> Void)? = nil
+
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                List {
+                    ForEach(availableDevices, id: \.name) { device in
+                        Button(action: {
+                            // set selection and dismiss
+                            selectedDevice = device.name
+                            onDone?()
+                        }) {
+                            HStack {
+                                Text(device.name)
+                                    .foregroundColor(.white)
+                                Spacer()
+                                if selectedDevice == device.name {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(.red)
+                                }
+                            }
+                            .padding(.vertical, 12)
+                        }
+                        .listRowBackground(Color.gray.opacity(0.2))
+                    }
+                }
+                .listStyle(.plain)
+                .background(Color.black)
+                .scrollContentBackground(.hidden)
+            }
+            .navigationTitle("Select Device")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        onDone?()
+                    }
+                    .foregroundColor(.red)
+                }
+            }
+        }
+    }
+}
+
+struct TargetTypePickerView: View {
+    let iconNames: [String]
+    @Binding var selectedType: String
+    var onDone: (() -> Void)? = nil
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                List {
+                    ForEach(iconNames, id: \.self) { icon in
+                        Button(action: {
+                            // set selection and dismiss
+                            selectedType = icon
+                            onDone?()
+                        }) {
+                            HStack {
+                                Image(icon)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 24, height: 24)
+                                    .foregroundColor(.white)
+                                Text(icon)
+                                    .foregroundColor(.white)
+                                Spacer()
+                                if selectedType == icon {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(.red)
+                                }
+                            }
+                            .padding(.vertical, 12)
+                        }
+                        .listRowBackground(Color.gray.opacity(0.2))
+                    }
+                }
+                .listStyle(.plain)
+                .background(Color.black)
+                .scrollContentBackground(.hidden)
+            }
+            .navigationTitle("Select Target Type")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        onDone?()
+                    }
+                    .foregroundColor(.red)
+                }
+            }
+        }
     }
 }
 
 #Preview {
-    TargetConfigListView(deviceList: [], targetConfigs: .constant([]), onDone: {})
+    let mockDevices = [
+        NetworkDevice(name: "Target 1", mode: "active"),
+        NetworkDevice(name: "Target 2", mode: "active"),
+        NetworkDevice(name: "Target 3", mode: "active"),
+        NetworkDevice(name: "Target 4", mode: "active")
+    ]
+    
+    let mockConfigs = [
+        DrillTargetsConfigData(seqNo: 1, targetName: "Target 1", targetType: "ipsc", timeout: 30.0, countedShots: 5),
+        DrillTargetsConfigData(seqNo: 2, targetName: "Target 2", targetType: "paddle", timeout: 25.0, countedShots: 3),
+        DrillTargetsConfigData(seqNo: 3, targetName: "Target 3", targetType: "popper", timeout: 20.0, countedShots: 1)
+    ]
+    
+    TargetConfigListView(deviceList: mockDevices, targetConfigs: .constant(mockConfigs), onDone: {})
 }
