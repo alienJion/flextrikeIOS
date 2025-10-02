@@ -5,6 +5,7 @@
 //  Created by Kai Yang on 2025/6/30.
 //
 import CoreMotion
+import UIKit
 
 
 class MotionManager: ObservableObject {

@@ -16,7 +16,15 @@ class PersistenceController {
             container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
         }
         loadStores()
+        
+        // Configure viewContext
         container.viewContext.automaticallyMergesChangesFromParent = true
+        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        
+        // Explicitly ensure viewContext uses main queue (should be default, but be explicit)
+        if container.viewContext.concurrencyType != .mainQueueConcurrencyType {
+            print("WARNING: ViewContext is not using main queue concurrency type!")
+        }
     }
 
     private func loadStores() {

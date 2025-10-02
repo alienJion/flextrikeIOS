@@ -2,19 +2,6 @@ import SwiftUI
 
 /**
  `DrillNameSectionView` is a reusable SwiftUI component for editing drill names.
- 
- This view provides:
- - An editable text field with a 30-character limit
- - Visual feedback when editing (red underline)
- - A pencil/close button to toggle edit mode
- - Placeholder text when empty
- - Focus state management
- 
- ## Features
- - Tap to edit functionality
- - Character limit enforcement
- - Visual editing state indicators
- - Keyboard management with done button
  */
 
 struct DrillNameSectionView: View {
@@ -41,6 +28,8 @@ struct DrillNameSectionView: View {
                     .padding(.vertical, 4)
                     .background(Color.clear)
                     .submitLabel(.done)
+                    .disableAutocorrection(true)
+                    .textInputAutocapitalization(.words)
                     
                     if !isEditingName {
                         Text(drillName.isEmpty ? "Drill Name" : drillName)
@@ -58,6 +47,7 @@ struct DrillNameSectionView: View {
                 
                 Button(action: {
                     if isEditingName {
+                        drillName = "" // Clear the text when xmark is tapped
                         isEditingName = false
                         isDrillNameFocused = false
                     } else {
@@ -83,8 +73,6 @@ struct DrillNameSectionView_Previews: PreviewProvider {
         ZStack {
             Color.black.ignoresSafeArea()
             VStack {
-                DrillNameSectionView(drillName: .constant("Sample Drill Name"))
-                    .padding()
                 DrillNameSectionView(drillName: .constant(""))
                     .padding()
             }
