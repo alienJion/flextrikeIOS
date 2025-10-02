@@ -284,6 +284,11 @@ struct DrillFormView: View {
                     // Force save on context's queue
                     try viewContext.save()
                     print("Save successful!")
+
+                    // Notify listeners that the repository changed so UI can refresh
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: .drillRepositoryDidChange, object: nil)
+                    }
                 } catch let saveError as NSError {
                     print("Save failed with NSError:")
                     print("  localizedDescription: \(saveError.localizedDescription)")
