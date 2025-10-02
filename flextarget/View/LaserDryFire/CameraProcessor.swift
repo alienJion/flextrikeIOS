@@ -172,6 +172,7 @@ class CameraProcessor: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
                 
                 if(self.lastRectifyMatrix != nil) {
                     //Apply the last rectify matrix to the image
+                    #if USE_OPENCV
                     if let matrix = self.lastRectifyMatrix,
                        let image = self.uiImageFromSampleBuffer(sampleBuffer) {
                         let outputSize = image.size //Adjust as needed
@@ -183,6 +184,7 @@ class CameraProcessor: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
                             }
                         }
                     }
+                    #endif
                 } else {//Calculate the transformation matrix for rectification
                     
                     // Compute centroids to identify each QR code's position
@@ -213,6 +215,7 @@ class CameraProcessor: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
                         self.previewImage = dotted
                         AudioServicesPlaySystemSound(SystemSoundID(1057)) // Beep sound
                         
+                        #if USE_OPENCV
                         let width = self.previewImage?.size.width ?? 1080
                         let height = self.previewImage?.size.height ?? 1920
                         let denormPoints = dotPoints.prefix(4).map { pt in
@@ -230,10 +233,12 @@ class CameraProcessor: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
                             self.shouldAdjustExposure = true // Set flag to adjust exposure next time
 //                            print("Rectification matrix: \(matrix)")
                         }
+                        #endif
                     }
                 } // ELS OF IF Transformation Matrix Found
                 
                 if(self.rectified == true){
+                    #if USE_OPENCV
                     let binarized = OpenCVWrapper.metalBinaryRedHSV(self.previewImage)
                                         
                     if let nsCenters = OpenCVWrapper.centersOfContours(from: binarized) {
@@ -260,6 +265,7 @@ class CameraProcessor: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
                             self.saveToLocalStorageAndSendBLE(key: "0", value: centerString ?? "{}") // Don't send timestamp for now
                         }
                     } // Image Binarized
+                    #endif
                 } // Image Rectified
                 DispatchQueue.main.async {
                     NotificationCenter.default.post(name: .newFrameProcessed, object: nil)
@@ -612,8 +618,13 @@ class CameraProcessor: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
     
     private func hasCameraViewChanged(current: UIImage, previous: UIImage?, threshold: Double = 10.0) -> Bool {
         guard let previous = previous else { return true }
+        #if USE_OPENCV
         let diff = OpenCVWrapper.metalMeanAbsDiffBetween(current, and: previous)
         return diff > threshold
+        #else
+        // Fallback for simulator - assume camera view has changed
+        return true
+        #endif
     }
     
     @objc private func handleBLEStateNotification(_ notification: Notification) {

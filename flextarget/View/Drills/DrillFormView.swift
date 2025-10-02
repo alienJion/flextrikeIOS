@@ -1,0 +1,612 @@
+import PhotosUI
+import SwiftUI
+import UIKit
+import CoreData
+
+enum DrillFormMode {
+    case add
+    case edit(DrillSetup)
+    
+    var saveButtonText: String {
+        switch self {
+        case .add: return "Save Drill"
+        case .edit: return "Save Changes"
+        }
+    }
+    
+    var isEditMode: Bool {
+        if case .edit = self {
+            return true
+        }
+        return false
+    }
+}
+
+struct DrillFormView: View {
+    let bleManager: BLEManager
+    let mode: DrillFormMode
+    
+    @State private var drillName: String = ""
+    @State private var description: String = ""
+    @State private var demoVideoURL: URL? = nil
+    @State private var selectedVideoItem: PhotosPickerItem? = nil
+    @State private var demoVideoThumbnail: UIImage? = nil
+    @State private var thumbnailFileURL: URL? = nil
+    @State private var showVideoPlayer: Bool = false
+    @State private var delayType: DelayConfigurationView.DelayType = .fixed
+    @State private var delayValue: Double = 0
+    @State private var targets: [DrillTargetsConfigData] = []
+    @State private var isTargetListReceived: Bool = false
+    @State private var targetConfigs: [DrillTargetsConfigData] = []
+    @State private var navigateToDrillResult: Bool = false
+    
+    @Environment(\.presentationMode) var presentationMode
+    
+    // Use shared persistence controller directly to avoid environment propagation issues
+    private var viewContext: NSManagedObjectContext {
+        PersistenceController.shared.container.viewContext
+    }
+    
+    init(bleManager: BLEManager, mode: DrillFormMode) {
+        self.bleManager = bleManager
+        self.mode = mode
+        
+        // Pre-populate fields if editing
+        if case .edit(let drillSetup) = mode {
+            _drillName = State(initialValue: drillSetup.name ?? "")
+            _description = State(initialValue: drillSetup.desc ?? "")
+            _demoVideoURL = State(initialValue: drillSetup.demoVideoURL)
+            _thumbnailFileURL = State(initialValue: drillSetup.thumbnailURL)
+            _delayValue = State(initialValue: drillSetup.delay)
+            
+            let coreDataTargets = (drillSetup.targets as? Set<DrillTargetsConfig>) ?? []
+            let targetsArray = coreDataTargets.sorted(by: { $0.seqNo < $1.seqNo }).map { $0.toStruct() }
+            _targets = State(initialValue: targetsArray)
+            _targetConfigs = State(initialValue: targetsArray)
+        }
+        
+        // Note: Cannot call viewContext.rollback() here because viewContext is not initialized yet
+        // Will handle cleanup in onAppear
+    }
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                ZStack {
+                    Color.black.ignoresSafeArea()
+                        .onTapGesture {
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        }
+                    
+                    VStack(spacing: 20) {
+                        // History Record Button
+                        NavigationLink(destination: DrillRecordView()) {
+                            HStack {
+                                RoundedRectangle(cornerRadius: 24)
+                                    .stroke(Color.red, lineWidth: 1)
+                                    .background(RoundedRectangle(cornerRadius: 16).fill(Color.clear))
+                                    .frame(height: 36)
+                                    .overlay(
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "clock.arrow.circlepath")
+                                                .foregroundColor(.red)
+                                                .font(.title3)
+                                            Text("History Record")
+                                                .foregroundColor(.white)
+                                                .font(.footnote)
+                                        }
+                                    )
+                                    .padding(.horizontal)
+                                    .padding(.top)
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        ScrollView {
+                            // Grouped Section: Drill Name, Description, Add Video
+                            VStack(spacing: 20) {
+                                DrillNameSectionView(drillName: $drillName)
+                                
+                                DescriptionVideoSectionView(
+                                    description: $description,
+                                    demoVideoURL: $demoVideoURL,
+                                    selectedVideoItem: $selectedVideoItem,
+                                    demoVideoThumbnail: $demoVideoThumbnail,
+                                    thumbnailFileURL: $thumbnailFileURL,
+                                    showVideoPlayer: $showVideoPlayer
+                                )
+                                .sheet(isPresented: $showVideoPlayer) {
+                                    if let url = demoVideoURL {
+                                        VideoPlayerView(url: url)
+                                    }
+                                }
+                            }
+                            .padding()
+                            .background(Color.gray.opacity(0.2))
+                            .cornerRadius(20)
+                            .padding(.horizontal)
+                            
+                            // Delay of Set Starting
+                            DelayConfigurationView(
+                                delayType: $delayType,
+                                delayValue: $delayValue
+                            )
+                            .padding(.horizontal)
+                            
+                            // Drill Setup Field
+                            TargetsSectionView(
+                                isTargetListReceived: $isTargetListReceived,
+                                bleManager: bleManager,
+                                targetConfigs: $targetConfigs,
+                                onTargetConfigDone: { targets = targetConfigs }
+                            )
+                            .padding(.horizontal)
+                            
+                            Spacer()
+                            
+                            // Bottom Buttons
+                            actionButtons
+                        }
+                        .onAppear {
+                            // Clean up any leftover inserted objects from previous attempts
+                            if viewContext.hasChanges {
+                                print("⚠️ ViewContext has unsaved changes on appear, rolling back...")
+                                print("  Inserted: \(viewContext.insertedObjects.count)")
+                                print("  Updated: \(viewContext.updatedObjects.count)")
+                                print("  Deleted: \(viewContext.deletedObjects.count)")
+                                viewContext.rollback()
+                            }
+                            
+                            queryDeviceList()
+                            loadThumbnailIfNeeded()
+                        }
+                        .onReceive(NotificationCenter.default.publisher(for: .bleDeviceListUpdated)) { notification in
+                            handleDeviceListUpdate(notification)
+                        }
+                        .ignoresSafeArea(.keyboard, edges: .bottom)
+                    }
+                }
+            }
+        }
+        .navigationDestination(isPresented: $navigateToDrillResult) {
+            if case .edit(let drillSetup) = mode {
+                DrillResultView(drillSetup: drillSetup)
+            }
+        }
+    }
+    
+    // MARK: - Action Buttons
+    
+    @ViewBuilder
+    private var actionButtons: some View {
+        HStack {
+            Button(action: saveDrill) {
+                Text(mode.saveButtonText)
+                    .foregroundColor(.white)
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.red)
+                    .cornerRadius(8)
+            }
+            
+            if case .edit = mode {
+                Button(action: startDrill) {
+                    Text("Start Drill")
+                        .foregroundColor(.white)
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.green)
+                        .cornerRadius(8)
+                }
+            }
+        }
+        .padding(.horizontal)
+        .padding(.bottom, 20)
+    }
+    
+    // MARK: - Save Logic
+    
+    private func saveDrill() {
+        targets = targetConfigs
+        
+        do {
+            // Ensure any picked temp files are moved into app Documents for persistence
+            if let tempVideo = demoVideoURL, tempVideo.path.starts(with: FileManager.default.temporaryDirectory.path) {
+                if let moved = moveFileToDocuments(from: tempVideo) {
+                    demoVideoURL = moved
+                } else {
+                    print("Warning: Failed to move video from temp to Documents, keeping temp path")
+                }
+            }
+            if let tempThumb = thumbnailFileURL, tempThumb.path.starts(with: FileManager.default.temporaryDirectory.path) {
+                if let moved = moveFileToDocuments(from: tempThumb) {
+                    thumbnailFileURL = moved
+                } else {
+                    print("Warning: Failed to move thumbnail from temp to Documents, keeping temp path")
+                }
+            }
+
+            switch mode {
+            case .add:
+                createNewDrillSetup()
+                
+            case .edit(let drillSetup):
+                updateExistingDrillSetup(drillSetup)
+            }
+            
+            // Ensure save happens on main thread
+            if viewContext.hasChanges {
+                print("Context has changes, attempting to save...")
+                
+                // Check if context is valid
+                print("ViewContext description: \(viewContext)")
+                print("Persistent store coordinator: \(String(describing: viewContext.persistentStoreCoordinator))")
+                print("Persistent stores: \(viewContext.persistentStoreCoordinator?.persistentStores.count ?? 0)")
+                print("Inserted objects count: \(viewContext.insertedObjects.count)")
+                print("Updated objects count: \(viewContext.updatedObjects.count)")
+                print("Deleted objects count: \(viewContext.deletedObjects.count)")
+                
+                // Try to validate all inserted objects
+                for object in viewContext.insertedObjects {
+                    do {
+                        try object.validateForInsert()
+                        print("Validation passed for: \(object)")
+                    } catch let validationError {
+                        print("Validation failed for \(object): \(validationError)")
+                        throw validationError
+                    }
+                }
+                
+                // Try to save - explicitly ensure we're on the right thread
+                print("About to save - Thread check:")
+                print("  Is main thread: \(Thread.isMainThread)")
+                print("  Context concurrency type: \(viewContext.concurrencyType.rawValue)")
+                
+                // Check if persistent store is available
+                guard let coordinator = viewContext.persistentStoreCoordinator else {
+                    print("ERROR: No persistent store coordinator!")
+                    throw NSError(domain: "DrillFormView", code: -1, userInfo: [NSLocalizedDescriptionKey: "No persistent store coordinator"])
+                }
+                
+                if coordinator.persistentStores.isEmpty {
+                    print("ERROR: No persistent stores loaded!")
+                    throw NSError(domain: "DrillFormView", code: -2, userInfo: [NSLocalizedDescriptionKey: "No persistent stores loaded"])
+                }
+                
+                print("Persistent stores loaded: \(coordinator.persistentStores.count)")
+                for (index, store) in coordinator.persistentStores.enumerated() {
+                    print("  Store \(index): \(store.type) at \(store.url?.path ?? "unknown")")
+                }
+                
+                do {
+                    // Force save on context's queue
+                    try viewContext.save()
+                    print("Save successful!")
+                } catch let saveError as NSError {
+                    print("Save failed with NSError:")
+                    print("  localizedDescription: \(saveError.localizedDescription)")
+                    print("  code: \(saveError.code)")
+                    print("  domain: \(saveError.domain)")
+                    print("  userInfo keys: \(saveError.userInfo.keys)")
+                    for (key, value) in saveError.userInfo {
+                        print("    \(key): \(value)")
+                    }
+                    
+                    // Try to get more details from the error
+                    if let underlyingError = saveError.userInfo[NSUnderlyingErrorKey] as? NSError {
+                        print("Underlying error found:")
+                        print("  description: \(underlyingError)")
+                        print("  domain: \(underlyingError.domain)")
+                        print("  code: \(underlyingError.code)")
+                        print("  userInfo: \(underlyingError.userInfo)")
+                    }
+                    
+                    // Check for Core Data specific error keys
+                    if let affectedObjects = saveError.userInfo[NSAffectedObjectsErrorKey] as? [NSManagedObject] {
+                        print("Affected objects: \(affectedObjects)")
+                    }
+                    
+                    if let validationKey = saveError.userInfo[NSValidationKeyErrorKey] {
+                        print("Validation key: \(validationKey)")
+                    }
+                    
+                    if let validationObject = saveError.userInfo[NSValidationObjectErrorKey] {
+                        print("Validation object: \(validationObject)")
+                    }
+                    
+                    throw saveError
+                }
+            } else {
+                print("No changes to save")
+            }
+            presentationMode.wrappedValue.dismiss()
+        } catch let error as NSError {
+            print("Failed to save drill setup: \(error.localizedDescription)")
+            print("Error code: \(error.code)")
+            print("Error domain: \(error.domain)")
+            print("Error userInfo: \(error.userInfo)")
+            if let detailedErrors = error.userInfo[NSDetailedErrorsKey] as? [NSError] {
+                for detailedError in detailedErrors {
+                    print("Detailed error: \(detailedError.localizedDescription)")
+                    print("Failed object: \(detailedError.userInfo)")
+                }
+            }
+            
+            // Rollback the failed changes to clean up the context
+            print("Rolling back failed changes...")
+            viewContext.rollback()
+        } catch {
+            print("Unknown error: \(error)")
+            
+            // Rollback on unknown error too
+            print("Rolling back failed changes...")
+            viewContext.rollback()
+        }
+    }
+    
+    private func startDrill() {
+        guard case .edit(let drillSetup) = mode else { return }
+        
+        // Save changes before starting
+        targets = targetConfigs
+        updateExistingDrillSetup(drillSetup)
+        
+        do {
+            try viewContext.save()
+        } catch {
+            print("Failed to save drill setup before starting: \(error)")
+        }
+        
+        sendStartDrillMessages(for: drillSetup)
+        navigateToDrillResult = true
+    }
+    
+    // MARK: - CoreData Operations
+    
+    private func createNewDrillSetup() {
+        let drillSetup = DrillSetup(context: viewContext)
+        drillSetup.id = UUID()
+        drillSetup.name = drillName
+        drillSetup.desc = description
+        
+        // Set URLs - ensure they're valid file URLs
+        if let videoURL = demoVideoURL {
+            print("Setting demoVideoURL: \(videoURL.absoluteString)")
+            print("  isFileURL: \(videoURL.isFileURL)")
+            print("  path: \(videoURL.path)")
+            
+            // Try standardizing the URL to ensure it's properly formatted
+            let standardizedURL = videoURL.standardized
+            print("  standardized: \(standardizedURL.absoluteString)")
+            drillSetup.demoVideoURL = standardizedURL
+        }
+        
+        if let thumbURL = thumbnailFileURL {
+            print("Setting thumbnailURL: \(thumbURL.absoluteString)")
+            print("  isFileURL: \(thumbURL.isFileURL)")
+            print("  path: \(thumbURL.path)")
+            
+            // Try standardizing the URL to ensure it's properly formatted
+            let standardizedURL = thumbURL.standardized
+            print("  standardized: \(standardizedURL.absoluteString)")
+            drillSetup.thumbnailURL = standardizedURL
+        }
+        
+        drillSetup.delay = delayValue
+        
+        print("Creating drill setup with:")
+        print("  name: \(drillName)")
+        print("  desc: \(description)")
+        print("  delay: \(delayValue)")
+        print("  targetConfigs count: \(targetConfigs.count)")
+        
+        // Add targets - use the Core Data relationship method instead of direct assignment
+        for (index, targetData) in targetConfigs.enumerated() {
+            let target = DrillTargetsConfig(context: viewContext)
+            target.id = targetData.id ?? UUID()  // Ensure id is never nil
+            target.seqNo = Int32(targetData.seqNo)
+            target.targetName = targetData.targetName
+            target.targetType = targetData.targetType
+            target.timeout = targetData.timeout
+            target.countedShots = Int32(targetData.countedShots)
+            
+            // Use the Core Data generated method to establish relationship
+            drillSetup.addToTargets(target)
+            
+            print("  Added target \(index): \(targetData.targetName) with id: \(target.id?.uuidString ?? "nil")")
+            print("    Relationship established: drillSetup.targets count = \((drillSetup.targets?.count ?? 0))")
+        }
+        
+        // Try to validate before saving
+        do {
+            try drillSetup.validateForInsert()
+            print("Drill setup validation passed")
+        } catch {
+            print("Drill setup validation failed: \(error)")
+        }
+        
+        // Validate all targets too
+        for target in viewContext.insertedObjects where target is DrillTargetsConfig {
+            do {
+                try (target as! DrillTargetsConfig).validateForInsert()
+            } catch {
+                print("Target validation failed: \(error)")
+            }
+        }
+    }
+    
+    private func updateExistingDrillSetup(_ drillSetup: DrillSetup) {
+        drillSetup.name = drillName
+        drillSetup.desc = description
+        drillSetup.demoVideoURL = demoVideoURL
+        drillSetup.thumbnailURL = thumbnailFileURL
+        drillSetup.delay = delayValue
+        
+        // Clear and update targets
+        if let existingTargets = drillSetup.targets {
+            drillSetup.removeFromTargets(existingTargets)
+        }
+        
+        for targetData in targetConfigs {
+            let target = DrillTargetsConfig(context: viewContext)
+            target.id = targetData.id ?? UUID()  // Ensure id is never nil
+            target.seqNo = Int32(targetData.seqNo)
+            target.targetName = targetData.targetName
+            target.targetType = targetData.targetType
+            target.timeout = targetData.timeout
+            target.countedShots = Int32(targetData.countedShots)
+            
+            // Use the Core Data generated method to establish relationship
+            drillSetup.addToTargets(target)
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func loadThumbnailIfNeeded() {
+        if let url = thumbnailFileURL {
+            do {
+                let data = try Data(contentsOf: url)
+                demoVideoThumbnail = UIImage(data: data)
+            } catch {
+                print("Failed to load thumbnail: \(error)")
+            }
+        }
+    }
+
+    // Move a file from temp directory into app Documents and return new URL
+    private func moveFileToDocuments(from url: URL) -> URL? {
+        let fileManager = FileManager.default
+        
+        // Check if source file exists
+        guard fileManager.fileExists(atPath: url.path) else {
+            print("Source file does not exist at: \(url.path)")
+            return nil
+        }
+        
+        let docs = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let dest = docs.appendingPathComponent(UUID().uuidString + "." + (url.pathExtension.isEmpty ? "dat" : url.pathExtension))
+        do {
+            if fileManager.fileExists(atPath: dest.path) {
+                try fileManager.removeItem(at: dest)
+            }
+            try fileManager.copyItem(at: url, to: dest)
+            print("Successfully moved file to Documents: \(dest.lastPathComponent)")
+            // Try to remove the original temp file after successful copy
+            do { try fileManager.removeItem(at: url) } catch { print("Could not remove temp file: \(error)") }
+            return dest
+        } catch {
+            print("Failed to move file to Documents: \(error.localizedDescription)")
+            print("Source: \(url.path)")
+            print("Destination: \(dest.path)")
+            return nil
+        }
+    }
+    
+    private func sendStartDrillMessages(for drillSetup: DrillSetup) {
+        guard bleManager.isConnected else {
+            print("BLE not connected")
+            return
+        }
+        
+        guard let targetsSet = drillSetup.targets as? Set<DrillTargetsConfig> else { return }
+        let sortedTargets = targetsSet.sorted { $0.seqNo < $1.seqNo }
+        
+        for (index, target) in sortedTargets.enumerated() {
+            do {
+                let delay = index == 0 ? drillSetup.delay : 0
+                let content: [String: Any] = [
+                    "command": "ready",
+                    "delay": delay,
+                    "targetType": target.targetType ?? "",
+                    "timeout": target.timeout,
+                    "countedShots": target.countedShots
+                ]
+                let message: [String: Any] = [
+                    "type": "netlink",
+                    "action": "forward",
+                    "dest": target.targetName ?? "",
+                    "content": content
+                ]
+                let messageData = try JSONSerialization.data(withJSONObject: message, options: [])
+                let messageString = String(data: messageData, encoding: .utf8)!
+                print("Sending forward message for target \(target.targetName ?? ""), length: \(messageData.count)")
+                bleManager.writeJSON(messageString)
+            } catch {
+                print("Failed to send start drill message for target \(target.targetName ?? ""): \(error)")
+            }
+        }
+    }
+    
+    // MARK: - Device List Query
+    
+    private func queryDeviceList() {
+        guard bleManager.isConnected else {
+            print("BLE not connected, cannot query device list")
+            return
+        }
+        
+        let command = ["type": "netlink", "action": "query_device_list"]
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: command, options: [])
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                print("Query message length: \(jsonData.count)")
+                bleManager.writeJSON(jsonString)
+                print("Sent query_device_list command: \(jsonString)")
+            }
+        } catch {
+            print("Failed to serialize query_device_list command: \(error)")
+        }
+    }
+    
+    private func handleDeviceListUpdate(_ notification: Notification) {
+        if let userInfo = notification.userInfo,
+           let deviceList = userInfo["device_list"] as? [NetworkDevice] {
+            print("Device list received with \(deviceList.count) devices")
+            DispatchQueue.main.async {
+                self.isTargetListReceived = true
+            }
+        }
+    }
+}
+
+// MARK: - Preview
+struct DrillFormView_Previews: PreviewProvider {
+    static var previews: some View {
+        let context = PersistenceController.preview.container.viewContext
+        
+        Group {
+            DrillFormView(bleManager: BLEManager.shared, mode: .add)
+                .environment(\.managedObjectContext, context)
+                .environmentObject(BLEManager.shared)
+                .previewDisplayName("Add Mode")
+            
+            DrillFormView(bleManager: BLEManager.shared, mode: .edit(mockDrillSetup(context: context)))
+                .environment(\.managedObjectContext, context)
+                .environmentObject(BLEManager.shared)
+                .previewDisplayName("Edit Mode")
+        }
+    }
+    
+    static func mockDrillSetup(context: NSManagedObjectContext) -> DrillSetup {
+        let drillSetup = DrillSetup(context: context)
+        drillSetup.id = UUID()
+        drillSetup.name = "Sample Drill"
+        drillSetup.desc = "A sample drill for testing"
+        drillSetup.delay = 5.0
+        
+        let target = DrillTargetsConfig(context: context)
+        target.id = UUID()
+        target.seqNo = 1
+        target.targetName = "Target 1"
+        target.targetType = "Standard"
+        target.timeout = 30
+        target.countedShots = 5
+        target.drillSetup = drillSetup
+        
+        return drillSetup
+    }
+}

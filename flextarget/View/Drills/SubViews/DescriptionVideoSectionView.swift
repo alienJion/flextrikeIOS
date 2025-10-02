@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import AVFoundation
+import UniformTypeIdentifiers
 
 /**
  `DescriptionVideoSectionView` is a SwiftUI component that handles drill description and demo video functionality.
@@ -28,8 +29,9 @@ struct DescriptionVideoSectionView: View {
     @Binding var thumbnailFileURL: URL?
     @Binding var showVideoPlayer: Bool
     
-    @State private var isDescriptionExpanded: Bool = true
     @State private var isGeneratingThumbnail: Bool = false
+    @State private var isDownloadingVideo: Bool = false
+    @FocusState private var isDescriptionFocused: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -38,40 +40,44 @@ struct DescriptionVideoSectionView: View {
                     .foregroundColor(.white)
                     .font(.body)
                 Spacer()
-                Image(systemName: isDescriptionExpanded ? "chevron.up" : "chevron.down")
-                    .foregroundColor(.red)
-                    .onTapGesture {
-                        withAnimation {
-                            isDescriptionExpanded.toggle()
+                if isDescriptionFocused {
+                    Image(systemName: "checkmark")
+                        .foregroundColor(.red)
+                        .onTapGesture {
+                            isDescriptionFocused = false
                         }
-                    }
+                }
             }
             
             ZStack(alignment: .topLeading) {
                 TextEditor(text: $description)
-                    .frame(height: isDescriptionExpanded ? 120 : 24) // 5 lines or 1 line
+                    .frame(height: 120) // Fixed height for 5 lines
                     .foregroundColor(.white)
                     .scrollContentBackground(.hidden)
                     .background(Color.clear)
                     .cornerRadius(8)
+                    .disableAutocorrection(true)
+                    .textInputAutocapitalization(.sentences)
+                    .focused($isDescriptionFocused)
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
                             .stroke(Color.gray.opacity(0.5), lineWidth: 1)
                     )
-                    .disabled(!isDescriptionExpanded) // Only editable when expanded
                 
-                if description.isEmpty {
+                if description.isEmpty && !isDescriptionFocused {
                     Text("Enter description...")
                         .font(.footnote)
                         .foregroundColor(Color.white.opacity(0.4))
                         .padding(.top, 8)
                         .padding(.leading, 5)
+                        .onTapGesture {
+                            isDescriptionFocused = true
+                        }
                 }
             }
             
-            if isDescriptionExpanded {
-                // Demo Video Upload (only visible when expanded)
-                PhotosPicker(
+            // Demo Video Upload
+            PhotosPicker(
                     selection: $selectedVideoItem,
                     matching: .videos,
                     photoLibrary: .shared()
@@ -146,34 +152,48 @@ struct DescriptionVideoSectionView: View {
                             )
                     }
                 }
-            }
         }
-        .onChange(of: selectedVideoItem) { newItem in
-            guard let item = newItem else { return }
+        .onChange(of: selectedVideoItem) {
+            guard let item = selectedVideoItem else { return }
             isGeneratingThumbnail = true
             Task {
-                // Try to get a URL first
+                // Ensure the loading flag is cleared on main when finished
+                defer { Task { await MainActor.run { isGeneratingThumbnail = false } } }
+
+                // 1) Try to get a URL representation and copy it into a temporary file (do NOT persist into Documents yet)
                 if let url = try? await item.loadTransferable(type: URL.self) {
-                    demoVideoURL = url
-                    if let thumbnail = await generateThumbnail(for: url) {
-                        demoVideoThumbnail = thumbnail
-                        thumbnailFileURL = saveThumbnailToDocuments(thumbnail)
-                    }
-                } else if let data = try? await item.loadTransferable(type: Data.self) {
-                    // Save to temp file
-                    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mov")
-                    do {
-                        try data.write(to: tempURL)
-                        demoVideoURL = tempURL
-                        if let thumbnail = await generateThumbnail(for: tempURL) {
-                            demoVideoThumbnail = thumbnail
-                            thumbnailFileURL = saveThumbnailToDocuments(thumbnail)
+                    if let temp = copyFileToTemp(from: url) {
+                        await MainActor.run { demoVideoURL = temp }
+                        if let thumbnail = await generateThumbnail(for: temp) {
+                            let tempThumb = writeDataToTemp(data: thumbnail.jpegData(compressionQuality: 0.8) ?? Data(), ext: "jpg")
+                            await MainActor.run {
+                                demoVideoThumbnail = thumbnail
+                                thumbnailFileURL = tempThumb
+                            }
                         }
-                    } catch {
-                        print("Failed to write video data to temp file: \(error)")
+                        return
                     }
                 }
-                isGeneratingThumbnail = false
+
+                // 2) Fallback: try to load raw Data and write to app storage
+                await MainActor.run { isDownloadingVideo = true }
+                if let data = try? await item.loadTransferable(type: Data.self) {
+                    if let written = writeDataToTemp(data: data, ext: "mov") {
+                        await MainActor.run { demoVideoURL = written }
+                        if let thumbnail = await generateThumbnail(for: written) {
+                            let tempThumb = writeDataToTemp(data: thumbnail.jpegData(compressionQuality: 0.8) ?? Data(), ext: "jpg")
+                            await MainActor.run {
+                                demoVideoThumbnail = thumbnail
+                                thumbnailFileURL = tempThumb
+                            }
+                        }
+                        return
+                    }
+                }
+                await MainActor.run { isDownloadingVideo = false }
+
+                // If we got here, nothing usable was produced
+                print("Failed to obtain a usable video file from selected item")
             }
         }
     }
@@ -195,7 +215,9 @@ struct DescriptionVideoSectionView: View {
                     let cropped = cropToAspect(image: uiImage, aspectWidth: 16, aspectHeight: 9)
                     continuation.resume(returning: cropped)
                 } catch {
-                    continuation.resume(returning: nil)
+                    // Return a default image if thumbnail generation fails
+                    let defaultImage = UIImage(systemName: "video") ?? UIImage()
+                    continuation.resume(returning: defaultImage)
                 }
             }
         }
@@ -227,6 +249,67 @@ struct DescriptionVideoSectionView: View {
     }
     
     // Helper to save thumbnail image to documents directory
+    // Helper: copy a file URL into the app Documents directory and return the new URL
+    func copyFileToAppStorage(from url: URL) -> URL? {
+        let fileManager = FileManager.default
+        let docs = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let dest = docs.appendingPathComponent(UUID().uuidString + "." + (url.pathExtension.isEmpty ? "mov" : url.pathExtension))
+        do {
+            if fileManager.fileExists(atPath: dest.path) {
+                try fileManager.removeItem(at: dest)
+            }
+            try fileManager.copyItem(at: url, to: dest)
+            return dest
+        } catch {
+            print("Failed to copy file to app storage: \(error)")
+            return nil
+        }
+    }
+
+    // Helper: write Data into app Documents directory and return file URL
+    func writeDataToAppStorage(data: Data, ext: String) -> URL? {
+        let fileManager = FileManager.default
+        let docs = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let dest = docs.appendingPathComponent(UUID().uuidString + "." + ext)
+        do {
+            try data.write(to: dest)
+            return dest
+        } catch {
+            print("Failed to write data to app storage: \(error)")
+            return nil
+        }
+    }
+
+    // Helper: copy a file URL into temporary directory and return the temp URL
+    func copyFileToTemp(from url: URL) -> URL? {
+        let fileManager = FileManager.default
+        let temp = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString + "." + (url.pathExtension.isEmpty ? "mov" : url.pathExtension))
+        do {
+            if fileManager.fileExists(atPath: temp.path) {
+                try fileManager.removeItem(at: temp)
+            }
+            try fileManager.copyItem(at: url, to: temp)
+            return temp
+        } catch {
+            print("Failed to copy file to temp: \(error)")
+            return nil
+        }
+    }
+
+    // Helper: write Data into temp directory and return the temp URL
+    func writeDataToTemp(data: Data, ext: String) -> URL? {
+        let fileManager = FileManager.default
+        let temp = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString + "." + ext)
+        do {
+            try data.write(to: temp)
+            return temp
+        } catch {
+            print("Failed to write data to temp: \(error)")
+            return nil
+        }
+    }
+
+    
     func saveThumbnailToDocuments(_ image: UIImage) -> URL? {
         guard let data = image.jpegData(compressionQuality: 0.8) else { return nil }
         let filename = UUID().uuidString + ".jpg"
@@ -239,6 +322,7 @@ struct DescriptionVideoSectionView: View {
             return nil
         }
     }
+
 }
 
 struct DescriptionVideoSectionView_Previews: PreviewProvider {

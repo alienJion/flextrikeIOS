@@ -104,6 +104,13 @@ class DrillRepository: ObservableObject, DrillRepositoryProtocol {
         
         let results = try context.fetch(fetchRequest)
         for setup in results {
+            // Attempt to remove any stored video/thumbnail files referenced by this setup
+            if let videoURL = setup.demoVideoURL {
+                do { try FileManager.default.removeItem(at: videoURL) } catch { /* ignore */ }
+            }
+            if let thumbURL = setup.thumbnailURL {
+                do { try FileManager.default.removeItem(at: thumbURL) } catch { /* ignore */ }
+            }
             context.delete(setup)
         }
         
