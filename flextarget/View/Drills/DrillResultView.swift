@@ -53,6 +53,14 @@ struct DrillResultView: View {
     @State private var dots: String = ""
     @State private var replayTimer: Timer?
     @State private var visibleShotIndices: Set<Int> = []
+    @State private var pulsingShotIndex: Int? = nil
+    @State private var pulseScale: CGFloat = 1.0
+    
+    private var shotTimelineData: [(index: Int, time: Double)] {
+        shots.enumerated()
+            .map { ($0.offset, $0.element.content.timeDiff) }
+            .sorted { $0.1 < $1.1 }
+    }
     
     var totalDuration: Double {
         guard let targets = drillSetup.targets as? Set<DrillTargetsConfig> else { return 10.0 }
@@ -120,6 +128,7 @@ struct DrillResultView: View {
                                         Circle()
                                             .stroke(Color.yellow, lineWidth: 3)
                                             .frame(width: 40, height: 40)
+                                            .scaleEffect(pulsingShotIndex == index ? pulseScale : 1.0)
                                     }
                                 }
                                 .position(x: transformedX, y: transformedY)
@@ -128,12 +137,22 @@ struct DrillResultView: View {
                     }
                     .frame(width: frameWidth, height: frameHeight)
                     
-                    // Progress bar
-                    HStack {
-                        ProgressView(value: currentProgress, total: totalDuration)
-                            .progressViewStyle(LinearProgressViewStyle(tint: .white))
-                            .frame(height: 4)
-                        Spacer()
+                    // Progress bar with shot tick marks
+                    HStack(alignment: .center, spacing: 12) {
+                        ShotTimelineView(
+                            shots: shotTimelineData,
+                            totalDuration: totalDuration,
+                            currentProgress: currentProgress,
+                            isEnabled: drillStatus != "In Progress",
+                            onProgressChange: { newTime in
+                                seek(to: newTime, highlightIndex: nil, shouldPulse: false)
+                            },
+                            onShotFocus: { shotIndex in
+                                focusOnShot(shotIndex)
+                            }
+                        )
+                        .frame(height: 28)
+                        
                         Text("\(String(format: "%.1f", currentProgress))/\(String(format: "%.1f", totalDuration))s")
                             .font(.caption)
                             .foregroundColor(.white)
@@ -223,22 +242,75 @@ struct DrillResultView: View {
         }
     }
 
+    private func seek(to time: Double, highlightIndex: Int?, shouldPulse: Bool) {
+        let clampedTime = max(0.0, min(time, totalDuration))
+        pauseReplay()
+        isPlaying = false
+        currentProgress = clampedTime
+        updateVisibleShots(upTo: clampedTime)
+        
+        if let highlightIndex = highlightIndex, shots.indices.contains(highlightIndex) {
+            selectedShotIndex = highlightIndex
+            if shouldPulse {
+                triggerPulse(on: highlightIndex)
+            } else {
+                pulsingShotIndex = highlightIndex
+                pulseScale = 1.0
+            }
+        } else {
+            updateSelection(for: clampedTime)
+            pulsingShotIndex = selectedShotIndex
+            pulseScale = 1.0
+        }
+    }
+    
+    private func focusOnShot(_ shotIndex: Int) {
+        guard shots.indices.contains(shotIndex) else { return }
+        let shotTime = shots[shotIndex].content.timeDiff
+        seek(to: shotTime, highlightIndex: shotIndex, shouldPulse: true)
+    }
+    
+    private func updateVisibleShots(upTo progress: Double) {
+        let indices = shots.enumerated()
+            .filter { $0.element.content.timeDiff <= progress }
+            .map { $0.offset }
+        visibleShotIndices = Set(indices)
+    }
+    
+    private func updateSelection(for progress: Double) {
+        let currentShotIndex = shots.enumerated()
+            .filter { $0.element.content.timeDiff <= progress }
+            .max(by: { $0.element.content.timeDiff < $1.element.content.timeDiff })?
+            .offset
+        selectedShotIndex = currentShotIndex
+    }
+    
+    private func triggerPulse(on index: Int) {
+        guard shots.indices.contains(index) else { return }
+        pulsingShotIndex = index
+        withAnimation(.easeOut(duration: 0.15)) {
+            pulseScale = 1.3
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            withAnimation(.easeIn(duration: 0.15)) {
+                pulseScale = 1.0
+            }
+        }
+    }
+
     private func startReplay() {
         // Reset to beginning
         currentProgress = 0.0
         visibleShotIndices.removeAll()
         selectedShotIndex = nil
+        pulsingShotIndex = nil
+        pulseScale = 1.0
         
         // Start replay timer
         replayTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
             currentProgress += 0.1
             
-            // Check if any shots should be visible at current progress
-            for (index, shot) in shots.enumerated() {
-                if shot.content.timeDiff <= currentProgress && !visibleShotIndices.contains(index) {
-                    visibleShotIndices.insert(index)
-                }
-            }
+            updateVisibleShots(upTo: currentProgress)
             
             // Update selected shot to the current one
             let currentShotIndex = shots.enumerated()
@@ -246,6 +318,7 @@ struct DrillResultView: View {
                 .max(by: { $0.element.content.timeDiff < $1.element.content.timeDiff })?
                 .offset
             selectedShotIndex = currentShotIndex
+            pulsingShotIndex = currentShotIndex
             
             // Stop at end of drill
             if currentProgress >= totalDuration {
@@ -266,15 +339,10 @@ struct DrillResultView: View {
         let previousShots = shots.enumerated().filter { $0.element.content.timeDiff < currentProgress }.sorted { $0.element.content.timeDiff > $1.element.content.timeDiff }
         
         if let previousShot = previousShots.first {
-            currentProgress = previousShot.element.content.timeDiff
-            // Update visible shots
-            visibleShotIndices = Set(shots.enumerated().filter { $0.element.content.timeDiff <= currentProgress }.map { $0.offset })
-            selectedShotIndex = previousShot.offset
+            seek(to: previousShot.element.content.timeDiff, highlightIndex: previousShot.offset, shouldPulse: true)
         } else {
             // Go to beginning
-            currentProgress = 0.0
-            visibleShotIndices.removeAll()
-            selectedShotIndex = nil
+            seek(to: 0.0, highlightIndex: nil, shouldPulse: false)
         }
     }
     
@@ -283,15 +351,14 @@ struct DrillResultView: View {
         let nextShots = shots.enumerated().filter { $0.element.content.timeDiff > currentProgress }.sorted { $0.element.content.timeDiff < $1.element.content.timeDiff }
         
         if let nextShot = nextShots.first {
-            currentProgress = nextShot.element.content.timeDiff
-            // Update visible shots
-            visibleShotIndices = Set(shots.enumerated().filter { $0.element.content.timeDiff <= currentProgress }.map { $0.offset })
-            selectedShotIndex = nextShot.offset
+            seek(to: nextShot.element.content.timeDiff, highlightIndex: nextShot.offset, shouldPulse: true)
         } else {
             // Go to end
-            currentProgress = totalDuration
-            visibleShotIndices = Set(shots.indices)
-            selectedShotIndex = shots.enumerated().max(by: { $0.element.content.timeDiff < $1.element.content.timeDiff })?.offset
+            if let lastShot = shotTimelineData.last {
+                seek(to: totalDuration, highlightIndex: lastShot.index, shouldPulse: true)
+            } else {
+                seek(to: totalDuration, highlightIndex: nil, shouldPulse: false)
+            }
         }
     }
     
@@ -415,6 +482,101 @@ struct DrillResultView: View {
     }
 }
 
+private struct ShotTimelineView: View {
+    let shots: [(index: Int, time: Double)]
+    let totalDuration: Double
+    let currentProgress: Double
+    let isEnabled: Bool
+    let onProgressChange: (Double) -> Void
+    let onShotFocus: (Int) -> Void
+    
+    @State private var lastFocusedShotIndex: Int?
+    
+    private var highlightThreshold: Double {
+        max(0.25, totalDuration * 0.03)
+    }
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let width = max(geometry.size.width, 1)
+            let height = max(geometry.size.height, 1)
+            let clampedRatio = totalDuration > 0 ? min(max(currentProgress / totalDuration, 0), 1) : 0
+            let progressWidth = width * clampedRatio
+            
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.white.opacity(0.25))
+                    .frame(height: 4)
+                Capsule()
+                    .fill(Color.white)
+                    .frame(width: progressWidth, height: 4)
+            }
+            .frame(height: 4)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .overlay(
+                ZStack {
+                    ForEach(shots.indices, id: \.self) { idx in
+                        let shot = shots[idx]
+                        let ratio = totalDuration > 0 ? min(max(shot.time / totalDuration, 0), 1) : 0
+                        let xPosition = width * ratio
+                        let isPastShot = shot.time <= currentProgress + 0.0001
+                        Rectangle()
+                            .fill(isPastShot ? Color.yellow : Color.white.opacity(0.7))
+                            .frame(width: 2, height: 12)
+                            .frame(width: 24, height: height)
+                            .position(x: xPosition, y: height / 2)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                guard isEnabled else { return }
+                                onProgressChange(shot.time)
+                                onShotFocus(shot.index)
+                            }
+                    }
+                }
+            )
+            .gesture(isEnabled ? dragGesture(width: width) : nil)
+        }
+        .allowsHitTesting(isEnabled)
+    }
+    
+    private func dragGesture(width: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                let ratio = min(max(value.location.x / max(width, 1), 0), 1)
+                let newTime = ratio * totalDuration
+                onProgressChange(newTime)
+                if let nearest = nearestShot(to: newTime) {
+                    if nearest.index != lastFocusedShotIndex {
+                        lastFocusedShotIndex = nearest.index
+                        onShotFocus(nearest.index)
+                    }
+                } else {
+                    lastFocusedShotIndex = nil
+                }
+            }
+            .onEnded { value in
+                lastFocusedShotIndex = nil
+                let ratio = min(max(value.location.x / max(width, 1), 0), 1)
+                let newTime = ratio * totalDuration
+                if let nearest = nearestShot(to: newTime) {
+                    onProgressChange(nearest.time)
+                    onShotFocus(nearest.index)
+                } else {
+                    onProgressChange(newTime)
+                }
+            }
+    }
+    
+    private func nearestShot(to time: Double) -> (index: Int, time: Double)? {
+        guard !shots.isEmpty else { return nil }
+        if let nearest = shots.min(by: { abs($0.time - time) < abs($1.time - time) }),
+           abs(nearest.time - time) <= highlightThreshold {
+            return nearest
+        }
+        return nil
+    }
+}
+
 #Preview {
     let context = PersistenceController.preview.container.viewContext
     let mockDrillSetup = DrillSetup(context: context)
@@ -440,11 +602,11 @@ struct DrillResultView: View {
                 "target": "target1",
                 "content": [
                     "command": "shot",
-                    "hit_area": "A",
-                    "hit_position": ["x": 200.0, "y": 300.0],
+                    "hit_area": "B",
+                    "hit_position": ["x": 395.0, "y": 495.0],
                     "rotation_angle": 0,
                     "target_type": "hostage",
-                    "time_diff": 1.5
+                    "time_diff": 0.18
                 ],
                 "type": "shot",
                 "action": "hit",
@@ -458,7 +620,105 @@ struct DrillResultView: View {
                     "hit_position": ["x": 400.0, "y": 500.0],
                     "rotation_angle": 0,
                     "target_type": "hostage",
-                    "time_diff": 0.2
+                    "time_diff": 0.21
+                ],
+                "type": "shot",
+                "action": "hit",
+                "device": "device1"
+            ],
+            [
+                "target": "target1",
+                "content": [
+                    "command": "shot",
+                    "hit_area": "B",
+                    "hit_position": ["x": 403.0, "y": 502.0],
+                    "rotation_angle": 0,
+                    "target_type": "hostage",
+                    "time_diff": 0.22
+                ],
+                "type": "shot",
+                "action": "hit",
+                "device": "device1"
+            ],
+            [
+                "target": "target1",
+                "content": [
+                    "command": "shot",
+                    "hit_area": "B",
+                    "hit_position": ["x": 398.0, "y": 498.0],
+                    "rotation_angle": 0,
+                    "target_type": "hostage",
+                    "time_diff": 0.24
+                ],
+                "type": "shot",
+                "action": "hit",
+                "device": "device1"
+            ],
+            [
+                "target": "target1",
+                "content": [
+                    "command": "shot",
+                    "hit_area": "B",
+                    "hit_position": ["x": 405.0, "y": 505.0],
+                    "rotation_angle": 0,
+                    "target_type": "hostage",
+                    "time_diff": 0.27
+                ],
+                "type": "shot",
+                "action": "hit",
+                "device": "device1"
+            ],
+            [
+                "target": "target1",
+                "content": [
+                    "command": "shot",
+                    "hit_area": "A",
+                    "hit_position": ["x": 205.0, "y": 295.0],
+                    "rotation_angle": 0,
+                    "target_type": "hostage",
+                    "time_diff": 1.35
+                ],
+                "type": "shot",
+                "action": "hit",
+                "device": "device1"
+            ],
+            [
+                "target": "target1",
+                "content": [
+                    "command": "shot",
+                    "hit_area": "A",
+                    "hit_position": ["x": 208.0, "y": 298.0],
+                    "rotation_angle": 0,
+                    "target_type": "hostage",
+                    "time_diff": 1.37
+                ],
+                "type": "shot",
+                "action": "hit",
+                "device": "device1"
+            ],
+            [
+                "target": "target1",
+                "content": [
+                    "command": "shot",
+                    "hit_area": "C",
+                    "hit_position": ["x": 520.0, "y": 640.0],
+                    "rotation_angle": 0,
+                    "target_type": "hostage",
+                    "time_diff": 2.8
+                ],
+                "type": "shot",
+                "action": "hit",
+                "device": "device1"
+            ],
+            [
+                "target": "target1",
+                "content": [
+                    "command": "shot",
+                    "hit_area": "C",
+                    "hit_position": ["x": 523.0, "y": 643.0],
+                    "rotation_angle": 0,
+                    "target_type": "hostage",
+                    "time_diff": 2.83
                 ],
                 "type": "shot",
                 "action": "hit",
