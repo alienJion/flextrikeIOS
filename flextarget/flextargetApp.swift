@@ -23,7 +23,7 @@ struct flextargetApp: App {
     }
 
     @State private var showLaunchScreen = true
-//    @StateObject var bleManager = BLEManager.shared
+    @StateObject var bleManager = BLEManager.shared
 
     var body: some Scene {
         WindowGroup {
@@ -45,6 +45,11 @@ struct flextargetApp: App {
                         .environmentObject(BLEManager.shared)
                         .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 }
+//                NavigationStack {
+//                    DrillListView(bleManager: BLEManager.shared)
+//                        .environment(\.managedObjectContext, persistenceController.container.viewContext)
+//                }
+//                .environmentObject(bleManager)
                 .tint(.red)
             }
         }

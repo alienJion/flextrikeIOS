@@ -63,10 +63,66 @@ struct DrillResultView: View {
         GeometryReader { geometry in
             let screenWidth = geometry.size.width
             let screenHeight = geometry.size.height
+            
+            // Calculate frame dimensions (9:16 aspect ratio, 2/3 of page height)
+            let frameHeight = screenHeight * 2 / 3
+            let frameWidth = frameHeight * 9 / 16
 
             ZStack {
+                // Black background
+                Color.black.edgesIgnoringSafeArea(.all)
+                
+                // Status text label above the frame
+                VStack {
+                    Spacer()
+                        .frame(height: (screenHeight / 2) - (frameHeight / 2) - 60)
                     
-                    // Horizontal scroller below the frame
+                    Text("Drill In Progress...")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.red)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 20)
+                        .cornerRadius(10)
+                    
+                    Spacer()
+                }
+                
+                // White rectangular frame representing target device with gray fill
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: frameWidth, height: frameHeight)
+                    .overlay(
+                        Rectangle()
+                            .stroke(Color.white, lineWidth: 8)
+                    )
+                    .position(x: screenWidth / 2, y: screenHeight / 2)
+                
+                // Target icon inside the frame (90% of frame size)
+                Image(selectedIcon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: frameWidth, height: frameHeight )
+                    .position(x: screenWidth / 2, y: screenHeight / 2)
+        
+                    // Center display for shot count
+                    VStack {
+                        Spacer()
+                        Text("Shots: \(shots.count)")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(Color.black.opacity(0.7))
+                            .cornerRadius(10)
+                        Spacer()
+                    }
+                
+                // Horizontal scroller below the frame
+                VStack {
+                    Spacer()
+                        .frame(height: screenHeight / 2 + frameHeight / 2 + 20)
+                    
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 20) {
                             ForEach(targetIcons, id: \.self) { icon in
@@ -85,19 +141,9 @@ struct DrillResultView: View {
                         .padding(.horizontal)
                     }
                     .frame(height: 100)
-        
-                    // Center display for shot count
-                    VStack {
-                        Spacer()
-                        Text("Shots: \(shots.count)")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .padding()
-                            .background(Color.black.opacity(0.7))
-                            .cornerRadius(10)
-                        Spacer()
-                    }
+                    
+                    Spacer()
+                }
                 
                 // Shot position markers
                 ForEach(shots.indices, id: \.self) { index in
@@ -219,12 +265,27 @@ struct DrillResultView: View {
     }
     
     private func saveDrillResults() {
-        let drillResult = DrillResult(context: viewContext)
-        drillResult.drillId = drillSetup.id
+        // Debug: Check if drillSetup.id exists
+        guard let drillId = drillSetup.id else {
+            print("Failed to save drill results: drillSetup.id is nil")
+            return
+        }
+        
+        print("Saving drill results for drill ID: \(drillId)")
+        
+        // Use the drillSetup's managed object context to ensure consistency
+        guard let context = drillSetup.managedObjectContext else {
+            print("Failed to save drill results: drillSetup has no managed object context")
+            return
+        }
+        
+        let drillResult = DrillResult(context: context)
+        drillResult.drillId = drillId
         drillResult.date = Date()
+        drillResult.drillSetup = drillSetup
         
         for shotData in shots {
-            let shot = Shot(context: viewContext)
+            let shot = Shot(context: context)
             do {
                 let jsonData = try JSONEncoder().encode(shotData)
                 shot.data = String(data: jsonData, encoding: .utf8)
@@ -237,10 +298,20 @@ struct DrillResultView: View {
         }
         
         do {
-            try viewContext.save()
-            print("Drill results saved successfully")
-        } catch {
+            try context.save()
+            print("Drill results saved successfully with \(shots.count) shots")
+        } catch let error as NSError {
             print("Failed to save drill results: \(error)")
+            print("Error domain: \(error.domain)")
+            print("Error code: \(error.code)")
+            print("Error userInfo: \(error.userInfo)")
+            
+            // Check for validation errors
+            if let detailedErrors = error.userInfo[NSDetailedErrorsKey] as? [NSError] {
+                for detailedError in detailedErrors {
+                    print("Detailed error: \(detailedError)")
+                }
+            }
         }
     }
 }

@@ -5,6 +5,8 @@ struct DrillMainPageView: View {
     @State private var showDrillList = false
     @State private var showConnectView = false
     @State private var showInfo = false
+    let persistenceController = PersistenceController.shared
+    
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -66,7 +68,7 @@ struct DrillMainPageView: View {
             }
             .navigationDestination(isPresented: $showDrillList) {
                 DrillListView(bleManager: bleManager)
-                /*DrillSetupEntryView()*/
+                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
             }
             .sheet(isPresented: $showConnectView) {
                 ConnectSmartTargetWrapper(onDismiss: { showConnectView = false })
