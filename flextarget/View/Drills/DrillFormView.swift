@@ -41,10 +41,14 @@ struct DrillFormView: View {
     @State private var navigateToDrillResult: Bool = false
     
     @Environment(\.presentationMode) var presentationMode
-    
-    // Use shared persistence controller directly to avoid environment propagation issues
+    @Environment(\.managedObjectContext) private var environmentContext
+
     private var viewContext: NSManagedObjectContext {
-        PersistenceController.shared.container.viewContext
+        if let coordinator = environmentContext.persistentStoreCoordinator,
+           coordinator.persistentStores.isEmpty == false {
+            return environmentContext
+        }
+        return PersistenceController.shared.container.viewContext
     }
     
     init(bleManager: BLEManager, mode: DrillFormMode) {
@@ -80,7 +84,10 @@ struct DrillFormView: View {
                     
                     VStack(spacing: 20) {
                         // History Record Button
-                        NavigationLink(destination: DrillRecordView()) {
+                        NavigationLink {
+                            DrillRecordView()
+                                .environment(\.managedObjectContext, viewContext)
+                        } label: {
                             HStack {
                                 RoundedRectangle(cornerRadius: 24)
                                     .stroke(Color.red, lineWidth: 1)
@@ -168,9 +175,11 @@ struct DrillFormView: View {
                 }
             }
         }
+        .environment(\.managedObjectContext, viewContext)
         .navigationDestination(isPresented: $navigateToDrillResult) {
             if case .edit(let drillSetup) = mode {
                 DrillResultView(drillSetup: drillSetup)
+                    .environment(\.managedObjectContext, viewContext)
             }
         }
     }

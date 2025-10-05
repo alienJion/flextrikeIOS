@@ -13,10 +13,16 @@ struct DrillListView: View {
     let bleManager: BLEManager
     @State private var searchText: String = ""
 
-    // Use the shared persistence controller's viewContext directly
-    // to ensure we read from the same store where DrillFormView writes
+    @Environment(\.managedObjectContext) private var environmentContext
+
+    // Use the shared persistence controller's viewContext as a fallback to
+    // ensure we always point at a live store even if the environment is missing
     private var viewContext: NSManagedObjectContext {
-        PersistenceController.shared.container.viewContext
+        if let coordinator = environmentContext.persistentStoreCoordinator,
+           coordinator.persistentStores.isEmpty == false {
+            return environmentContext
+        }
+        return PersistenceController.shared.container.viewContext
     }
     
     @FetchRequest(
@@ -115,6 +121,7 @@ struct DrillListView: View {
                 Text("Are you sure you want to delete \(drill.name ?? "this drill")?")
             }
         }
+        .environment(\.managedObjectContext, viewContext)
     }
 
     // MARK: - Actions
