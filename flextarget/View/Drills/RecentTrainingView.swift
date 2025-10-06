@@ -2,14 +2,15 @@ import SwiftUI
 import UIKit
 
 struct RecentTrainingView: View {
+    @Binding var selectedDrillSetup: DrillSetup?
     @State private var selectedPage: Int = 0
-    @State private var summaries: [DrillSummary] = []
+    @State private var drills: [(DrillSummary, DrillSetup)] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
     
     @StateObject private var repository = DrillRepository.shared
     
-    private var pageCount: Int { min(summaries.count, 3) }
+    private var pageCount: Int { min(drills.count, 3) }
     private let cardHeight: CGFloat = 288
 
     private var loadingView: some View {
@@ -63,21 +64,17 @@ struct RecentTrainingView: View {
 
     private func contentView() -> some View {
         TabView(selection: $selectedPage) {
-            let toShow = Array(summaries.prefix(pageCount))
-            ForEach(Array(toShow.enumerated()), id: \ .1.id) { idx, summary in
-                cardView(for: summary)
+            let toShow = Array(drills.prefix(pageCount))
+            ForEach(Array(toShow.enumerated()), id: \ .offset) { idx, drill in
+                cardView(for: drill.0, drillSetup: drill.1)
                     .tag(idx)
             }
         }
         .tabViewStyle(.page)
         .frame(height: cardHeight)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.gray.opacity(0.2))
-        )
     }
 
-    private func cardView(for summary: DrillSummary) -> some View {
+    private func cardView(for summary: DrillSummary, drillSetup: DrillSetup) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             //Title
             HStack(spacing: 8) {
@@ -155,17 +152,6 @@ struct RecentTrainingView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            
-            // Page Indicator (re-using circles)
-            HStack(spacing: 8) {
-                ForEach(0..<pageCount, id: \ .self) { i in
-                    Circle()
-                        .fill(i == selectedPage ? Color.red : Color.gray.opacity(0.5))
-                        .frame(width: 8, height: 8)
-                }
-            }
-            .padding(.bottom, 12)
-            .frame(maxWidth: .infinity)
         }
         .padding(.top, 0)
         .background(Color.gray.opacity(0.3))
@@ -173,19 +159,18 @@ struct RecentTrainingView: View {
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .frame(height: cardHeight)
         .padding(.horizontal, 4)
+        .onTapGesture {
+            selectedDrillSetup = drillSetup
+        }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Latest Drills")
-                .font(.headline)
-                .foregroundColor(.white)
-
             if isLoading {
                 loadingView
             } else if errorMessage != nil {
                 errorView
-            } else if summaries.isEmpty {
+            } else if drills.isEmpty {
                 emptyView
             } else {
                 contentView()
@@ -194,7 +179,7 @@ struct RecentTrainingView: View {
         .onAppear {
             loadRecentDrills()
         }
-        .onChange(of: summaries) { _, _ in
+        .onChange(of: drills.count) { _, _ in
             // Clamp selected page to valid range when data changes
             if selectedPage >= pageCount {
                 selectedPage = max(0, pageCount - 1)
@@ -220,10 +205,10 @@ struct RecentTrainingView: View {
             }
             
             do {
-                let recentSummaries = try repository.fetchRecentSummaries(limit: 3)
+                let recentDrills = try repository.fetchRecentDrills(limit: 3)
                 
                 await MainActor.run {
-                    self.summaries = recentSummaries
+                    self.drills = recentDrills
                     self.isLoading = false
                 }
                 
@@ -233,8 +218,9 @@ struct RecentTrainingView: View {
                     self.isLoading = false
                     
                     // Fallback to mock data if repository fails
-                    if summaries.isEmpty {
-                        self.summaries = DrillSummary.mock
+                    if drills.isEmpty {
+                        // For mock data, we need to create dummy DrillSetup
+                        // Since we don't have real DrillSetup for mock, we'll keep empty for now
                         self.errorMessage = nil
                     }
                 }
@@ -247,7 +233,7 @@ struct RecentTrainingView_Previews: PreviewProvider {
     static var previews: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            RecentTrainingView()
+            RecentTrainingView(selectedDrillSetup: .constant(nil))
                 .padding()
         }
         .previewLayout(.sizeThatFits)

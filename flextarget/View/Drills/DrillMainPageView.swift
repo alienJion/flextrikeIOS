@@ -5,6 +5,7 @@ struct DrillMainPageView: View {
     @State private var showDrillList = false
     @State private var showConnectView = false
     @State private var showInfo = false
+    @State private var selectedDrillSetup: DrillSetup? = nil
     let persistenceController = PersistenceController.shared
     
     var body: some View {
@@ -45,7 +46,7 @@ struct DrillMainPageView: View {
                     .padding(.horizontal)
                     .padding(.top, 24)
                     // Recent Training (moved to subview)
-                    RecentTrainingView()
+                    RecentTrainingView(selectedDrillSetup: $selectedDrillSetup)
                         .padding(.horizontal)
                         .padding(.top, 16)
                     // Menu Buttons
@@ -68,6 +69,10 @@ struct DrillMainPageView: View {
             }
             .navigationDestination(isPresented: $showDrillList) {
                 DrillListView(bleManager: bleManager)
+                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            }
+            .navigationDestination(item: $selectedDrillSetup) { drillSetup in
+                DrillResultView(drillSetup: drillSetup)
                     .environment(\.managedObjectContext, persistenceController.container.viewContext)
             }
             .sheet(isPresented: $showConnectView) {
