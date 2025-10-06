@@ -68,6 +68,7 @@ enum BLEError: Error, LocalizedError {
 protocol BLEManagerProtocol {
     var isConnected: Bool { get }
     func write(data: Data, completion: @escaping (Bool) -> Void)
+    func writeJSON(_ jsonString: String)
 }
 
 // Backwards-compatibility: some views reference an older protocol name `ConnectSmartTargetBLEProtocol`.
@@ -129,7 +130,19 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
     // Make initializer private to enforce singleton usage
     private override init() {
         super.init()
+        #if targetEnvironment(simulator)
+        // Simulator: Mock connected state and device list
+        isConnected = true
+        isReady = true
+        networkDevices = [
+            NetworkDevice(name: "Simulator Target 1", mode: "active"),
+            NetworkDevice(name: "Simulator Target 2", mode: "standby"),
+            NetworkDevice(name: "Simulator Target 3", mode: "active")
+        ]
+        lastDeviceListUpdate = Date()
+        #else
         centralManager = CBCentralManager(delegate: self, queue: .main)
+        #endif
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleAppWillTerminate),
@@ -138,8 +151,16 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
         )
     }
     
+    @objc private func handleAppWillTerminate() {
+        disconnect()
+    }
+    
     // MARK: - Scanning
     func startScan() {
+        #if targetEnvironment(simulator)
+        // Simulator: No-op for scanning
+        return
+        #else
         discoveredPeripherals.removeAll()
         // Reset readiness when starting a new scan
         DispatchQueue.main.async {
@@ -178,6 +199,7 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
                 self.centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
             }
         }
+        #endif
     }
     
     func stopScan() {
@@ -197,6 +219,10 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
     // MARK: - Connect
     
     func connect(to peripheral: CBPeripheral) {
+        #if targetEnvironment(simulator)
+        // Simulator: No-op for connection
+        return
+        #else
         error = nil
         stopScan()
         connectingPeripheral = peripheral
@@ -204,9 +230,14 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
         // Actively disconnect immediately after attempting to connect
 //        centralManager.cancelPeripheralConnection(peripheral)
         centralManager.connect(peripheral, options: nil)
+        #endif
     }
     
     func connectToSelectedPeripheral(_ discoveredPeripheral: DiscoveredPeripheral) {
+        #if targetEnvironment(simulator)
+        // Simulator: No-op for connection
+        return
+        #else
         error = nil
         stopScan()
         connectingPeripheral = discoveredPeripheral.peripheral
@@ -218,19 +249,28 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
         connectionTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] _ in
             self?.timeoutConnection()
         }
+        #endif
     }
     
     func disconnect() {
+        #if targetEnvironment(simulator)
+        // Simulator: Set disconnected state
+        isConnected = false
+        isReady = false
+        connectedPeripheral = nil
+        #else
         connectionAttemptFailed = true
         if let peripheral = connectingPeripheral {
             //print device is disconnected
             print("Device is disconnected")
             centralManager.cancelPeripheralConnection(peripheral)
         }
+        #endif
     }
     
     // MARK: - CBCentralManagerDelegate
     
+    #if !targetEnvironment(simulator)
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch central.state {
         case .poweredOn:
@@ -299,7 +339,16 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
         }
         // Do not auto-retry scan, let the view handle reconnection logic
     }
+    #else
+    // Simulator stubs for required protocol methods
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {}
+    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {}
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {}
+    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {}
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {}
+    #endif
     
+    #if !targetEnvironment(simulator)
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         if let error = error {
             print("Service discovery failed: \(error.localizedDescription)")
@@ -344,23 +393,6 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
                 self.connectionTimer = nil
             }
         }
-    }
-    
-    func writeJSON(_ jsonString: String) {
-        guard let peripheral = connectingPeripheral,
-              let writeCharacteristic = writeCharacteristic else {
-            print("Peripheral or write characteristic not available")
-            return
-        }
-        guard let data = jsonString.data(using: .utf8) else {
-            print("Failed to encode JSON string")
-            return
-        }
-        
-        //Add debug to print the JSON string
-        print("Writing JSON data to BLE: \(jsonString)")
-        print("BLE data length: \(data.count)")
-        peripheral.writeValue(data, for: writeCharacteristic, type: .withResponse)
     }
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
@@ -430,10 +462,6 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
         }
     }
     
-    @objc private func handleAppWillTerminate() {
-        disconnect()
-    }
-    
     // In BLEManager, implement the delegate to handle write response
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
         if let completion = writeCompletion {
@@ -447,11 +475,23 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
             }
         }
     }
+    #else
+    // Simulator stubs for required protocol methods
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {}
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {}
+    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {}
+    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {}
+    #endif
 }
 
 // BLEManager conforms to BLEManagerProtocol
 extension BLEManager: BLEManagerProtocol {
     func write(data: Data, completion: @escaping (Bool) -> Void) {
+        #if targetEnvironment(simulator)
+        // Simulator: Mock successful write
+        print("Simulator: Mock writing data")
+        completion(true)
+        #else
         guard let peripheral = connectingPeripheral,
               let writeCharacteristic = writeCharacteristic,
               isConnected else {
@@ -462,6 +502,29 @@ extension BLEManager: BLEManagerProtocol {
         writeCompletion = completion
 //        print("Writing data to BLE: \(data as NSData)")
         peripheral.writeValue(data, for: writeCharacteristic, type: .withResponse)
+        #endif
+    }
+    
+    func writeJSON(_ jsonString: String) {
+        #if targetEnvironment(simulator)
+        // Simulator: No-op for writing
+        print("Simulator: Mock writing JSON: \(jsonString)")
+        #else
+        guard let peripheral = connectingPeripheral,
+              let writeCharacteristic = writeCharacteristic else {
+            print("Peripheral or write characteristic not available")
+            return
+        }
+        guard let data = jsonString.data(using: .utf8) else {
+            print("Failed to encode JSON string")
+            return
+        }
+        
+        //Add debug to print the JSON string
+        print("Writing JSON data to BLE: \(jsonString)")
+        print("BLE data length: \(data.count)")
+        peripheral.writeValue(data, for: writeCharacteristic, type: .withResponse)
+        #endif
     }
 }
 

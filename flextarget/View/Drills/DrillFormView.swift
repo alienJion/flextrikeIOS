@@ -606,6 +606,57 @@ struct DrillFormView: View {
                 let messageString = String(data: messageData, encoding: .utf8)!
                 print("Sending forward message for target \(target.targetName ?? ""), length: \(messageData.count)")
                 bleManager.writeJSON(messageString)
+                
+                #if targetEnvironment(simulator)
+                // In simulator, mock some shot received notifications after sending ready command
+                DispatchQueue.main.asyncAfter(deadline: .now() + Double(index + 1) * 2.0) {
+                    // Mock shot data for this target
+                    let mockShotData: [String: Any] = [
+                        "target": target.targetName ?? "",
+                        "device": target.targetName ?? "",
+                        "type": "netlink",
+                        "action": "forward",
+                        "content": [
+                            "command": "shot",
+                            "hit_area": "center",
+                            "hit_position": ["x": 200, "y": 400],
+                            "rotation_angle": 0,
+                            "target_type": target.targetType ?? "ipsc",
+                            "time_diff": Double(index + 1) * 1.5
+                        ]
+                    ]
+                    
+                    NotificationCenter.default.post(
+                        name: .bleShotReceived,
+                        object: nil,
+                        userInfo: ["shot_data": mockShotData]
+                    )
+                    
+                    // Send a second shot after a short delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        let secondMockShotData: [String: Any] = [
+                            "target": target.targetName ?? "",
+                            "device": target.targetName ?? "",
+                            "type": "netlink",
+                            "action": "forward",
+                            "content": [
+                                "command": "shot",
+                                "hit_area": "edge",
+                                "hit_position": ["x": 220, "y": 430],
+                                "rotation_angle": 15,
+                                "target_type": target.targetType ?? "ipsc",
+                                "time_diff": Double(index + 1) * 1.5 + 1.0
+                            ]
+                        ]
+                        
+                        NotificationCenter.default.post(
+                            name: .bleShotReceived,
+                            object: nil,
+                            userInfo: ["shot_data": secondMockShotData]
+                        )
+                    }
+                }
+                #endif
             } catch {
                 print("Failed to send start drill message for target \(target.targetName ?? ""): \(error)")
             }
@@ -632,6 +683,17 @@ struct DrillFormView: View {
         } catch {
             print("Failed to serialize query_device_list command: \(error)")
         }
+        
+        #if targetEnvironment(simulator)
+        // In simulator, immediately post the device list notification with mock data
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            NotificationCenter.default.post(
+                name: .bleDeviceListUpdated,
+                object: nil,
+                userInfo: ["device_list": self.bleManager.networkDevices]
+            )
+        }
+        #endif
     }
     
     private func handleDeviceListUpdate(_ notification: Notification) {
