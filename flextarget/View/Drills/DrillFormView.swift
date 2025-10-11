@@ -41,6 +41,13 @@ struct DrillFormView: View {
     @State private var isTargetListReceived: Bool = false
     @State private var targetConfigs: [DrillTargetsConfigData] = []
     @State private var navigateToDrillResult: Bool = false
+    // ACK tracking for start drill
+    @State private var waitingForAcks: Bool = false
+    @State private var ackedDevices: Set<String> = []
+    // expected devices are derived from drill targetConfigs (by targetName)
+    @State private var expectedDevices: [String] = []
+    @State private var ackTimeoutTimer: Timer? = nil
+    @State private var showAckTimeoutAlert: Bool = false
     
     @Environment(\.presentationMode) var presentationMode
     @Environment(\.managedObjectContext) private var environmentContext
@@ -187,6 +194,9 @@ struct DrillFormView: View {
                         .onReceive(NotificationCenter.default.publisher(for: .bleDeviceListUpdated)) { notification in
                             handleDeviceListUpdate(notification)
                         }
+                        .onReceive(NotificationCenter.default.publisher(for: .bleNetlinkForwardReceived)) { notification in
+                            handleNetlinkForward(notification)
+                        }
                         .ignoresSafeArea(.keyboard, edges: .bottom)
                     }
                 }
@@ -199,6 +209,27 @@ struct DrillFormView: View {
                     .environment(\.managedObjectContext, viewContext)
             }
         }
+        .alert(isPresented: $showAckTimeoutAlert) {
+            Alert(title: Text(NSLocalizedString("ack_timeout_title", comment: "ACK timeout")), message: Text(NSLocalizedString("ack_timeout_message", comment: "Not all devices responded in time")), dismissButton: .default(Text("OK")))
+        }
+        .overlay(
+            Group {
+                if waitingForAcks {
+                    VStack(spacing: 12) {
+                        ProgressView(NSLocalizedString("waiting_for_devices", comment: "Waiting for devices"))
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .foregroundColor(.white)
+                        Text(String(format: NSLocalizedString("waiting_devices_count", comment: "Waiting count"), ackedDevices.count, expectedDevices.count))
+                            .foregroundColor(.white)
+                            .font(.caption)
+                    }
+                    .padding()
+                    .background(Color.black.opacity(0.7))
+                    .cornerRadius(10)
+                    .padding()
+                }
+            }
+        )
     }
     
     // MARK: - Action Buttons
@@ -393,7 +424,85 @@ struct DrillFormView: View {
         }
         
         sendStartDrillMessages(for: drillSetup)
-        navigateToDrillResult = true
+        // Begin waiting for ACKs from devices
+        beginWaitingForAcks(for: drillSetup)
+    }
+
+    private func beginWaitingForAcks(for drillSetup: DrillSetup) {
+        guard bleManager.isConnected else { return }
+
+        // Reset tracking
+        ackedDevices.removeAll()
+        // Use the current drill targetConfigs as the expected devices
+        expectedDevices = targetConfigs.compactMap { $0.targetName }
+        waitingForAcks = true
+
+        // Start 10s guard timer
+        ackTimeoutTimer?.invalidate()
+        ackTimeoutTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { _ in
+            handleAckTimeout()
+        }
+
+        // If no expected devices, proceed immediately
+        if expectedDevices.isEmpty {
+            finishWaitingForAcks(success: true)
+        }
+    }
+
+    private func handleNetlinkForward(_ notification: Notification) {
+        guard waitingForAcks else { return }
+        guard let userInfo = notification.userInfo, let json = userInfo["json"] as? [String: Any] else { return }
+
+        // Expected JSON example: ["action": "forward", "device": "B", "type": "netlink", "content": "ready"]
+    if let device = json["device"] as? String {
+            // Content may be a string or object; we only care about "ready"
+            if let content = json["content"] as? String, content == "ready" {
+                ackedDevices.insert(device)
+                print("Device ack received: \(device) (string content)")
+            } else if let content = json["content"] as? [String: Any], let command = content["command"] as? String, command == "ready" {
+                ackedDevices.insert(device)
+                print("Device ack received: \(device) (object content)")
+            }
+
+            // Check if we've received all expected ACKs
+            let expectedNames = Set(expectedDevices)
+            if expectedNames.isSubset(of: ackedDevices) {
+                finishWaitingForAcks(success: true)
+            }
+        }
+    }
+
+    private func handleAckTimeout() {
+        waitingForAcks = false
+        ackTimeoutTimer?.invalidate()
+        ackTimeoutTimer = nil
+
+        let expectedNames = Set(expectedDevices)
+        let missing = expectedNames.subtracting(ackedDevices)
+        if missing.isEmpty {
+            // all acked just before timeout
+            finishWaitingForAcks(success: true)
+        } else {
+            // Show alert to user and stay
+            print("ACK timeout — missing: \(missing)")
+            showAckTimeoutAlert = true
+        }
+    }
+
+    private func finishWaitingForAcks(success: Bool) {
+        waitingForAcks = false
+        ackTimeoutTimer?.invalidate()
+        ackTimeoutTimer = nil
+
+        if success {
+            // Proceed to drill result
+            DispatchQueue.main.async {
+                navigateToDrillResult = true
+            }
+        } else {
+            // Show timeout alert
+            showAckTimeoutAlert = true
+        }
     }
     
     // MARK: - CoreData Operations

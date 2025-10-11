@@ -79,6 +79,12 @@
 "save_drill" = "Übung speichern";
 "save_changes" = "Änderungen speichern";
 
+/* ACK / Waiting messages */
+"ack_timeout_title" = "Warten 10s";
+"ack_timeout_message" = "Zeitüberschreitung";
+"waiting_for_devices" = "Warten";
+"waiting_devices_count" = "%d Geräte werden bereit sein";
+
 /* Additional */
 "copy_suffix" = " Kopie";
 "retry" = "Erneut versuchen";

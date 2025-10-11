@@ -460,6 +460,24 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
             print("Received shot data: \(json)")
             NotificationCenter.default.post(name: .bleShotReceived, object: nil, userInfo: ["shot_data": json])
         }
+
+        // Post general netlink forward messages (e.g. device ACKs with content "ready")
+        if let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+           let type = json["type"] as? String, type == "netlink",
+           let action = json["action"] as? String, action == "forward" {
+            // Avoid duplicating the shot notification which is already posted above
+            var isShot = false
+            if let content = json["content"] as? [String: Any], let command = content["command"] as? String, command == "shot" {
+                isShot = true
+            }
+            if let contentStr = json["content"] as? String, contentStr == "shot" {
+                isShot = true
+            }
+
+            if !isShot {
+                NotificationCenter.default.post(name: .bleNetlinkForwardReceived, object: nil, userInfo: ["json": json])
+            }
+        }
     }
     
     // In BLEManager, implement the delegate to handle write response
@@ -533,4 +551,5 @@ extension Notification.Name {
     static let bleStateNotificationReceived = Notification.Name("bleStateNotificationReceived")
     static let bleDeviceListUpdated = Notification.Name("bleDeviceListUpdated")
     static let bleShotReceived = Notification.Name("bleShotReceived")
+    static let bleNetlinkForwardReceived = Notification.Name("bleNetlinkForwardReceived")
 }
