@@ -79,6 +79,12 @@
 "save_drill" = "儲存訓練";
 "save_changes" = "儲存變更";
 
+/* ACK / Waiting messages */
+"ack_timeout_title" = "等待 10 秒";
+"ack_timeout_message" = "逾時";
+"waiting_for_devices" = "等待中";
+"waiting_devices_count" = "%d 個裝置待就緒";
+
 /* Additional */
 "copy_suffix" = " 複製";
 "retry" = "重試";

@@ -79,6 +79,12 @@
 "save_drill" = "ドリルを保存";
 "save_changes" = "変更を保存";
 
+/* ACK / Waiting messages */
+"ack_timeout_title" = "10秒待機";
+"ack_timeout_message" = "タイムアウトしました";
+"waiting_for_devices" = "待機中";
+"waiting_devices_count" = "%d 台のデバイスが準備中";
+
 /* Additional */
 "copy_suffix" = " コピー";
 "retry" = "再試行";

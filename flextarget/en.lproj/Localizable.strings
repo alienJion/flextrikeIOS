@@ -78,3 +78,9 @@
 "start_drill" = "Start Drill";
 "save_drill" = "Save Drill";
 "save_changes" = "Save Changes";
+
+/* ACK / Waiting messages */
+"ack_timeout_title" = "Waiting 10s";
+"ack_timeout_message" = "Timed Out";
+"waiting_for_devices" = "Waiting";
+"waiting_devices_count" = "%d Devices to be Ready";
