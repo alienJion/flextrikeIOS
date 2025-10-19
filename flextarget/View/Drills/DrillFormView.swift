@@ -452,6 +452,7 @@ struct DrillFormView: View {
             onComplete: { summaries in
                 DispatchQueue.main.async {
                     self.drillRepeatSummaries = summaries
+                    self.saveDrillResultsFromSummaries(summaries, for: drillSetup)
                     self.navigateToDrillSummary = true
                     self.executionManager = nil
                     self.isDrillInProgress = false
@@ -763,6 +764,55 @@ struct DrillFormView: View {
             print("Device list received with \(deviceList.count) devices")
             DispatchQueue.main.async {
                 self.isTargetListReceived = true
+            }
+        }
+    }
+    
+    private func saveDrillResultsFromSummaries(_ summaries: [DrillRepeatSummary], for drillSetup: DrillSetup) {
+        guard let drillId = drillSetup.id else {
+            print("Failed to save drill results: drillSetup.id is nil")
+            return
+        }
+        
+        let context = drillSetup.managedObjectContext ?? viewContext
+        
+        // Generate a unique session ID for all results from this execution
+        let sessionId = UUID()
+        
+        for summary in summaries {
+            let drillResult = DrillResult(context: context)
+            drillResult.drillId = drillId
+            drillResult.sessionId = sessionId
+            drillResult.date = Date()
+            drillResult.drillSetup = drillSetup
+            
+            for shotData in summary.shots {
+                let shot = Shot(context: context)
+                do {
+                    let jsonData = try JSONEncoder().encode(shotData)
+                    shot.data = String(data: jsonData, encoding: .utf8)
+                } catch {
+                    print("Failed to encode shot data: \(error)")
+                    shot.data = nil
+                }
+                shot.timestamp = Date()
+                shot.drillResult = drillResult
+            }
+        }
+        
+        do {
+            try context.save()
+            print("Drill results saved successfully for \(summaries.count) repeats")
+        } catch let error as NSError {
+            print("Failed to save drill results: \(error)")
+            print("Error domain: \(error.domain)")
+            print("Error code: \(error.code)")
+            print("Error userInfo: \(error.userInfo)")
+            
+            if let detailedErrors = error.userInfo[NSDetailedErrorsKey] as? [NSError] {
+                for detailedError in detailedErrors {
+                    print("Detailed error: \(detailedError)")
+                }
             }
         }
     }

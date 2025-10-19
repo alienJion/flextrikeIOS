@@ -237,8 +237,8 @@ class DrillExecutionManager {
 
             // Schedule completion handling for this repeat
             let repeatIndex = currentRepeat
-            let delay = Double(drillSetup.drillDuration) + Double(drillSetup.pause) + Double(drillSetup.delay) + 1.0
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            let repeatDuration = Double(drillSetup.drillDuration) + (repeatIndex == drillSetup.repeats ? 0.0 : Double(drillSetup.pause)) + Double(drillSetup.delay) + 1.0
+            DispatchQueue.main.asyncAfter(deadline: .now() + repeatDuration) { [weak self] in
                 guard let self = self else { return }
                 self.finalizeRepeat(repeatIndex: repeatIndex)
 

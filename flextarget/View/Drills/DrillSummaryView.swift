@@ -39,12 +39,14 @@ struct DrillSummaryView: View {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 20) {
                             ForEach(summaries) { summary in
-                                summaryCard(
-                                    title: "Repeat #\(summary.repeatIndex)",
-                                    subtitle: "\(summary.numShots) shots • \(format(time: summary.totalTime))",
-                                    iconName: "scope",
-                                    metrics: metrics(for: summary)
-                                )
+                                NavigationLink(destination: DrillResultView(drillSetup: drillSetup, shots: summary.shots)) {
+                                    summaryCard(
+                                        title: "Repeat #\(summary.repeatIndex)",
+                                        subtitle: "\(summary.numShots) shots • \(format(time: summary.totalTime))",
+                                        iconName: "scope",
+                                        metrics: metrics(for: summary)
+                                    )
+                                }
                             }
                         }
                         .padding(.vertical, 24)
