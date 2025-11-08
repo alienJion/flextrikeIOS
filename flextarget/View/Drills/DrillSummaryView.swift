@@ -13,11 +13,11 @@ struct DrillSummaryView: View {
 
     private func metrics(for summary: DrillRepeatSummary) -> [SummaryMetric] {
         [
-            SummaryMetric(iconName: "clock.arrow.circlepath", label: "Total Time", value: format(time: summary.totalTime)),
-            SummaryMetric(iconName: "scope", label: "Shots", value: "\(summary.numShots)"),
-            SummaryMetric(iconName: "bolt.circle", label: "Fastest", value: format(time: summary.fastest)),
-            SummaryMetric(iconName: "timer", label: "First Shot", value: format(time: summary.firstShot)),
-            SummaryMetric(iconName: "flame.fill", label: "Score", value: "\(summary.score)")
+            SummaryMetric(iconName: "clock.arrow.circlepath", label: NSLocalizedString("total_time_label", comment: "Total time metric label"), value: format(time: summary.totalTime)),
+            SummaryMetric(iconName: "scope", label: NSLocalizedString("shots_metric_label", comment: "Shots metric label"), value: "\(summary.numShots)"),
+            SummaryMetric(iconName: "bolt.circle", label: NSLocalizedString("fastest_label", comment: "Fastest shot label"), value: format(time: summary.fastest)),
+            SummaryMetric(iconName: "timer", label: NSLocalizedString("first_shot_label", comment: "First shot label"), value: format(time: summary.firstShot)),
+            SummaryMetric(iconName: "flame.fill", label: NSLocalizedString("score_label", comment: "Score label"), value: "\(summary.score)")
         ]
     }
 
@@ -41,8 +41,8 @@ struct DrillSummaryView: View {
                             ForEach(summaries) { summary in
                                 NavigationLink(destination: DrillResultView(drillSetup: drillSetup, repeatSummary: summary)) {
                                     summaryCard(
-                                        title: "Repeat #\(summary.repeatIndex)",
-                                        subtitle: "\(summary.numShots) shots • \(format(time: summary.totalTime))",
+                                        title: String(format: NSLocalizedString("repeat_number", comment: "Repeat number format"), summary.repeatIndex),
+                                        subtitle: "\(summary.numShots) \(NSLocalizedString("shots_label", comment: "Shots label")) • \(format(time: summary.totalTime))",
                                         iconName: "scope",
                                         metrics: metrics(for: summary)
                                     )
@@ -76,7 +76,7 @@ struct DrillSummaryView: View {
                 .shadow(color: Color.red.opacity(0.3), radius: 8, x: 0, y: 4)
             }
 
-            Text("Drill Result Summary")
+            Text(NSLocalizedString("drill_result_summary_title", comment: "Drill result summary title"))
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundColor(.white)
 
@@ -96,11 +96,11 @@ struct DrillSummaryView: View {
                 .foregroundColor(.red)
                 .padding()
 
-            Text("No summary data recorded yet.")
+            Text(NSLocalizedString("no_summary_data_title", comment: "No summary data title"))
                 .font(.system(size: 18, weight: .medium))
                 .foregroundColor(.white)
 
-            Text("Run a drill session to generate performance metrics.")
+            Text(NSLocalizedString("no_summary_data_subtitle", comment: "No summary data subtitle"))
                 .font(.system(size: 14))
                 .foregroundColor(.gray)
             Spacer()

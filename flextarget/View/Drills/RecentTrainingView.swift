@@ -171,7 +171,7 @@ struct RecentTrainingView: View {
                 let shots = convertShots(result.shots)
                 let summary = DrillRepeatSummary(
                     repeatIndex: index + 1,
-                    totalTime: result.totalTime,
+                    totalTime: result.effectiveTotalTime,
                     numShots: shots.count,
                     firstShot: shots.first?.content.timeDiff ?? 0,
                     fastest: result.fastestShot,

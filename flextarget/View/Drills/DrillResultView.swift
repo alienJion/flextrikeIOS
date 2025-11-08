@@ -587,12 +587,12 @@ struct DrillResultView: View {
                     
                     if !isDuplicate {
                         shots.append(shotData)
-                        print("Added new shot at position: (\(shotData.content.hitPosition.x), \(shotData.content.hitPosition.y))")
+                        print(NSLocalizedString("shot_added", comment: "Shot added message") + ": (\(shotData.content.hitPosition.x), \(shotData.content.hitPosition.y))")
                     } else {
-                        print("Ignored duplicate shot")
+                        print(NSLocalizedString("duplicate_shot_ignored", comment: "Duplicate shot ignored message"))
                     }
                 } catch {
-                    print("Failed to decode shot data: \(error)")
+                    print(NSLocalizedString("decode_shot_error", comment: "Shot decode error message") + ": \(error)")
                 }
             }
         }
@@ -603,10 +603,10 @@ struct DrillResultView: View {
     }
     
     private func onDrillTimerExpired() {
-        drillStatus = "Drill Ended"
+        drillStatus = NSLocalizedString("drill_ended", comment: "Drill ended status")
         stopDotsTimer()
         
-        print("Drill timer expired. Shots received:")
+        print(NSLocalizedString("drill_timer_expired", comment: "Drill timer expired message") + ". " + NSLocalizedString("shots_received", comment: "Shots received label") + ":")
         for (index, shot) in shots.enumerated() {
             print("Shot \(index + 1): (\(shot.content.hitPosition.x), \(shot.content.hitPosition.y))")
         }
@@ -634,6 +634,11 @@ struct DrillResultView: View {
         drillResult.drillId = drillId
         drillResult.date = Date()
         drillResult.drillSetup = drillSetup
+        
+        // Set totalTime from repeatSummary if available
+        if let repeatSummary = repeatSummary {
+            drillResult.totalTime = repeatSummary.totalTime
+        }
         
         for shotData in shots {
             let shot = Shot(context: context)

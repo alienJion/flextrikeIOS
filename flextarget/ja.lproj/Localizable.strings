@@ -49,6 +49,24 @@
 "progress_time" = "%.2f/%.2f秒";
 "drill_in_progress" = "ドリル実行中";
 "drill_in_progress_overlay" = "ドリル実行中...";
+"drill_ended" = "ドリル終了";
+"shot_added" = "位置に新しいショットを追加";
+"duplicate_shot_ignored" = "重複するショットを無視";
+"decode_shot_error" = "ショットデータのデコードに失敗";
+"drill_timer_expired" = "ドリルタイマー期限切れ";
+"shots_received" = "受信したショット";
+
+/* DrillSummaryView */
+"drill_result_summary_title" = "ドリル結果サマリー";
+"no_summary_data_title" = "まだサマリーデータが記録されていません。";
+"no_summary_data_subtitle" = "ドリルセッションを実行してパフォーマンスメトリクスを生成します。";
+"repeat_number" = "繰り返し #%d";
+"shots_label" = "ショット";
+"total_time_label" = "合計時間";
+"shots_metric_label" = "ショット";
+"fastest_label" = "最速";
+"first_shot_label" = "最初のショット";
+"score_label" = "スコア";
 
 /* SubViews */
 "history_record" = "履歴記録";
@@ -56,6 +74,7 @@
 "num_repeats_label" = "繰り返しの数";
 "select_repeats" = "繰り返しを選択";
 "drill_duration_seconds_label" = "期間/Rep(s)";
+"drill_pause_seconds_label" = "反復間のポーズ(秒)";
 "delay_range" = "2...5";
 "description" = "説明";
 "enter_description_placeholder" = "説明を入力...";

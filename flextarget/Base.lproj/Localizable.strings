@@ -50,6 +50,24 @@
 "progress_time" = "%.2f/%.2fs";
 "drill_in_progress" = "Drill In Progress";
 "drill_in_progress_overlay" = "DRILL IN PROGRESS...";
+"drill_ended" = "Drill Ended";
+"shot_added" = "Added new shot at position";
+"duplicate_shot_ignored" = "Ignored duplicate shot";
+"decode_shot_error" = "Failed to decode shot data";
+"drill_timer_expired" = "Drill timer expired";
+"shots_received" = "Shots received";
+
+/* DrillSummaryView */
+"drill_result_summary_title" = "Drill Result Summary";
+"no_summary_data_title" = "No summary data recorded yet.";
+"no_summary_data_subtitle" = "Run a drill session to generate performance metrics.";
+"repeat_number" = "Repeat #%d";
+"shots_label" = "shots";
+"total_time_label" = "Total Time";
+"shots_metric_label" = "Shots";
+"fastest_label" = "Fastest";
+"first_shot_label" = "First Shot";
+"score_label" = "Score";
 
 /* SubViews */
 "history_record" = "History Record";
@@ -57,6 +75,7 @@
 "num_repeats_label" = "Number of Repeats";
 "select_repeats" = "Select Repeats";
 "drill_duration_seconds_label" = "Duration/Rep(s)";
+"drill_pause_seconds_label" = "Pause Between Reps(s)";
 "delay_range" = "2...5";
 "description" = "Description";
 "enter_description_placeholder" = "Enter description...";

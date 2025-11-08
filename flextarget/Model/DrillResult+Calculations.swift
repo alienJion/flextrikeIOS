@@ -46,15 +46,25 @@ extension DrillResult {
         return shotScores.reduce(0, +)
     }
     
-    /// Calculate total time for all shots
-    var totalTime: TimeInterval {
+    /// Calculate total time for all shots (fallback if not persisted)
+    private var calculatedTotalTime: TimeInterval {
         return decodedShots.map { $0.content.timeDiff }.reduce(0, +)
+    }
+    
+    /// Get effective total time (uses persisted value or calculated fallback)
+    var effectiveTotalTime: TimeInterval {
+        // Use persisted totalTime if available (non-zero)
+        if totalTime > 0 {
+            return TimeInterval(totalTime)
+        }
+        // Fallback to shot-based calculation for backward compatibility
+        return calculatedTotalTime
     }
     
     /// Calculate hit factor (score per second)
     var hitFactor: Double {
-        guard totalTime > 0 else { return 0.0 }
-        return totalScore / totalTime
+        guard effectiveTotalTime > 0 else { return 0.0 }
+        return totalScore / effectiveTotalTime
     }
     
     /// Get unique target types from all shots
@@ -79,7 +89,7 @@ extension DrillResult {
         return ShotStatistics(
             totalShots: decodedShots.count,
             totalScore: totalScore,
-            totalTime: totalTime,
+            totalTime: effectiveTotalTime,
             fastestShot: fastestShot,
             hitFactor: hitFactor,
             accuracy: accuracy,
