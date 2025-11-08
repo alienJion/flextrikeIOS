@@ -83,7 +83,7 @@ struct DrillRecordView: View {
         let shots = convertShots(result.shots)
         return DrillRepeatSummary(
             repeatIndex: 1,
-            totalTime: result.totalTime,
+            totalTime: result.effectiveTotalTime,
             numShots: shots.count,
             firstShot: shots.first?.content.timeDiff ?? 0,
             fastest: result.fastestShot,

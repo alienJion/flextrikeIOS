@@ -49,6 +49,24 @@
 "progress_time" = "%.2f/%.2f秒";
 "drill_in_progress" = "訓練進行中";
 "drill_in_progress_overlay" = "訓練進行中...";
+"drill_ended" = "訓練結束";
+"shot_added" = "已添加位置處的新射擊";
+"duplicate_shot_ignored" = "忽略重複射擊";
+"decode_shot_error" = "解碼射擊數據失敗";
+"drill_timer_expired" = "訓練計時器超時";
+"shots_received" = "收到的射擊";
+
+/* DrillSummaryView */
+"drill_result_summary_title" = "訓練結果摘要";
+"no_summary_data_title" = "尚未記錄摘要數據。";
+"no_summary_data_subtitle" = "運行訓練課程以生成性能指標。";
+"repeat_number" = "重複 #%d";
+"shots_label" = "射擊";
+"total_time_label" = "總時間";
+"shots_metric_label" = "射擊";
+"fastest_label" = "最快";
+"first_shot_label" = "首次射擊";
+"score_label" = "分數";
 
 /* SubViews */
 "history_record" = "歷史記錄";
@@ -56,6 +74,7 @@
 "num_repeats_label" = "重複次數";
 "select_repeats" = "選擇重複次數";
 "drill_duration_seconds_label" = "持續時間/Rep(s)";
+"drill_pause_seconds_label" = "重複之間的暫停(秒)";
 "delay_range" = "2...5";
 "description" = "描述";
 "enter_description_placeholder" = "輸入描述...";

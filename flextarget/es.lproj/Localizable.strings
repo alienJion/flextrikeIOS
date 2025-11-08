@@ -49,6 +49,24 @@
 "progress_time" = "%.2f/%.2fs";
 "drill_in_progress" = "Ejercicio en Progreso";
 "drill_in_progress_overlay" = "EJERCICIO EN PROGRESO...";
+"drill_ended" = "Ejercicio finalizado";
+"shot_added" = "Nuevo disparo agregado en posición";
+"duplicate_shot_ignored" = "Disparo duplicado ignorado";
+"decode_shot_error" = "Error al decodificar datos de disparo";
+"drill_timer_expired" = "Tiempo del ejercicio agotado";
+"shots_received" = "Disparos recibidos";
+
+/* DrillSummaryView */
+"drill_result_summary_title" = "Resumen de Resultados del Ejercicio";
+"no_summary_data_title" = "Aún no se han registrado datos de resumen.";
+"no_summary_data_subtitle" = "Ejecute una sesión de ejercicio para generar métricas de rendimiento.";
+"repeat_number" = "Repetición #%d";
+"shots_label" = "disparos";
+"total_time_label" = "Tiempo Total";
+"shots_metric_label" = "Disparos";
+"fastest_label" = "Más Rápido";
+"first_shot_label" = "Primer Disparo";
+"score_label" = "Puntuación";
 
 /* SubViews */
 "history_record" = "Registro Histórico";
@@ -56,6 +74,7 @@
 "num_repeats_label" = "Número de repeticiones";
 "select_repeats" = "Seleccionar repeticiones";
 "drill_duration_seconds_label" = "Duración/Rep(s)";
+"drill_pause_seconds_label" = "Pausa entre repeticiones(s)";
 "delay_range" = "2...5";
 "description" = "Descripción";
 "enter_description_placeholder" = "Introducir descripción...";

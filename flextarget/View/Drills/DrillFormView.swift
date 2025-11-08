@@ -115,7 +115,7 @@ struct DrillFormView: View {
                                     Image(systemName: "clock.arrow.circlepath")
                                         .foregroundColor(.red)
                                         .font(.title3)
-                                    Text("History Record")
+                                    Text(NSLocalizedString("history_record", comment: "History Record button label"))
                                         .foregroundColor(.white)
                                         .font(.footnote)
                                     Spacer()
@@ -818,6 +818,7 @@ struct DrillFormView: View {
             drillResult.drillId = drillId
             drillResult.sessionId = sessionId
             drillResult.date = Date()
+            drillResult.totalTime = summary.totalTime
             drillResult.drillSetup = drillSetup
             
             for shotData in summary.shots {

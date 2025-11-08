@@ -4,6 +4,7 @@
         <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="drillId" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="sessionId" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="totalTime" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <relationship name="drillSetup" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DrillSetup" inverseName="results" inverseEntity="DrillSetup"/>
         <relationship name="shots" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Shot" inverseName="drillResult" inverseEntity="Shot"/>
     </entity>
