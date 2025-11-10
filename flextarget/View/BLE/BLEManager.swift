@@ -187,12 +187,18 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
         // Start with a targeted scan for the service UUID
         centralManager.scanForPeripherals(withServices: [advServiceUUID], options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
 
-        // Schedule fallback to broad scan after targetedScanDuration to find more devices
+        // Start 60s scan timer to allow time to discover multiple peripherals
+        connectionTimer?.invalidate()
+        connectionTimer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: false) { [weak self] _ in
+            self?.completeScan()
+        }
+
+        // Schedule fallback to broad scan if nothing found within targetedScanDuration
         fallbackScanTimer?.invalidate()
         fallbackScanTimer = Timer.scheduledTimer(withTimeInterval: targetedScanDuration, repeats: false) { [weak self] _ in
             guard let self = self else { return }
-            if self.isScanning {
-                print("Switching to broad scan after \(self.targetedScanDuration)s to find more devices")
+            if self.isScanning && self.discoveredPeripherals.isEmpty {
+                print("No targeted devices found within \(self.targetedScanDuration)s — falling back to broad scan")
                 self.centralManager.stopScan()
                 self.centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
             }
