@@ -49,12 +49,12 @@ private struct TargetDisplay: Identifiable, Hashable {
     let id: String
     let config: DrillTargetsConfig
     let icon: String
-    let deviceName: String?
+    let targetName: String?
 
     func matches(_ shot: ShotData) -> Bool {
-        if let deviceName = deviceName {
-            let shotDevice = shot.device?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            return shotDevice == deviceName
+        if let targetName = targetName {
+            let shotTargetName = shot.device?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return shotTargetName == targetName
         } else {
             let shotIcon = shot.content.targetType.isEmpty ? "hostage" : shot.content.targetType
             return shotIcon == icon
@@ -66,18 +66,16 @@ private struct TargetDisplayView: View {
     let targetDisplays: [TargetDisplay]
     @Binding var selectedTargetKey: String
     let shots: [ShotData]
-    let visibleShotIndices: Set<Int>
     let selectedShotIndex: Int?
     let pulsingShotIndex: Int?
     let pulseScale: CGFloat
     let frameWidth: CGFloat
     let frameHeight: CGFloat
-    
+
     var body: some View {
         TabView(selection: $selectedTargetKey) {
-            ForEach(targetDisplays) { display in
+            ForEach(targetDisplays, id: \.id) { display in
                 ZStack {
-                    // White rectangular frame representing target device with gray fill
                     Rectangle()
                         .fill(Color.gray.opacity(0.3))
                         .frame(width: frameWidth, height: frameHeight)
@@ -85,15 +83,14 @@ private struct TargetDisplayView: View {
                             Rectangle()
                                 .stroke(Color.white, lineWidth: 12)
                         )
-                    
-                    // Target icon inside the frame
+
                     Image("\(display.icon).live.target")
                         .resizable()
                         .scaledToFit()
                         .frame(width: frameWidth - 20, height: frameHeight - 20)
                         .overlay(alignment: .topTrailing) {
-                            if let deviceName = display.deviceName {
-                                Text(deviceName)
+                            if let targetName = display.targetName {
+                                Text(targetName)
                                     .foregroundColor(.white)
                                     .font(.caption)
                                     .fontWeight(.semibold)
@@ -103,24 +100,21 @@ private struct TargetDisplayView: View {
                                     .padding(10)
                             }
                         }
-                    
-                    // Shot position markers (only show visible shots during replay)
+
                     ForEach(shots.indices, id: \.self) { index in
                         let shot = shots[index]
-                        if display.matches(shot) && visibleShotIndices.contains(index) {
+                        if display.matches(shot) {
                             let x = shot.content.hitPosition.x
                             let y = shot.content.hitPosition.y
-                            // Transform coordinates from 720×1280 source to frame dimensions
                             let transformedX = (x / 720.0) * frameWidth
                             let transformedY = (y / 1280.0) * frameHeight
-                            
+
                             ZStack {
                                 Image("bullet_hole2")
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 30, height: 30)
-                                
-                                // Highlight selected shot
+
                                 if selectedShotIndex == index {
                                     Circle()
                                         .stroke(Color.yellow, lineWidth: 3)
@@ -138,7 +132,7 @@ private struct TargetDisplayView: View {
         }
         .frame(width: frameWidth, height: frameHeight)
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: targetDisplays.count > 1 ? .automatic : .never))
-                    .onChange(of: shots.count) { _ in
+        .onChange(of: shots.count) { _ in
             // This would need to be passed as a closure or handled differently
             // For now, we'll handle this in the parent view
         }
@@ -162,12 +156,9 @@ struct DrillResultView: View {
     
     @State private var selectedTargetKey: String = ""
     @State private var selectedShotIndex: Int? = nil
-    @State private var currentProgress: Double = 0.0
-    @State private var isPlaying: Bool = false
     @State private var dots: String = ""
     @State private var dotsTimer: Timer?
-    @State private var replayTimer: Timer?
-    @State private var visibleShotIndices: Set<Int> = []
+    // visibleShotIndices removed: show all matching shots by default
     @State private var pulsingShotIndex: Int? = nil
     @State private var pulseScale: CGFloat = 1.0
     
@@ -204,7 +195,7 @@ struct DrillResultView: View {
             let iconName = target.targetType ?? ""
             let resolvedIcon = iconName.isEmpty ? "hostage" : iconName
             let id = target.id?.uuidString ?? UUID().uuidString
-            return TargetDisplay(id: id, config: target, icon: resolvedIcon, deviceName: target.targetName)
+            return TargetDisplay(id: id, config: target, icon: resolvedIcon, targetName: target.targetName)
         }
     }
     
@@ -264,13 +255,10 @@ struct DrillResultView: View {
                 let frameWidth = frameHeight * 9 / 16
                 
                 VStack {
-                    Spacer()
-                    
                     TargetDisplayView(
                         targetDisplays: targetDisplays,
                         selectedTargetKey: $selectedTargetKey,
                         shots: shots,
-                        visibleShotIndices: visibleShotIndices,
                         selectedShotIndex: selectedShotIndex,
                         pulsingShotIndex: pulsingShotIndex,
                         pulseScale: pulseScale,
@@ -280,95 +268,117 @@ struct DrillResultView: View {
                     .onChange(of: shots.count) { _ in
                         ensureSelectedTargetIsValid()
                     }
-                    
-                    // Progress bar with shot tick marks
-                    HStack(alignment: .center, spacing: 12) {
-                        ShotTimelineView(
-                            shots: currentTargetTimelineData,
-                            totalDuration: totalDuration,
-                            currentProgress: currentProgress,
-                            isEnabled: drillStatus != "In Progress",
-                            onProgressChange: { newTime in
-                                seek(to: newTime, highlightIndex: nil, shouldPulse: false, restrictToSelectedTarget: true)
-                            },
-                            onShotFocus: { shotIndex in
-                                focusOnShot(shotIndex)
+                    .onChange(of: selectedShotIndex) { newIndex in
+                        guard let idx = newIndex, shots.indices.contains(idx) else { return }
+                        let shot = shots[idx]
+                        if let matching = targetDisplays.first(where: { $0.matches(shot) }) {
+                            selectedTargetKey = matching.id
+                        }
+                    }
+
+                    // Shot list below the target display
+                    Divider()
+                    ScrollView {
+                        LazyVStack(alignment: .center, spacing: 6) {
+                            ForEach(shots.indices, id: \.self) { idx in
+                                let shot = shots[idx]
+                                HStack(spacing: 12) {
+                                    // Centered columns: seq, zone, time
+                                    Text("#\(idx + 1)")
+                                        .frame(width: 64, alignment: .center)
+                                        .foregroundColor(.white)
+                                    Text(shot.content.hitArea)
+                                        .frame(width: 80, alignment: .center)
+                                        .foregroundColor(.white)
+                                    Text(String(format: "%.2f", shot.content.timeDiff))
+                                        .frame(width: 80, alignment: .center)
+                                        .foregroundColor(.white.opacity(0.9))
+                                }
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 16)
+                                .frame(maxWidth: 640)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .fill((idx % 2) == 0 ? Color(white: 0.03) : Color(white: 0.06))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .stroke(selectedShotIndex == idx ? Color.red.opacity(0.95) : Color.clear, lineWidth: 2)
+                                )
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    // highlight the selected shot marker in the display
+                                    selectedShotIndex = idx
+                                    pulsingShotIndex = idx
+                                    // update selected target to match this shot
+                                    if let matching = targetDisplays.first(where: { $0.matches(shot) }) {
+                                        selectedTargetKey = matching.id
+                                    }
+                                    withAnimation(.easeOut(duration: 0.15)) {
+                                        pulseScale = 1.3
+                                    }
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                        withAnimation(.easeIn(duration: 0.15)) {
+                                            pulseScale = 1.0
+                                        }
+                                    }
+                                }
                             }
-                        )
-                        .frame(height: 28)
-                        
-                        Text(String(format: NSLocalizedString("progress_time", comment: "Progress time display"), currentProgress, totalDuration))
-                            .font(.caption)
+                        }
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 12)
+                    }
+                    .frame(maxHeight: 200)
+
+                    // Simple status row
+                    HStack(spacing: 12) {
+                        Text(drillStatus)
+                            .font(.headline)
                             .foregroundColor(.white)
+                        Spacer()
+                        Text("\(shots.count) shots")
+                            .font(.subheadline)
+                            .foregroundColor(.white.opacity(0.85))
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 20)
-                    
-                    // Video player controls
-                    HStack(spacing: 40) {
-                        Button(action: {
-                            // Previous shot
-                            previousShot()
-                        }) {
-                            Image(systemName: "backward.end")
-                                .resizable()
-                                .frame(width: 30, height: 30)
-                                .foregroundColor(.white)
-                        }
-                        .disabled(drillStatus == "In Progress")
-                        
-                        Button(action: {
-                            // Play/Pause
-                            if drillStatus == "In Progress" {
-                                return // Don't allow replay during drill
-                            }
-                            isPlaying.toggle()
-                            if isPlaying {
-                                startReplay()
-                            } else {
-                                pauseReplay()
-                            }
-                        }) {
-                            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                                .resizable()
-                                .frame(width: 30, height: 30)
-                                .foregroundColor(.white)
-                        }
-                        .disabled(drillStatus == "In Progress")
-                        
-                        Button(action: {
-                            // Next shot
-                            nextShot()
-                        }) {
-                            Image(systemName: "forward.end")
-                                .resizable()
-                                .frame(width: 30, height: 30)
-                                .foregroundColor(.white)
-                        }
-                        .disabled(drillStatus == "In Progress")
-                    }
-                    .padding(.vertical, 20)
-                    
+
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.black.edgesIgnoringSafeArea(.all))
             }
             .navigationTitle(NSLocalizedString("drill_replay", comment: "Drill Replay navigation title"))
-            .onAppear {
-                ensureSelectedTargetIsValid()
-                if isLiveDrill {
-                    startDrillTimer()
-                    setupNotificationObserver()
-                    startDotsTimer()
-                } else {
-                    // For completed drills, show all shots initially
-                    visibleShotIndices = Set(shots.indices)
+                .onAppear {
+                    ensureSelectedTargetIsValid()
+
+                    // If there are shots and no selection yet, focus the first shot
+                    if selectedShotIndex == nil && !shots.isEmpty {
+                        selectedShotIndex = 0
+                        pulsingShotIndex = 0
+                        if let firstShot = shots.first, let matching = targetDisplays.first(where: { $0.matches(firstShot) }) {
+                            selectedTargetKey = matching.id
+                        }
+                        withAnimation(.easeOut(duration: 0.15)) {
+                            pulseScale = 1.3
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            withAnimation(.easeIn(duration: 0.15)) {
+                                pulseScale = 1.0
+                            }
+                        }
+                    }
+
+                    if isLiveDrill {
+                        // NOTE: Live BLE handling has been moved out of `DrillResultView`.
+                        // Live preview / live-shot streaming will be implemented in a
+                        // dedicated `LivePreview` view in a future change.
+                        startDrillTimer()
+                        startDotsTimer()
+                    }
                 }
-            }
             .onDisappear {
                 stopDrillTimer()
-                removeNotificationObserver()
                 stopDotsTimer()
             }
             
@@ -390,71 +400,7 @@ struct DrillResultView: View {
         }
     }
 
-    private func seek(to time: Double, highlightIndex: Int?, shouldPulse: Bool, restrictToSelectedTarget: Bool = false) {
-        let clampedTime = max(0.0, min(time, totalDuration))
-        pauseReplay()
-        isPlaying = false
-        currentProgress = clampedTime
-        updateVisibleShots(upTo: clampedTime)
-        
-        if let highlightIndex = highlightIndex, shots.indices.contains(highlightIndex) {
-            selectedShotIndex = highlightIndex
-            updateSelectedTargetForCurrentShot()
-            if shouldPulse {
-                triggerPulse(on: highlightIndex)
-            } else {
-                pulsingShotIndex = highlightIndex
-                pulseScale = 1.0
-            }
-        } else if restrictToSelectedTarget, let display = targetDisplays.first(where: { $0.id == selectedTargetKey }) {
-            let currentShotIndex = shots.enumerated()
-                .filter { display.matches($0.element) && absoluteTime(for: $0.offset) <= clampedTime }
-                .max(by: { absoluteTime(for: $0.offset) < absoluteTime(for: $1.offset) })?
-                .offset
-            selectedShotIndex = currentShotIndex
-            pulsingShotIndex = currentShotIndex
-            pulseScale = 1.0
-        } else {
-            updateSelection(for: clampedTime)
-            pulsingShotIndex = selectedShotIndex
-            pulseScale = 1.0
-        }
-    }
     
-    private func focusOnShot(_ shotIndex: Int) {
-        guard shots.indices.contains(shotIndex) else { return }
-        let shotTime = absoluteTime(for: shotIndex)
-        seek(to: shotTime, highlightIndex: shotIndex, shouldPulse: true)
-    }
-    
-    private func updateVisibleShots(upTo progress: Double) {
-        let indices = shots.enumerated()
-            .filter { absoluteTime(for: $0.offset) <= progress }
-            .map { $0.offset }
-        visibleShotIndices = Set(indices)
-    }
-    
-    private func updateSelection(for progress: Double) {
-        let currentShotIndex = shots.enumerated()
-            .filter { absoluteTime(for: $0.offset) <= progress }
-            .max(by: { absoluteTime(for: $0.offset) < absoluteTime(for: $1.offset) })?
-            .offset
-        selectedShotIndex = currentShotIndex
-        updateSelectedTargetForCurrentShot()
-    }
-    
-    private func triggerPulse(on index: Int) {
-        guard shots.indices.contains(index) else { return }
-        pulsingShotIndex = index
-        withAnimation(.easeOut(duration: 0.15)) {
-            pulseScale = 1.3
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            withAnimation(.easeIn(duration: 0.15)) {
-                pulseScale = 1.0
-            }
-        }
-    }
 
     private func startDotsTimer() {
         dotsTimer?.invalidate()
@@ -470,47 +416,7 @@ struct DrillResultView: View {
         dots = ""
     }
 
-    private func startReplay() {
-        // Reset to beginning
-        currentProgress = 0.0
-        visibleShotIndices.removeAll()
-        selectedShotIndex = nil
-        pulsingShotIndex = nil
-        pulseScale = 1.0
-        
-        // Start replay timer
-        replayTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-            currentProgress += 0.1
-            
-            updateVisibleShots(upTo: currentProgress)
-            
-            // Update selected shot to the current one
-            let currentShotIndex = shots.enumerated()
-                .filter { absoluteTime(for: $0.offset) <= currentProgress }
-                .max(by: { absoluteTime(for: $0.offset) < absoluteTime(for: $1.offset) })?
-                .offset
-            selectedShotIndex = currentShotIndex
-            updateSelectedTargetForCurrentShot()
-            pulsingShotIndex = currentShotIndex
-            
-            // Stop at end of drill
-            if currentProgress >= totalDuration {
-                pauseReplay()
-                currentProgress = totalDuration
-                isPlaying = false
-            }
-        }
-    }
     
-    private func updateSelectedTargetForCurrentShot() {
-        guard let index = selectedShotIndex, shots.indices.contains(index) else { return }
-        let shot = shots[index]
-        
-        // Find matching display for this shot
-        if let matchingDisplay = targetDisplays.first(where: { $0.matches(shot) }) {
-            selectedTargetKey = matchingDisplay.id
-        }
-    }
 
     private func ensureSelectedTargetIsValid() {
         guard !targetDisplays.contains(where: { $0.id == selectedTargetKey }) else { return }
@@ -518,40 +424,7 @@ struct DrillResultView: View {
             selectedTargetKey = fallback.id
         }
     }
-    private func pauseReplay() {
-        replayTimer?.invalidate()
-        replayTimer = nil
-    }
     
-    private func previousShot() {
-        guard let display = targetDisplays.first(where: { $0.id == selectedTargetKey }) else { return }
-        // Find the previous shot before current progress on the current target
-        let previousShots = shots.enumerated().filter { display.matches($0.element) && absoluteTime(for: $0.offset) < currentProgress }.sorted { absoluteTime(for: $0.offset) > absoluteTime(for: $1.offset) }
-        
-        if let previousShot = previousShots.first {
-            seek(to: absoluteTime(for: previousShot.offset), highlightIndex: previousShot.offset, shouldPulse: true, restrictToSelectedTarget: true)
-        } else {
-            // Go to beginning
-            seek(to: 0.0, highlightIndex: nil, shouldPulse: false, restrictToSelectedTarget: true)
-        }
-    }
-    
-    private func nextShot() {
-        guard let display = targetDisplays.first(where: { $0.id == selectedTargetKey }) else { return }
-        // Find the next shot after current progress on the current target
-        let nextShots = shots.enumerated().filter { display.matches($0.element) && absoluteTime(for: $0.offset) > currentProgress }.sorted { absoluteTime(for: $0.offset) < absoluteTime(for: $1.offset) }
-        
-        if let nextShot = nextShots.first {
-            seek(to: absoluteTime(for: nextShot.offset), highlightIndex: nextShot.offset, shouldPulse: true, restrictToSelectedTarget: true)
-        } else {
-            // Go to end of current target
-            if let lastShotOnTarget = currentTargetTimelineData.last {
-                seek(to: absoluteTime(for: lastShotOnTarget.index), highlightIndex: lastShotOnTarget.index, shouldPulse: true, restrictToSelectedTarget: true)
-            } else {
-                seek(to: totalDuration, highlightIndex: nil, shouldPulse: false, restrictToSelectedTarget: true)
-            }
-        }
-    }
     
     private func startDrillTimer() {
         let duration = drillSetup.delay + drillSetup.drillDuration
@@ -569,43 +442,13 @@ struct DrillResultView: View {
     private func stopDrillTimer() {
         drillTimer?.invalidate()
         drillTimer = nil
-        pauseReplay() // Also stop replay timer if running
+        // replay functionality removed; nothing more to stop here
     }
     
-    private func setupNotificationObserver() {
-        NotificationCenter.default.addObserver(
-            forName: .bleShotReceived,
-            object: nil,
-            queue: .main
-        ) { notification in
-            if let shotDict = notification.userInfo?["shot_data"] as? [String: Any] {
-                do {
-                    // Convert dict to JSON data for decoding
-                    let jsonData = try JSONSerialization.data(withJSONObject: shotDict, options: [])
-                    let shotData = try JSONDecoder().decode(ShotData.self, from: jsonData)
-                    
-                    // Check for duplicates based on hit position
-                    let isDuplicate = shots.contains { existingShot in
-                        existingShot.content.hitPosition.x == shotData.content.hitPosition.x &&
-                        existingShot.content.hitPosition.y == shotData.content.hitPosition.y
-                    }
-                    
-                    if !isDuplicate {
-                        shots.append(shotData)
-                        print(NSLocalizedString("shot_added", comment: "Shot added message") + ": (\(shotData.content.hitPosition.x), \(shotData.content.hitPosition.y))")
-                    } else {
-                        print(NSLocalizedString("duplicate_shot_ignored", comment: "Duplicate shot ignored message"))
-                    }
-                } catch {
-                    print(NSLocalizedString("decode_shot_error", comment: "Shot decode error message") + ": \(error)")
-                }
-            }
-        }
-    }
-    
-    private func removeNotificationObserver() {
-        NotificationCenter.default.removeObserver(self, name: .bleShotReceived, object: nil)
-    }
+    // Live BLE notification handling previously lived here. It has been
+    // intentionally removed so that `DrillResultView` only handles replay
+    // and completed-results display. A dedicated `LivePreview` view should
+    // implement streaming BLE shot handling and duplicate detection.
     
     private func onDrillTimerExpired() {
         drillStatus = NSLocalizedString("drill_ended", comment: "Drill ended status")

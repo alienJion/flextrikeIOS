@@ -227,26 +227,31 @@ struct RecentTrainingView: View {
             do {
                 let recentDrills = try repository.fetchRecentDrills(limit: 3)
                 
-                // Group results by sessionId to show one session per card
+                // Group results by session identifier (use UUID string when present,
+                // otherwise fall back to the object's URI string) so the key is always
+                // a deterministic string and we avoid unsafe casts.
                 var sessionGrouped: [(DrillSummary, [DrillResult])] = []
-                var seenSessions = Set<UUID>()
-                
+                var seenSessions = Set<String>()
+
                 for (summary, result) in recentDrills {
-                    let sessionId = result.sessionId ?? result.objectID as CVarArg as! UUID
-                    
+                    let sessionKey = result.sessionId?.uuidString ?? result.objectID.uriRepresentation().absoluteString
+
                     // Skip if we've already added this session
-                    if seenSessions.contains(sessionId) {
+                    if seenSessions.contains(sessionKey) {
                         continue
                     }
-                    
-                    // Fetch all results for this session
+
+                    // Fetch all results that share the same deterministic session key
                     let sessionResults = recentDrills
-                        .filter { $0.1.sessionId == result.sessionId }
+                        .filter { otherSummary, otherResult in
+                            let otherKey = otherResult.sessionId?.uuidString ?? otherResult.objectID.uriRepresentation().absoluteString
+                            return otherKey == sessionKey
+                        }
                         .map { $0.1 }
-                    
+
                     if !sessionResults.isEmpty {
                         sessionGrouped.append((summary, sessionResults))
-                        seenSessions.insert(sessionId)
+                        seenSessions.insert(sessionKey)
                     }
                 }
                 

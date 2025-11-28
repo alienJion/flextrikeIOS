@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 import CoreData
 import AVFoundation
+import Combine
 
 enum DrillFormMode {
     case add
@@ -112,8 +113,11 @@ struct DrillFormView: View {
                 VStack(spacing: 20) {
                         // History Record Button - only show in edit mode
                         if let drillSetup = currentDrillSetup {
-                            NavigationLink(destination: DrillRecordView(drillSetup: drillSetup)
-                                .environment(\.managedObjectContext, viewContext)) {
+                            // Extract destination into a local constant to help the compiler
+                            let drillRecordDestination = DrillRecordView(drillSetup: drillSetup)
+                                .environment(\.managedObjectContext, viewContext)
+
+                            NavigationLink(destination: drillRecordDestination) {
                                 HStack(spacing: 8) {
                                     Image(systemName: "clock.arrow.circlepath")
                                         .foregroundColor(.red)

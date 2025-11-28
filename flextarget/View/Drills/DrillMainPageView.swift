@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import CoreData
 
 struct DrillMainPageView: View {
     @EnvironmentObject var bleManager: BLEManager
