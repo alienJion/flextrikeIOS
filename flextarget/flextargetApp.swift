@@ -20,6 +20,9 @@ struct flextargetApp: App {
         UINavigationBar.appearance().tintColor = .red
         UINavigationBar.appearance().standardAppearance = appearance
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        #if DEBUG
+        // NOTE: seeding runs from onAppear to avoid capturing `self` in init
+        #endif
     }
 
     @State private var showLaunchScreen = true
@@ -27,6 +30,7 @@ struct flextargetApp: App {
 
     var body: some Scene {
         WindowGroup {
+            Group {
             if showLaunchScreen {
                 LaunchScreen()
                     .onAppear {
@@ -52,6 +56,18 @@ struct flextargetApp: App {
 //                }
 //                .environmentObject(bleManager)
                 .tint(.red)
+            }
+            }
+            // Run UITest seeder after the app UI appears (debug only)
+            .onAppear {
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("-UITestPopulate") {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        let bg = PersistenceController.shared.container.newBackgroundContext()
+                        UITestDataSeeder.seedSampleData(into: bg)
+                    }
+                }
+                #endif
             }
         }
     }

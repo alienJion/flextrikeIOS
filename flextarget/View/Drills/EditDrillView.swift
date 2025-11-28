@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreData
 
 /**
  Wrapper view that uses the unified DrillFormView in edit mode

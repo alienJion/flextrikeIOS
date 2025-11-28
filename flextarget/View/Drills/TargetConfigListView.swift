@@ -164,7 +164,6 @@ struct TargetRowView: View {
         "rotation",
         "special_1",
         "special_2",
-        "testTarget"
     ]
 
     var body: some View {

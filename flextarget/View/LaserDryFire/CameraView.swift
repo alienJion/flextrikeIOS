@@ -1,10 +1,15 @@
 import SwiftUI
+import Combine
+
+// SVG rendering is optional (requires SVGKit). Provide a lightweight
+// fallback so the app builds even if SVGKit isn't available in the build.
+#if canImport(SVGKit)
 import SVGKit
 
 struct SVGImageView: UIViewRepresentable {
     let name: String
     let size: CGSize
-    
+
     func makeUIView(context: Context) -> SVGKFastImageView {
         let svgImage = SVGKImage(named: name)
         svgImage?.size = size
@@ -12,9 +17,25 @@ struct SVGImageView: UIViewRepresentable {
         imageView?.contentMode = .scaleAspectFit
         return imageView!
     }
-    
+
     func updateUIView(_ uiView: SVGKFastImageView, context: Context) {}
 }
+#else
+// Fallback: simple UIViewRepresentable that shows an empty SwiftUI view
+// when SVGKit isn't linked. This keeps CameraView compilable.
+struct SVGImageView: UIViewRepresentable {
+    let name: String
+    let size: CGSize
+
+    func makeUIView(context: Context) -> UIView {
+        let v = UIView(frame: CGRect(origin: .zero, size: size))
+        v.backgroundColor = .clear
+        return v
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
+}
+#endif
 
 struct CameraGestureView: UIViewRepresentable {
     let onTap: (CGPoint) -> Void

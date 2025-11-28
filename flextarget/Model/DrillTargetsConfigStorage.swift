@@ -1,4 +1,6 @@
 import Foundation
+import Combine
+import SwiftUI
 
 class DrillTargetsConfigStorage: ObservableObject {
     @Published var drillTargetsConfigs: [DrillTargetsConfigData] = []
