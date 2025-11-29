@@ -58,6 +58,7 @@
 "decode_shot_error" = "Error al decodificar datos de disparo";
 "drill_timer_expired" = "Tiempo del ejercicio agotado";
 "shots_received" = "Disparos recibidos";
+"drill_status_completed" = "Finalizado";
 
 /* DrillSummaryView */
 "drill_result_summary_title" = "Resumen de Resultados del Ejercicio";

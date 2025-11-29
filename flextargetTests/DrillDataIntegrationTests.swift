@@ -51,9 +51,9 @@ final class DrillDataIntegrationTests: XCTestCase {
                 let centerX = 360.0 + Double(i * 7) + jitterX
                 let centerY = 640.0 + Double(i * 9) + jitterY
                 let timeDelta = 0.4 + Double(i) * 0.15
-                let content = Content(command: "shot", hitArea: "C", hitPosition: HitPosition(x: centerX, y: centerY), rotationAngle: 0, targetType: t, timeDiff: timeDelta, device: "device_\(t)")
+                let content = Content(command: "shot", hitArea: "C", hitPosition: Position(x: centerX, y: centerY), rotationAngle: 0, targetType: t, timeDiff: timeDelta, device: "device_\(t)")
                 // Set ShotData.target to the targetName so UI can associate shots with each target
-                let sd = ShotData(target: targetName, content: content, type: "shot", action: "hit", device: "device_\(t)")
+                let sd = ShotData(target: targetName, content: content, type: "shot", action: "hit", device: "device_\(t)", targetPos: nil)
                 generatedShots.append(sd)
             }
         }

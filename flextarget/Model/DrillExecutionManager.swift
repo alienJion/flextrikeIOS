@@ -452,7 +452,8 @@ class DrillExecutionManager {
                     content: adjustedContent,
                     type: event.shot.type,
                     action: event.shot.action,
-                    device: event.shot.device
+                    device: event.shot.device,
+                    targetPos: event.shot.targetPos
                 )
             } else {
                 return event.shot
