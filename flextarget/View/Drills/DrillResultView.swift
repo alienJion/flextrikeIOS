@@ -8,12 +8,22 @@ struct ShotData: Codable {
     let type: String?
     let action: String?
     let device: String?
+    let targetPos: Position?
+
+    enum CodingKeys: String, CodingKey {
+        case target
+        case content
+        case type
+        case action
+        case device
+        case targetPos = "target_pos"
+    }
 }
 
 struct Content: Codable {
     let command: String
     let hitArea: String
-    let hitPosition: HitPosition
+    let hitPosition: Position
     let rotationAngle: Int
     let targetType: String
     let timeDiff: Double
@@ -29,7 +39,7 @@ struct Content: Codable {
         case device
     }
 
-    init(command: String, hitArea: String, hitPosition: HitPosition, rotationAngle: Int, targetType: String, timeDiff: Double, device: String? = nil) {
+    init(command: String, hitArea: String, hitPosition: Position, rotationAngle: Int, targetType: String, timeDiff: Double, device: String? = nil) {
         self.command = command
         self.hitArea = hitArea
         self.hitPosition = hitPosition
@@ -40,7 +50,7 @@ struct Content: Codable {
     }
 }
 
-struct HitPosition: Codable {
+struct Position: Codable {
     let x: Double
     let y: Double
 }
@@ -72,6 +82,61 @@ private struct TargetDisplayView: View {
     let frameWidth: CGFloat
     let frameHeight: CGFloat
 
+    // Extract the rotation overlay into a small subview to keep the main
+    // view builder expression simpler and easier for the compiler to type-check.
+    private struct RotationOverlayView: View {
+        let display: TargetDisplay
+        let shots: [ShotData]
+        let selectedShotIndex: Int?
+        let frameWidth: CGFloat
+        let frameHeight: CGFloat
+
+        var chosenShot: ShotData? {
+            if let sel = selectedShotIndex, shots.indices.contains(sel) {
+                let s = shots[sel]
+                if display.matches(s), s.targetPos != nil {
+                    return s
+                }
+            }
+            return nil
+        }
+
+        var body: some View {
+            Group {
+                if display.icon.lowercased() == "rotation" {
+                    if chosenShot == nil {
+                        Color.clear.onAppear {
+                            print("[DrillResultView] rotation overlay: no selected shot with targetPos for display \(display.id)")
+                        }
+                    }
+
+                    if let shotWithPos = chosenShot, let targetPos: Position = shotWithPos.targetPos {
+                        let transformedX = (targetPos.x / 720.0) * frameWidth
+                        let transformedY = (targetPos.y / 1280.0) * frameHeight
+                        let rotationRad = Double(shotWithPos.content.rotationAngle)
+
+                        // Scale the overlay from the design coordinate space (720x1280)
+                        // into the current frame so the image size matches the target
+                        // coordinate transform. We use the previously applied 1.1× (360×445)
+                        // base size (396×489.5) and scale it by the same factors used
+                        // for position transformation.
+                        let scaleX = frameWidth / 720.0
+                        let scaleY = frameHeight / 1280.0
+                        let overlayBaseWidth: CGFloat = 396.0
+                        let overlayBaseHeight: CGFloat = 489.5
+
+                        Image("ipsc")
+                            // .resizable()
+                            // .scaledToFit()
+                            .frame(width: overlayBaseWidth * scaleX, height: overlayBaseHeight * scaleY)
+                            .rotationEffect(Angle(radians: rotationRad))
+                            .position(x: transformedX, y: transformedY)
+                    }
+                }
+            }
+        }
+    }
+
     var body: some View {
         TabView(selection: $selectedTargetKey) {
             ForEach(targetDisplays, id: \.id) { display in
@@ -101,6 +166,8 @@ private struct TargetDisplayView: View {
                             }
                         }
 
+                    RotationOverlayView(display: display, shots: shots, selectedShotIndex: selectedShotIndex, frameWidth: frameWidth, frameHeight: frameHeight)
+
                     ForEach(shots.indices, id: \.self) { index in
                         let shot = shots[index]
                         if display.matches(shot) {
@@ -113,12 +180,12 @@ private struct TargetDisplayView: View {
                                 Image("bullet_hole2")
                                     .resizable()
                                     .scaledToFit()
-                                    .frame(width: 30, height: 30)
+                                    .frame(width: 21, height: 21)
 
                                 if selectedShotIndex == index {
                                     Circle()
-                                        .stroke(Color.yellow, lineWidth: 3)
-                                        .frame(width: 30, height: 30)
+                                        .stroke(Color.yellow, lineWidth: 2.5)
+                                        .frame(width: 21, height: 21)
                                         .scaleEffect(pulsingShotIndex == index ? pulseScale : 1.0)
                                 }
                             }
@@ -151,7 +218,7 @@ struct DrillResultView: View {
     @State private var timeRemaining: TimeInterval = 0
     
     // Drill status for title
-    @State private var drillStatus: String = "In Progress"
+    @State private var drillStatus: String = NSLocalizedString("drill_in_progress", comment: "Drill in progress status")
     @State private var isLiveDrill: Bool
     
     @State private var selectedTargetKey: String = ""
@@ -224,7 +291,7 @@ struct DrillResultView: View {
         self.repeatSummary = nil
         _isLiveDrill = State(initialValue: false)
         _shots = State(initialValue: shots)
-        _drillStatus = State(initialValue: "Completed")
+        _drillStatus = State(initialValue: NSLocalizedString("drill_status_completed", comment: "Drill completed status"))
         if let firstTarget = drillSetup.sortedTargets.first {
             _selectedTargetKey = State(initialValue: firstTarget.id?.uuidString ?? UUID().uuidString)
         } else {
@@ -237,7 +304,7 @@ struct DrillResultView: View {
         self.repeatSummary = repeatSummary
         _isLiveDrill = State(initialValue: false)
         _shots = State(initialValue: repeatSummary.shots)
-        _drillStatus = State(initialValue: "Completed")
+        _drillStatus = State(initialValue: NSLocalizedString("drill_status_completed", comment: "Drill completed status"))
         if let firstTarget = drillSetup.sortedTargets.first {
             _selectedTargetKey = State(initialValue: firstTarget.id?.uuidString ?? UUID().uuidString)
         } else {
@@ -275,13 +342,31 @@ struct DrillResultView: View {
                             selectedTargetKey = matching.id
                         }
                     }
+                    .onChange(of: selectedTargetKey) { newKey in
+                        // When the displayed target changes, update the list selection
+                        // to focus the first shot for that target (if any).
+                        let filtered = currentTargetTimelineData
+                        if let first = filtered.first {
+                            selectedShotIndex = first.index
+                            pulsingShotIndex = first.index
+                        } else {
+                            selectedShotIndex = nil
+                            pulsingShotIndex = nil
+                        }
+                    }
 
                     // Shot list below the target display
                     Divider()
                     ScrollView {
+                        // Only show shots for the currently selected target.
+                        // Use the precomputed `currentTargetTimelineData` which contains
+                        // tuples with the original shot index.
                         LazyVStack(alignment: .center, spacing: 6) {
-                            ForEach(shots.indices, id: \.self) { idx in
+                            ForEach(Array(currentTargetTimelineData.enumerated()), id: \.element.index) { enumeratedEntry in
+                                let pos = enumeratedEntry.offset
+                                let idx = enumeratedEntry.element.index
                                 let shot = shots[idx]
+
                                 HStack(spacing: 12) {
                                     // Centered columns: seq, zone, time
                                     Text("#\(idx + 1)")
@@ -299,7 +384,7 @@ struct DrillResultView: View {
                                 .frame(maxWidth: 640)
                                 .background(
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .fill((idx % 2) == 0 ? Color(white: 0.03) : Color(white: 0.06))
+                                        .fill((pos % 2) == 0 ? Color(white: 0.03) : Color(white: 0.06))
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -310,10 +395,7 @@ struct DrillResultView: View {
                                     // highlight the selected shot marker in the display
                                     selectedShotIndex = idx
                                     pulsingShotIndex = idx
-                                    // update selected target to match this shot
-                                    if let matching = targetDisplays.first(where: { $0.matches(shot) }) {
-                                        selectedTargetKey = matching.id
-                                    }
+                                    // selectedTargetKey already matches this group; no change needed
                                     withAnimation(.easeOut(duration: 0.15)) {
                                         pulseScale = 1.3
                                     }
@@ -546,9 +628,9 @@ struct PreviewContent: View {
         
         // Create mock shots with device info
         let mockShots = [
-            ShotData(target: "target1", content: Content(command: "shot", hitArea: "B", hitPosition: HitPosition(x: 395.0, y: 495.0), rotationAngle: 0, targetType: "hostage", timeDiff: 0.18), type: "shot", action: "hit", device: "device1"),
-            ShotData(target: "target1", content: Content(command: "shot", hitArea: "B", hitPosition: HitPosition(x: 400.0, y: 500.0), rotationAngle: 0, targetType: "hostage", timeDiff: 0.21), type: "shot", action: "hit", device: "device1"),
-            ShotData(target: "target1", content: Content(command: "shot", hitArea: "A", hitPosition: HitPosition(x: 205.0, y: 295.0), rotationAngle: 0, targetType: "hostage", timeDiff: 1.35), type: "shot", action: "hit", device: "device2"),
+            ShotData(target: "target1", content: Content(command: "shot", hitArea: "B", hitPosition: Position(x: 395.0, y: 495.0), rotationAngle: 0, targetType: "hostage", timeDiff: 0.18), type: "shot", action: "hit", device: "device1", targetPos: nil),
+            ShotData(target: "target1", content: Content(command: "shot", hitArea: "B", hitPosition: Position(x: 400.0, y: 500.0), rotationAngle: 0, targetType: "hostage", timeDiff: 0.21), type: "shot", action: "hit", device: "device1", targetPos: nil),
+            ShotData(target: "target1", content: Content(command: "shot", hitArea: "A", hitPosition: Position(x: 205.0, y: 295.0), rotationAngle: 0, targetType: "hostage", timeDiff: 1.35), type: "shot", action: "hit", device: "device2", targetPos: nil),
         ]
         
         self.context = context

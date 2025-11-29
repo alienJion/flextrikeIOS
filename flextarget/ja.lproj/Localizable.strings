@@ -58,6 +58,7 @@
 "decode_shot_error" = "ショットデータのデコードに失敗";
 "drill_timer_expired" = "ドリルタイマー期限切れ";
 "shots_received" = "受信したショット";
+"drill_status_completed" = "完了";
 
 /* DrillSummaryView */
 "drill_result_summary_title" = "ドリル結果サマリー";

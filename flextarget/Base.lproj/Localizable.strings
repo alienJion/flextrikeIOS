@@ -58,6 +58,7 @@
 "decode_shot_error" = "Failed to decode shot data";
 "drill_timer_expired" = "Drill timer expired";
 "shots_received" = "Shots received";
+"drill_status_completed" = "Completed";
 
 /* DrillSummaryView */
 "drill_result_summary_title" = "Drill Result Summary";

@@ -77,7 +77,7 @@ final class DrillResultTests: XCTestCase {
                 let centerX = 360.0 + rng.nextDouble(min: -20.0, max: 20.0)
                 let centerY = 640.0 + rng.nextDouble(min: -20.0, max: 20.0)
                 let timeDiff = rng.nextDouble(min: 0.2, max: 2.0)
-                let content = Content(command: "shot", hitArea: "C", hitPosition: HitPosition(x: centerX, y: centerY), rotationAngle: 0, targetType: target, timeDiff: timeDiff, device: "device_\(target)")
+                let content = Content(command: "shot", hitArea: "C", hitPosition: Position(x: centerX, y: centerY), rotationAngle: 0, targetType: target, timeDiff: timeDiff, device: "device_\(target)")
                 let shot = ShotData(target: nil, content: content, type: "shot", action: "hit", device: "device_\(target)")
                 generatedShots.append(shot)
             }

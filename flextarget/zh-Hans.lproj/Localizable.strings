@@ -58,6 +58,7 @@
 "decode_shot_error" = "解码射击数据失败";
 "drill_timer_expired" = "训练计时器超时";
 "shots_received" = "收到的射击";
+"drill_status_completed" = "已完成";
 
 /* DrillSummaryView */
 "drill_result_summary_title" = "训练结果摘要";
