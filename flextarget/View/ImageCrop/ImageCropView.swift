@@ -1,12 +1,18 @@
 import SwiftUI
 import PhotosUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct ImageCropView: View {
     @StateObject private var viewModel = ImageCropViewModel()
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var lastScale: CGFloat = 1.0
     @State private var lastOffset: CGSize = .zero
     @State private var dragTranslation: CGSize = .zero
+    @State private var pinchScale: CGFloat = 1.0
+    @State private var guideAspect: CGFloat? = nil
     
     // Canvas dimensions (9:16 portrait ratio)
     let canvasRatio: CGFloat = 9.0 / 16.0
@@ -15,116 +21,138 @@ struct ImageCropView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 // Main Canvas Area
-                VStack {
-                    if let image = viewModel.selectedImage {
-                        ZStack {
-                            // Image with transform
+                let containerHeight: CGFloat = 480
+                GeometryReader { geo in
+                    let containerSize = CGSize(width: geo.size.width, height: containerHeight)
+                    // Compute the guide's displayed size (preserve asset aspect) and use it as the crop area
+                    let guideSize: CGSize = {
+                        if let aspect = guideAspect {
+                            let containerAspect = containerSize.width / containerSize.height
+                            if aspect > containerAspect {
+                                // guide is wider than container -> fit width
+                                let w = containerSize.width
+                                let h = w / aspect
+                                return CGSize(width: w, height: h)
+                            } else {
+                                // guide is taller (or equal) -> fit height
+                                let h = containerSize.height
+                                let w = min(containerSize.width, h * aspect)
+                                return CGSize(width: w, height: h)
+                            }
+                        } else {
+                            // unknown aspect: fallback to full container
+                            return containerSize
+                        }
+                    }()
+                    // cropSize is the guide's visible size
+                    let cropSize = guideSize
+                    
+                    ZStack {
+                        if let image = viewModel.selectedImage {
+                            // Image fill area
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFill()
-                                .scaleEffect(viewModel.scale)
-                                .offset(CGSize(
-                                    width: viewModel.offset.width + dragTranslation.width,
-                                    height: viewModel.offset.height + dragTranslation.height
-                                ))
-//                                .gesture(
-//                                    MagnificationGesture()
-//                                        .onChanged { value in
-//                                            let delta = value / lastScale
-//                                            let newScale = viewModel.scale * delta
-//                                            viewModel.scale = min(max(newScale, 1.0), 5.0)
-//                                            lastScale = value
-//                                        }
-//                                        .onEnded { _ in
-//                                            lastScale = 1.0
-//                                        }
-//                                )
+                                .frame(width: geo.size.width, height: containerHeight)
+                                .scaleEffect(viewModel.scale, anchor: .center)
+                                // Compute effective offset (offset + dragTranslation) clamped to allowed range
+                                .offset(x: viewModel.clampedOffset(for: CGSize(width: viewModel.offset.width + dragTranslation.width,
+                                                                               height: viewModel.offset.height + dragTranslation.height), containerSize: containerSize, cropSize: cropSize).width,
+                                        y: viewModel.clampedOffset(for: CGSize(width: viewModel.offset.width + dragTranslation.width,
+                                                                               height: viewModel.offset.height + dragTranslation.height), containerSize: containerSize, cropSize: cropSize).height)
+                                .clipped()
                                 .gesture(
                                     DragGesture()
                                         .onChanged { value in
-                                            dragTranslation = value.translation
+                                            // Compute the proposed absolute offset and clamp it immediately
+                                            let proposed = CGSize(width: viewModel.offset.width + value.translation.width,
+                                                                  height: viewModel.offset.height + value.translation.height)
+                                            let clamped = viewModel.clampedOffset(for: proposed, containerSize: containerSize, cropSize: cropSize)
+                                            // Show the clamped translation while dragging
+                                            dragTranslation = CGSize(width: clamped.width - viewModel.offset.width,
+                                                                     height: clamped.height - viewModel.offset.height)
                                         }
                                         .onEnded { _ in
-                                            viewModel.offset = CGSize(
-                                                width: viewModel.offset.width + dragTranslation.width,
-                                                height: viewModel.offset.height + dragTranslation.height
-                                            )
+                                            // Commit clamped offset
+                                            let proposed = CGSize(width: viewModel.offset.width + dragTranslation.width,
+                                                                  height: viewModel.offset.height + dragTranslation.height)
+                                            viewModel.offset = viewModel.clampedOffset(for: proposed, containerSize: containerSize, cropSize: cropSize)
                                             dragTranslation = .zero
                                         }
                                 )
-                            
-                            // Silhouette mask overlay
-                            SilhouetteMaskView(width: 320, height: 320)
-                                .allowsHitTesting(false)
-                            
-//                            // Dark mask guide
-//                            MaskGuideOverlay(frameWidth: 480, frameHeight: 480)
+                                .simultaneousGesture(
+                                    MagnificationGesture()
+                                        .onChanged { value in
+                                            // value is relative to the gesture start; combine with lastScale
+                                            pinchScale = value
+                                            let proposed = lastScale * pinchScale
+                                            let clamped = min(max(proposed, viewModel.minScale), viewModel.maxScale)
+                                            viewModel.scale = clamped
+                                            // clamp offset live so zoom doesn't reveal background
+                                            viewModel.offset = viewModel.clampedOffset(for: viewModel.offset, containerSize: containerSize, cropSize: cropSize, scaleOverride: viewModel.scale)
+                                        }
+                                        .onEnded { _ in
+                                            lastScale = viewModel.scale
+                                            pinchScale = 1.0
+                                        }
+                                )
+                                .onChange(of: viewModel.scale) { _ in
+                                    viewModel.enforceConstraints(containerSize: containerSize, cropSize: cropSize)
+                                }
+                                .onAppear {
+                                    viewModel.enforceConstraints(containerSize: containerSize, cropSize: cropSize)
+                                }
+                                .onChange(of: viewModel.selectedImage) { _ in
+                                    viewModel.enforceConstraints(containerSize: containerSize, cropSize: cropSize)
+                                }
                         }
-                        .frame(height: 480)
-                        .frame(maxWidth: .infinity)
-                        .clipped()
-                    } else {
-                        // Placeholder
-                        VStack(spacing: 12) {
-                            Image(systemName: "photo.badge.plus")
-                                .font(.system(size: 40))
-                                .foregroundColor(.gray)
-                            Text("Select a Photo")
-                                .font(.headline)
-                            Text("Tap the button below to choose an image from your library")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 320)
-                        .background(Color(.systemGray6))
+                        
+                        // Crop guide image from Assets (vector PDF/SVG as asset)
+                        Image("custom-target-guide")
+                            .resizable()
+                            .renderingMode(.original)
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: guideSize.width, height: guideSize.height)
+                            .allowsHitTesting(false)
+                            .onAppear {
+                                // lazy-load asset aspect when UIKit is available
+                                #if canImport(UIKit)
+                                if guideAspect == nil {
+                                    if let img = UIImage(named: "custom-target-guide") {
+                                        let a = img.size.width / max(1.0, img.size.height)
+                                        guideAspect = a
+                                    }
+                                }
+                                #endif
+                            }
                     }
+                    .frame(height: containerHeight)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.black)
                 }
-                .background(Color.black)
+                .frame(height: containerHeight)
                 
                 // Controls Section
-                VStack(spacing: 16) {
-                    // Scale Slider
-                    if viewModel.selectedImage != nil {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text("Zoom")
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                Spacer()
-                                Text(String(format: "%.1fx", viewModel.scale))
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                            }
-                            
-                            Slider(value: $viewModel.scale, in: 1.0...5.0)
-                                .tint(.red)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 16)
-                    }
-                    
-                    // Action Buttons
-                    HStack(spacing: 12) {
-                        PhotosPicker(
-                            selection: $selectedPhotoItem,
-                            matching: .images,
-                            photoLibrary: .shared()
-                        ) {
-                            HStack {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 16) {
+                        Spacer()
+                        PhotosPicker(selection: $selectedPhotoItem, matching: .images, photoLibrary: .shared()) {
+                            HStack(spacing: 10) {
                                 Image(systemName: "photo.fill")
                                 Text("Choose Photo")
                             }
-                            .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
+                            .padding(.horizontal, 18)
                             .background(Color.red)
                             .foregroundColor(.white)
                             .cornerRadius(8)
+                            .contentShape(Rectangle())
+                            .frame(minHeight: 44)
                         }
                         .onChange(of: selectedPhotoItem) { newValue in
                             Task {
-                                if let data = try? await newValue?.loadTransferable(type: Data.self),
-                                   let uiImage = UIImage(data: data) {
+                                if let data = try? await newValue?.loadTransferable(type: Data.self), let uiImage = UIImage(data: data) {
                                     await MainActor.run {
                                         viewModel.selectedImage = uiImage
                                         viewModel.resetTransform()
@@ -134,72 +162,51 @@ struct ImageCropView: View {
                                 }
                             }
                         }
-                        
-                        if viewModel.selectedImage != nil {
-                            Button(action: {
-                                viewModel.resetTransform()
-                                lastOffset = .zero
-                                dragTranslation = .zero
-                            }) {
-                                HStack {
-                                    Image(systemName: "arrow.circlepath")
-                                    Text("Reset")
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(Color(.systemGray5))
-                                .foregroundColor(.primary)
-                                .cornerRadius(8)
-                            }
-                        }
+
+                        // Apply Crop moved to navigation bar as 'Complete'
+                        Spacer()
                     }
+                    .frame(maxWidth: .infinity)
                     .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
-                    
-                    // Preview and Crop Buttons
-                    if viewModel.selectedImage != nil {
-                        HStack(spacing: 12) {
-                            Button(action: {
-                                viewModel.showLivePreview.toggle()
-                            }) {
-                                HStack {
-                                    Image(systemName: "eye.fill")
-                                    Text("Preview")
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(viewModel.showLivePreview ? Color.red.opacity(0.7) : Color(.systemGray5))
-                                .foregroundColor(viewModel.showLivePreview ? .white : .primary)
-                                .cornerRadius(8)
-                            }
-                            
-                            Button(action: {
-                                // TODO: Save cropped image or proceed with it
-                                // viewModel.cropImage(within: cropFrame, canvasSize: canvasSize)
-                            }) {
-                                HStack {
-                                    Image(systemName: "checkmark.circle.fill")
-                                    Text("Apply Crop")
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(Color.red)
-                                .foregroundColor(.white)
-                                .cornerRadius(8)
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 16)
-                    }
+                    .padding(.bottom, 16)
+                    Spacer()
                 }
-                .background(Color(.systemBackground))
+                .frame(minHeight: 120)
+                .background(Color.black)
             }
             .navigationTitle("Position & Crop")
             .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button(action: { dismiss() }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "chevron.backward")
+                                // Text("Back")
+                            }
+                        }
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        if viewModel.selectedImage != nil {
+                            Button("Complete") {
+                                // TODO: perform crop and dismiss/return result
+                            }
+                        }
+                    }
+                }
             .sheet(isPresented: $viewModel.showLivePreview) {
                 LivePreviewSheet(viewModel: viewModel)
             }
+            .onAppear {
+                // ensure guideAspect is available as early as possible so clamping uses guide bounds
+                #if canImport(UIKit)
+                if guideAspect == nil, let img = UIImage(named: "custom-target-guide") {
+                    guideAspect = img.size.width / max(1.0, img.size.height)
+                }
+                #endif
+            }
         }
+        .background(Color.black)
+        .ignoresSafeArea()
     }
 }
 
@@ -220,11 +227,12 @@ struct LivePreviewSheet: View {
                             .offset(viewModel.offset)
                     }
                     
-                    // Silhouette mask guide
-                    SilhouetteMaskView(width: 180, height: 320)
-                    
-                    // Dark overlay mask
-                    MaskGuideOverlay(frameWidth: 180, frameHeight: 320)
+                    // Crop guide image for preview (matches preview frame)
+                    Image("custom-target-guide")
+                        .resizable()
+                        .renderingMode(.original)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 320)
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 400)
@@ -289,3 +297,5 @@ struct LivePreviewSheet: View {
 #Preview {
     ImageCropView()
 }
+
+// (Crop guide now provided by the `customer-image-guide` asset in Assets.xcassets)

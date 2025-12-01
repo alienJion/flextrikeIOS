@@ -52,6 +52,9 @@ struct DrillMainPageView: View {
                         showPhotoPicker = false
                     }
                 }
+                .sheet(isPresented: $showImageCrop) {
+                    ImageCropView()
+                }
                 .onAppear {
                     if !bleManager.isConnected {
                         showConnectView = true
@@ -111,23 +114,18 @@ struct DrillMainPageView: View {
                             showDrillList = true
                         }
                     // Image Transfer Button (Testing - uses testTarget from assets)
-                    // MainMenuButton(icon: "photo", text: "Transfer Image", color: .blue)
-                    //     .onTapGesture {
-                    //         if let testImage = UIImage(named: "testTarget") {
-                    //             startImageTransfer(testImage)
-                    //         } else {
-                    //             transferMessage = "Test image 'testTarget' not found in assets"
-                    //             showTransferAlert = true
-                    //         }
-                    //     }
-                    // // Disabled IPSC button (non-interactive, visually muted)
-                    // MainMenuButton(icon: "scope", text: NSLocalizedString("ipsc_questionaries", comment: "IPSC Questionaries menu button"), color: .gray)
-                    //     .allowsHitTesting(false)
-                    //     .opacity(0.6)
-                    // // Disabled IDPA button (non-interactive, visually muted)
-                    // MainMenuButton(icon: "shield", text: NSLocalizedString("idpa_questionaries", comment: "IDPA Questionaries menu button"), color: .gray)
-                    //     .allowsHitTesting(false)
-                    //     .opacity(0.6)
+                     MainMenuButton(icon: "photo", text: "Transfer Image", color: .blue)
+                         .onTapGesture {
+                             showImageCrop = true
+                         }
+//                     // Disabled IPSC button (non-interactive, visually muted)
+//                     MainMenuButton(icon: "scope", text: NSLocalizedString("ipsc_questionaries", comment: "IPSC Questionaries menu button"), color: .gray)
+//                         .allowsHitTesting(false)
+//                         .opacity(0.6)
+//                     // Disabled IDPA button (non-interactive, visually muted)
+//                     MainMenuButton(icon: "shield", text: NSLocalizedString("idpa_questionaries", comment: "IDPA Questionaries menu button"), color: .gray)
+//                         .allowsHitTesting(false)
+//                         .opacity(0.6)
                 }
                 .padding(.top, 24)
                 Spacer()
