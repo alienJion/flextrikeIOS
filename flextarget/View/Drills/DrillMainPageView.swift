@@ -1,5 +1,4 @@
 import SwiftUI
-import PhotosUI
 import CoreData
 
 struct DrillMainPageView: View {
@@ -15,21 +14,11 @@ struct DrillMainPageView: View {
     let persistenceController = PersistenceController.shared
     @State private var errorObserver: NSObjectProtocol?
     
-    // Image Transfer States
-    @State private var showPhotoPicker = false
-    @State private var selectedImage: UIImage? = nil
-    @State private var isTransferring = false
-    @State private var transferProgress = 0
-    @State private var transferMessage = ""
-    @State private var showTransferAlert = false
-    
-    // iOS 16+ PhotosPicker
-    @State private var selectedPhotoItem: Any? = nil
+    // (Image transfer moved to Connect view)
     
     // Image Crop Navigation
     @State private var showImageCrop = false
     
-    private let imageTransferManager = ImageTransferManager()
     
     var body: some View {
         if showDrillList {
@@ -43,15 +32,7 @@ struct DrillMainPageView: View {
                 .sheet(isPresented: $showInfo) {
                     InformationPage()
                 }
-                .sheet(isPresented: $showPhotoPicker) {
-                    ImagePickerView { image in
-                        if let image = image {
-                            selectedImage = image
-                            startImageTransfer(image)
-                        }
-                        showPhotoPicker = false
-                    }
-                }
+                
                 .sheet(isPresented: $showImageCrop) {
                     ImageCropView()
                 }
@@ -85,16 +66,7 @@ struct DrillMainPageView: View {
                 .alert(isPresented: $showError) {
                     Alert(title: Text(NSLocalizedString("ble_error", comment: "BLE Error alert title")), message: Text(errorMessage), dismissButton: .default(Text(NSLocalizedString("ok", comment: "OK button"))))
                 }
-                .alert(isPresented: $showTransferAlert) {
-                    Alert(
-                        title: Text("Image Transfer"),
-                        message: Text(transferMessage),
-                        dismissButton: .default(Text("OK")) {
-                            selectedImage = nil
-                            transferMessage = ""
-                        }
-                    )
-                }
+                
                 .navigationViewStyle(.stack)
         }
     }
@@ -113,11 +85,6 @@ struct DrillMainPageView: View {
                         .onTapGesture {
                             showDrillList = true
                         }
-                    // Image Transfer Button (Testing - uses testTarget from assets)
-                     MainMenuButton(icon: "photo", text: "Transfer Image", color: .blue)
-                         .onTapGesture {
-                             showImageCrop = true
-                         }
 //                     // Disabled IPSC button (non-interactive, visually muted)
 //                     MainMenuButton(icon: "scope", text: NSLocalizedString("ipsc_questionaries", comment: "IPSC Questionaries menu button"), color: .gray)
 //                         .allowsHitTesting(false)
@@ -224,72 +191,7 @@ struct DrillMainPageView: View {
     }
     
     // MARK: - Image Transfer Methods
-    
-    private func startImageTransfer(_ image: UIImage) {
-        guard bleManager.isConnected else {
-            transferMessage = "BLE device not connected. Please connect first."
-            showTransferAlert = true
-            return
-        }
-        
-        isTransferring = true
-        showPhotoPicker = false
-        transferMessage = "Compressing and transferring image..."
-        showTransferAlert = true
-        
-        // Start transfer in background
-        DispatchQueue.global(qos: .userInitiated).async {
-            imageTransferManager.transferImage(
-                image,
-                named: "target_image_\(Date().timeIntervalSince1970)",
-                compressionQuality: 0.05
-            ) { success, message in
-                DispatchQueue.main.async {
-                    isTransferring = false
-                    transferMessage = message
-                    showTransferAlert = true
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Image Picker View (iOS 14+ compatible)
-
-struct ImagePickerView: UIViewControllerRepresentable {
-    var onImageSelected: (UIImage?) -> Void
-    
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.sourceType = .photoLibrary
-        picker.delegate = context.coordinator
-        return picker
-    }
-    
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onImageSelected: onImageSelected)
-    }
-    
-    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        var onImageSelected: (UIImage?) -> Void
-        
-        init(onImageSelected: @escaping (UIImage?) -> Void) {
-            self.onImageSelected = onImageSelected
-        }
-        
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-            let image = info[.originalImage] as? UIImage
-            onImageSelected(image)
-            picker.dismiss(animated: true)
-        }
-        
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            onImageSelected(nil)
-            picker.dismiss(animated: true)
-        }
-    }
+    // Image transfer handled from ConnectSmartTargetView now.
 }
 
 #Preview {

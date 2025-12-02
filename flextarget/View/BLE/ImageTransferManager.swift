@@ -21,6 +21,9 @@ class ImageTransferManager {
     private var transferCompletion: ((Bool, String) -> Void)?
     private var progressHandler: ((Int) -> Void)?
     private var ackTimer: Timer?
+    // Observer and timer for ready-ack handshake
+    private var readyObserver: NSObjectProtocol?
+    private var readyTimer: Timer?
     
     init(bleManager: BLEManager = .shared) {
         self.bleManager = bleManager
@@ -42,35 +45,106 @@ class ImageTransferManager {
         completion: @escaping (Bool, String) -> Void
     ) {
         guard !transferInProgress else {
-            completion(false, "Transfer already in progress")
+            completion(false, NSLocalizedString("transfer_in_progress_error", comment: "Transfer already in progress"))
             return
         }
         
         guard bleManager.isConnected else {
-            completion(false, "BLE not connected")
+            completion(false, NSLocalizedString("ble_not_connected", comment: "BLE not connected"))
             return
         }
         
         // Compress image
         guard let jpegData = image.jpegData(compressionQuality: compressionQuality) else {
-            completion(false, "Failed to compress image")
+            completion(false, NSLocalizedString("failed_compress_image", comment: "Failed to compress image"))
             return
         }
-        
-        print("📦 Starting image transfer: \(imageName)")
+
+        print("📦 Preparing image transfer: \(imageName)")
         print("   Original size: \(jpegData.count) bytes")
-        
+
+        // Prepare chunks but do not start sending until the device ACKs readiness
         transferInProgress = true
         transferCompletion = completion
         progressHandler = progress
         currentChunkIndex = 0
         currentChunks = jpegData.chunked(into: chunkSize)
-        
+
         print("   Compressed size: \(jpegData.count) bytes")
         print("   Chunks: \(currentChunks.count) × \(chunkSize) bytes")
-        
-        // Send transfer start command
-        sendTransferStart(imageName: imageName, totalSize: jpegData.count, totalChunks: currentChunks.count)
+
+        // Send a readiness command to the device and wait for an ACK
+        sendReadyCommandAndAwaitAck(imageName: imageName, totalSize: jpegData.count, totalChunks: currentChunks.count)
+    }
+
+    // MARK: - Ready handshake
+
+    private func sendReadyCommandAndAwaitAck(imageName: String, totalSize: Int, totalChunks: Int) {
+        // Build minimal ready message (netlink_forward) — only command
+        let content: [String: Any] = [
+            "command": "image_transfer_ready"
+        ]
+        let message: [String: Any] = [
+            "action": "netlink_forward",
+            "dest": "ET02",
+            "content": content
+        ]
+
+                guard let jsonData = try? JSONSerialization.data(withJSONObject: message),
+                            let jsonString = String(data: jsonData, encoding: .utf8) else {
+                        finishTransfer(success: false, message: NSLocalizedString("failed_encode_ready", comment: "Failed to encode ready command"))
+                        return
+                }
+
+        // Register observer for incoming netlink forward messages
+        readyObserver = NotificationCenter.default.addObserver(forName: .bleNetlinkForwardReceived, object: nil, queue: .main) { [weak self] notification in
+            guard let self = self else { return }
+            guard let json = notification.userInfo?["json"] as? [String: Any] else { return }
+
+            // The ACK may appear at top-level or inside content
+            var ackValue: String? = nil
+            if let content = json["content"] as? [String: Any], let ack = content["ack"] as? String {
+                ackValue = ack
+            } else if let ack = json["ack"] as? String {
+                ackValue = ack
+            }
+
+            if let ack = ackValue, ack == "image_transfer_ready" {
+                // ACK received — cancel timer & observer and start transfer
+                self.readyTimer?.invalidate()
+                self.readyTimer = nil
+                if let obs = self.readyObserver {
+                    NotificationCenter.default.removeObserver(obs)
+                    self.readyObserver = nil
+                }
+
+                // Small delay to ensure target has finished handshake processing
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    self.sendTransferStart(imageName: imageName, totalSize: totalSize, totalChunks: totalChunks)
+                }
+            }
+        }
+
+
+        // Send the ready command
+        bleManager.writeJSON(jsonString)
+
+        // Notify UI that we're waiting for the target to acknowledge readiness
+        NotificationCenter.default.post(name: .imageTransferWaitingForAck, object: nil)
+
+        // Start guard timer: if no ACK within configured timeout, cancel transfer
+        readyTimer = Timer.scheduledTimer(withTimeInterval: timeoutInterval, repeats: false) { [weak self] _ in
+            guard let self = self else { return }
+            // Remove observer
+            if let obs = self.readyObserver {
+                NotificationCenter.default.removeObserver(obs)
+                self.readyObserver = nil
+            }
+            self.readyTimer = nil
+            // Notify UI that target didn't respond and abort transfer
+            NotificationCenter.default.post(name: .imageTransferTargetNotReady, object: nil)
+            self.finishTransfer(success: false, message: NSLocalizedString("image_transfer_target_not_ready", comment: "Target not ready to receive image"))
+        }
     }
     
     // MARK: - Private Methods
@@ -90,11 +164,11 @@ class ImageTransferManager {
             "content": content
         ]
         
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: message),
-              let jsonString = String(data: jsonData, encoding: .utf8) else {
-            finishTransfer(success: false, message: "Failed to encode start command")
-            return
-        }
+                guard let jsonData = try? JSONSerialization.data(withJSONObject: message),
+                            let jsonString = String(data: jsonData, encoding: .utf8) else {
+                        finishTransfer(success: false, message: NSLocalizedString("failed_encode_start_command", comment: "Failed to encode start command"))
+                        return
+                }
         
         bleManager.writeJSON(jsonString)
         
@@ -127,11 +201,11 @@ class ImageTransferManager {
             "content": content
         ]
         
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: message, options: [.sortedKeys]),
-              var jsonString = String(data: jsonData, encoding: .utf8) else {
-            finishTransfer(success: false, message: "Failed to encode chunk")
-            return
-        }
+                guard let jsonData = try? JSONSerialization.data(withJSONObject: message, options: [.sortedKeys]),
+                            var jsonString = String(data: jsonData, encoding: .utf8) else {
+                        finishTransfer(success: false, message: NSLocalizedString("failed_encode_chunk", comment: "Failed to encode chunk"))
+                        return
+                }
         
         // Verify base64 string integrity - log it for debugging
         print("   📋 Base64 length: \(base64String.count) chars")
@@ -166,22 +240,34 @@ class ImageTransferManager {
             "content": content
         ]
         
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: message),
-              let jsonString = String(data: jsonData, encoding: .utf8) else {
-            finishTransfer(success: false, message: "Failed to encode complete command")
-            return
-        }
+                guard let jsonData = try? JSONSerialization.data(withJSONObject: message),
+                            let jsonString = String(data: jsonData, encoding: .utf8) else {
+                        finishTransfer(success: false, message: NSLocalizedString("failed_encode_complete_command", comment: "Failed to encode complete command"))
+                        return
+                }
         
         bleManager.writeJSON(jsonString)
-        finishTransfer(success: true, message: "Image transferred successfully")
+        finishTransfer(success: true, message: NSLocalizedString("image_transferred_success", comment: "Image transferred successfully"))
     }
     
     private func finishTransfer(success: Bool, message: String) {
         transferInProgress = false
-        progressHandler?(success ? 100 : 0)
+        // Only report final progress on success. Avoid sending a 0% progress update
+        // on failure because that can race with UI timeout handling and cause
+        // the overlay to briefly switch to 'Transferring 0%'.
+        if success {
+            progressHandler?(100)
+        }
         progressHandler = nil
         ackTimer?.invalidate()
         ackTimer = nil
+        // Clean up ready observer / timer if still present
+        if let obs = readyObserver {
+            NotificationCenter.default.removeObserver(obs)
+            readyObserver = nil
+        }
+        readyTimer?.invalidate()
+        readyTimer = nil
         
         if success {
             print("✅ \(message)")
@@ -201,14 +287,28 @@ class ImageTransferManager {
         currentChunkIndex = 0
         ackTimer?.invalidate()
         ackTimer = nil
+        if let obs = readyObserver {
+            NotificationCenter.default.removeObserver(obs)
+            readyObserver = nil
+        }
+        readyTimer?.invalidate()
+        readyTimer = nil
         progressHandler?(0)
         progressHandler = nil
-        transferCompletion?(false, "Transfer cancelled")
+        transferCompletion?(false, NSLocalizedString("transfer_cancelled", comment: "Transfer cancelled"))
         transferCompletion = nil
     }
 }
 
 // MARK: - Helper Extensions
+
+// Notifications posted by ImageTransferManager for UI feedback
+extension Notification.Name {
+    /// Posted when the manager has sent the ready command and is waiting for an ACK
+    static let imageTransferWaitingForAck = Notification.Name("imageTransferWaitingForAck")
+    /// Posted when the ready ACK did not arrive within the guard timer
+    static let imageTransferTargetNotReady = Notification.Name("imageTransferTargetNotReady")
+}
 
 extension Data {
     /// Splits data into chunks of specified size

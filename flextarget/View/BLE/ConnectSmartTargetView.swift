@@ -13,6 +13,7 @@ struct ConnectSmartTargetView: View {
     @State private var hasTriedReconnect: Bool = false
     @State private var showPeripheralPicker: Bool = false
     @State private var selectedPeripheral: DiscoveredPeripheral?
+    @State private var showImageCrop: Bool = false
     @State private var connectionStartTime: Date?
     @State private var timeoutTimer: Timer?
     @State private var remainingSeconds: Int = 15
@@ -120,25 +121,40 @@ struct ConnectSmartTargetView: View {
                     }
 
                     if showOkay {
-                        HStack(spacing: 20) {
-                            Button(action: handleRescan) {
-                                Text(NSLocalizedString("scan", comment: "Scan button to rescan for other targets"))
+                        VStack(spacing: 12) {
+                            HStack(spacing: 20) {
+                                Button(action: handleRescan) {
+                                    Text(NSLocalizedString("scan", comment: "Scan button to rescan for other targets"))
+                                        .font(.custom("SFPro-Medium", size: 20))
+                                        .foregroundColor(.white)
+                                        .frame(width: geometry.size.width * 0.35, height: 44)
+                                        .background(Color.blue)
+                                        .cornerRadius(8)
+                                }
+                                Button(action: { showFirmwareAlert = true }) {
+                                    Text(NSLocalizedString("firmware_upgrade", comment: "Firmware Upgrade button"))
+                                        .font(.custom("SFPro-Medium", size: 20))
+                                        .foregroundColor(.white)
+                                        .frame(width: geometry.size.width * 0.35, height: 44)
+                                        .background(Color.red)
+                                        .cornerRadius(8)
+                                }
+                            }
+                            .padding(.horizontal)
+
+                            // Image Transfer button shown when connected (placed under Scan & Firmware)
+                            Button(action: {
+                                showImageCrop = true
+                            }) {
+                                Text(NSLocalizedString("my_target", comment: "Transfer Image button title"))
                                     .font(.custom("SFPro-Medium", size: 20))
                                     .foregroundColor(.white)
-                                    .frame(width: geometry.size.width * 0.35, height: 44)
+                                    .frame(width: geometry.size.width * 0.75, height: 44)
                                     .background(Color.blue)
                                     .cornerRadius(8)
                             }
-                            Button(action: { showFirmwareAlert = true }) {
-                                Text(NSLocalizedString("firmware_upgrade", comment: "Firmware Upgrade button"))
-                                    .font(.custom("SFPro-Medium", size: 20))
-                                    .foregroundColor(.white)
-                                    .frame(width: geometry.size.width * 0.35, height: 44)
-                                    .background(Color.red)
-                                    .cornerRadius(8)
-                            }
+                            .padding(.top, 4)
                         }
-                        .padding(.horizontal)
                     }
                 }//Status and Reconnect Button
                 .frame(maxWidth: .infinity)
@@ -214,6 +230,9 @@ struct ConnectSmartTargetView: View {
                     .accessibilityLabel(Text("Close"))
                 }
             }
+        }
+        .sheet(isPresented: $showImageCrop) {
+            ImageCropView()
         }
         .background(Color.black.ignoresSafeArea())
 //        .mobilePhoneLayout()

@@ -143,3 +143,35 @@
 "firmware_upgrade" = "韌體升級";
 "firmware_upgrade_title" = "韌體升級";
 "firmware_upgrade_message" = "確保新的韌體USB驅動器牢固地插入設備右側的USB端口。";
+
+/* Image transfer / ImageCropView */
+"my_target" = "我的標靶";
+"choose_photo" = "選擇照片";
+"complete" = "傳送";
+"transferring_image" = "正在傳送圖片...";
+"cancel_transfer" = "取消傳送";
+"cancel_transfer_confirm_title" = "取消傳送並返回？";
+"yes_cancel" = "是，取消";
+"no" = "否";
+"cancel_transfer_message" = "圖片傳送正在進行中。若返回，傳送將被停止。";
+"live_preview" = "即時預覽";
+"live_preview_description" = "顯示您的照片在輪廓導引下如何定位與裁切。";
+"zoom_level" = "縮放等級：";
+"offset" = "位移：";
+"close_preview" = "關閉預覽";
+"close" = "關閉";
+
+/* ImageTransferManager messages */
+"transfer_in_progress_error" = "傳送已在進行中";
+"ble_not_connected" = "BLE 未連接";
+"failed_compress_image" = "圖片壓縮失敗";
+"failed_encode_ready" = "準備命令編碼失敗";
+"image_transfer_target_not_ready" = "目標未準備好接收圖片";
+"failed_encode_start_command" = "開始命令編碼失敗";
+"failed_encode_chunk" = "分片編碼失敗";
+"failed_encode_complete_command" = "完成命令編碼失敗";
+"image_transferred_success" = "圖片傳送成功";
+"transfer_cancelled" = "傳送已取消";
+"transfer" = "傳輸";
+"ensure_target_ready" = "請確保標靶已準備就緒";
+"target_not_ready" = "標靶尚未準備好接收";

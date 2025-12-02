@@ -143,3 +143,35 @@
 "firmware_upgrade" = "Firmware-Aktualisierung";
 "firmware_upgrade_title" = "Firmware-Aktualisierung";
 "firmware_upgrade_message" = "Stellen Sie sicher, dass das neue Firmware-USB-Laufwerk sicher in den USB-Anschluss auf der rechten Seite des Geräts eingesteckt ist.";
+
+/* Image transfer / ImageCropView */
+"my_target" = "Mein Ziel";
+"choose_photo" = "Foto auswählen";
+"complete" = "Übertragen";
+"transferring_image" = "Bild wird übertragen...";
+"cancel_transfer" = "Übertragung abbrechen";
+"cancel_transfer_confirm_title" = "Übertragung abbrechen und zurück?";
+"yes_cancel" = "Ja, abbrechen";
+"no" = "Nein";
+"cancel_transfer_message" = "Eine Bildübertragung ist im Gange. Wenn Sie zurückgehen, wird die Übertragung gestoppt.";
+"live_preview" = "Live-Vorschau";
+"live_preview_description" = "Zeigt, wie Ihr Foto mit der Silhouetten-Vorlage positioniert und zugeschnitten wird.";
+"zoom_level" = "Zoomstufe:";
+"offset" = "Versatz:";
+"close_preview" = "Vorschau schließen";
+"close" = "Schließen";
+
+/* ImageTransferManager messages */
+"transfer_in_progress_error" = "Übertragung bereits in Arbeit";
+"ble_not_connected" = "BLE nicht verbunden";
+"failed_compress_image" = "Komprimierung des Bildes fehlgeschlagen";
+"failed_encode_ready" = "Fehler beim Kodieren des Ready-Befehls";
+"image_transfer_target_not_ready" = "Ziel ist nicht bereit, Bild zu empfangen";
+"failed_encode_start_command" = "Fehler beim Kodieren des Startbefehls";
+"failed_encode_chunk" = "Fehler beim Kodieren des Chunks";
+"failed_encode_complete_command" = "Fehler beim Kodieren des Abschlussbefehls";
+"image_transferred_success" = "Bild erfolgreich übertragen";
+"transfer_cancelled" = "Übertragung abgebrochen";
+"transfer" = "Übertragen";
+"ensure_target_ready" = "Stellen Sie sicher, dass das Ziel bereit ist";
+"target_not_ready" = "Ziel ist nicht bereit, zu empfangen";

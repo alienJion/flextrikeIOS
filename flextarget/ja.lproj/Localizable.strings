@@ -143,3 +143,35 @@
 "firmware_upgrade" = "ファームウェアアップグレード";
 "firmware_upgrade_title" = "ファームウェアアップグレード";
 "firmware_upgrade_message" = "新しいファームウェアUSBドライブがデバイスの右側のUSBポートにしっかりと挿入されていることを確認してください。";
+
+/* Image transfer / ImageCropView */
+"my_target" = "マイターゲット";
+"choose_photo" = "写真を選択";
+"transfer" = "転送";
+"transferring_image" = "画像を転送中...";
+"cancel_transfer" = "転送をキャンセル";
+"cancel_transfer_confirm_title" = "転送をキャンセルして戻りますか？";
+"yes_cancel" = "はい、キャンセル";
+"no" = "いいえ";
+"cancel_transfer_message" = "画像転送が進行中です。戻ると転送が停止されます。";
+"live_preview" = "ライブプレビュー";
+"live_preview_description" = "写真がシルエットガイドでどのように位置合わせおよびトリミングされるかを表示します。";
+"zoom_level" = "ズームレベル:";
+"offset" = "オフセット:";
+"close_preview" = "プレビューを閉じる";
+"close" = "閉じる";
+
+/* ImageTransferManager messages */
+"transfer_in_progress_error" = "転送は既に進行中です";
+"ble_not_connected" = "BLEが接続されていません";
+"failed_compress_image" = "画像の圧縮に失敗しました";
+"failed_encode_ready" = "準備コマンドのエンコードに失敗しました";
+"image_transfer_target_not_ready" = "ターゲットが画像を受信する準備ができていません";
+"failed_encode_start_command" = "開始コマンドのエンコードに失敗しました";
+"failed_encode_chunk" = "チャンクのエンコードに失敗しました";
+"failed_encode_complete_command" = "完了コマンドのエンコードに失敗しました";
+"image_transferred_success" = "画像が正常に転送されました";
+"transfer_cancelled" = "転送がキャンセルされました";
+"transfer" = "転送";
+"ensure_target_ready" = "ターゲットが準備できていることを確認してください";
+"target_not_ready" = "ターゲットが受信する準備ができていません";

@@ -1,0 +1,16 @@
+{
+  "problems.decorations.enabled": false,
+  "problems.showCurrentInStatus": false,
+  "[swift]": {
+    "editor.defaultFormatter": "apple.swift-format",
+    "editor.formatOnSave": false
+  },
+  "swift.disableSourceKitLSP": true,
+  "swift.checkForInstalledSwiftToolchain": false,
+  "swift.backgroundIndexing": false,
+  "swift.languageServerPath": "",
+  "extensions.ignoreRecommendations": true,
+  "extensions.autoUpdate": false,
+  "editor.codeActionsOnSave": {},
+  "editor.lightbulb.enabled": "off"
+}

@@ -132,19 +132,44 @@ class ImageCropViewModel: ObservableObject {
         let size = CGSize(width: CGFloat(imgW * pxPerPoint), height: CGFloat(imgH * pxPerPoint))
         var cropRectPixels = CGRect(origin: origin, size: size)
 
-        // Clamp to cgImage bounds
-        cropRectPixels.origin.x = max(0, cropRectPixels.origin.x)
-        cropRectPixels.origin.y = max(0, cropRectPixels.origin.y)
-        if cropRectPixels.maxX > CGFloat(cg.width) {
-            cropRectPixels.size.width = max(0, CGFloat(cg.width) - cropRectPixels.origin.x)
-        }
-        if cropRectPixels.maxY > CGFloat(cg.height) {
-            cropRectPixels.size.height = max(0, CGFloat(cg.height) - cropRectPixels.origin.y)
+        // Normalize to integer pixel boundaries and clamp to image bounds to avoid
+        // fractional/out-of-range rectangles that can cause cg.cropping(to:) to fail
+        cropRectPixels = cropRectPixels.standardized.integral
+        let imageBounds = CGRect(x: 0, y: 0, width: CGFloat(cg.width), height: CGFloat(cg.height))
+        cropRectPixels = cropRectPixels.intersection(imageBounds)
+
+        // If the resulting rect is empty or too small, attempt a safe fallback
+        if !(cropRectPixels.width >= 1.0 && cropRectPixels.height >= 1.0) {
+            // Log diagnostics for the originally computed rect
+            print("⚠️ cropImage: empty crop rect after clamping: \(cropRectPixels) imageBounds=\(imageBounds) img.size=\(norm.size) baseFill=\(baseFill) scale=\(scale) pxPerPoint=\(pxPerPoint)")
+
+            // Fallback: create a centered crop that preserves the target aspect ratio
+            // (720x1280) inside the available image bounds. This ensures a valid crop
+            // rectangle even when the guide/cropFrame calculation produced a zero width/height.
+            let targetSize = CGSize(width: 720.0, height: 1280.0)
+            let targetAspect = targetSize.width / targetSize.height
+
+            // Start by trying to use full image height and compute width by aspect
+            var fallbackHeight = imageBounds.height
+            var fallbackWidth = fallbackHeight * targetAspect
+
+            // If that width exceeds bounds, use full width and compute height by aspect
+            if fallbackWidth > imageBounds.width {
+                fallbackWidth = imageBounds.width
+                fallbackHeight = fallbackWidth / targetAspect
+            }
+
+            let fx = (imageBounds.width - fallbackWidth) / 2.0
+            let fy = (imageBounds.height - fallbackHeight) / 2.0
+            cropRectPixels = CGRect(x: fx, y: fy, width: fallbackWidth, height: fallbackHeight)
+            print("⚠️ cropImage: using fallback cropRectPixels=\(cropRectPixels)")
         }
 
         if let cropped = cg.cropping(to: cropRectPixels) {
+            print("✅ cropImage: cropped cg rect=\(cropRectPixels) cg.size=(\(cg.width),\(cg.height))")
             // Create UIImage from cropped CGImage and normalize orientation to .up so transfers/viewing show correct rotation
-            var ui = UIImage(cgImage: cropped, scale: norm.scale, orientation: .up)
+            // Use scale 1.0 for the created UIImage to avoid mixing device/backing scales
+            var ui = UIImage(cgImage: cropped, scale: 1.0, orientation: .up)
             ui = normalizedImage(ui)
 
             // Resize to target output resolution (720x1280) while preserving aspect ratio.
@@ -163,8 +188,15 @@ class ImageCropViewModel: ObservableObject {
             let drawOrigin = CGPoint(x: (targetSize.width - scaledSize.width) / 2.0,
                                      y: (targetSize.height - scaledSize.height) / 2.0)
 
+            // Use a renderer with scale 1.0 (renderer handles backing scale) to avoid
+            // issues when mixing cgImage scales on wide-gamut/high-density devices.
             let format = UIGraphicsImageRendererFormat()
             format.scale = 1.0
+            format.opaque = true
+            if #available(iOS 12.0, *) {
+                format.preferredRange = .standard
+            }
+            print("ℹ️ cropImage: renderer format scale=\(format.scale) opaque=\(format.opaque) preferredRange=\(String(describing: (format as AnyObject).preferredRange))")
             let renderer = UIGraphicsImageRenderer(size: targetSize, format: format)
             let resized = renderer.image { _ in
                 ui.draw(in: CGRect(origin: drawOrigin, size: scaledSize))
