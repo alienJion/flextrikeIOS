@@ -134,3 +134,36 @@
 /* Drill Execution - Back Navigation */
 "continue_button" = "Continue";
 "drill_in_progress_back_message" = "A drill is currently in progress. Going back will lose the drill record. Are you sure?";
+
+/* Image transfer / ImageCropView */
+"my_target" = "My Target";
+"choose_photo" = "Choose Photo";
+"transfer" = "Transfer";
+"transferring_image" = "Transferring image...";
+"cancel_transfer" = "Cancel Transfer";
+"cancel_transfer_confirm_title" = "Cancel transfer and go back?";
+"yes_cancel" = "Yes, cancel";
+"no" = "No";
+"cancel_transfer_message" = "An image transfer is in progress. If you go back the transfer will be stopped.";
+"live_preview" = "Live Preview";
+"live_preview_description" = "This shows how your photo will be positioned and cropped with the silhouette guide.";
+"zoom_level" = "Zoom Level:";
+"offset" = "Offset:";
+"close_preview" = "Close Preview";
+"close" = "Close";
+
+/* ImageTransferManager messages */
+"transfer_in_progress_error" = "Transfer already in progress";
+"ble_not_connected" = "BLE not connected";
+"failed_compress_image" = "Failed to compress image";
+"failed_encode_ready" = "Failed to encode ready command";
+"image_transfer_target_not_ready" = "Target not ready to receive image";
+"failed_encode_start_command" = "Failed to encode start command";
+"failed_encode_chunk" = "Failed to encode chunk";
+"failed_encode_complete_command" = "Failed to encode complete command";
+"image_transferred_success" = "Image transferred successfully";
+"transfer_cancelled" = "Transfer cancelled";
+
+/* Image transfer overlay messages */
+"ensure_target_ready" = "Make sure the Target is Ready";
+"target_not_ready" = "Target is Not Ready to receive";

@@ -143,3 +143,35 @@
 "firmware_upgrade" = "Actualización de Firmware";
 "firmware_upgrade_title" = "Actualización de Firmware";
 "firmware_upgrade_message" = "Asegúrese de que la nueva unidad USB de firmware esté firmemente insertada en el puerto USB del lado derecho del dispositivo.";
+
+/* Image transfer / ImageCropView */
+"my_target" = "Mi objetivo";
+"choose_photo" = "Elegir foto";
+"transfer" = "Transferir";
+"transferring_image" = "Transfiriendo imagen...";
+"cancel_transfer" = "Cancelar transferencia";
+"cancel_transfer_confirm_title" = "¿Cancelar la transferencia y volver?";
+"yes_cancel" = "Sí, cancelar";
+"no" = "No";
+"cancel_transfer_message" = "Hay una transferencia de imagen en progreso. Si regresas, la transferencia se detendrá.";
+"live_preview" = "Vista previa en vivo";
+"live_preview_description" = "Esto muestra cómo se posicionará y recortará su foto con la guía.";
+"zoom_level" = "Nivel de zoom:";
+"offset" = "Desplazamiento:";
+"close_preview" = "Cerrar vista previa";
+"close" = "Cerrar";
+
+/* ImageTransferManager messages */
+"transfer_in_progress_error" = "Transferencia ya en progreso";
+"ble_not_connected" = "BLE no conectado";
+"failed_compress_image" = "Error al comprimir la imagen";
+"failed_encode_ready" = "Error al codificar comando ready";
+"image_transfer_target_not_ready" = "El dispositivo no está listo para recibir la imagen";
+"failed_encode_start_command" = "Error al codificar el comando de inicio";
+"failed_encode_chunk" = "Error al codificar el fragmento";
+"failed_encode_complete_command" = "Error al codificar el comando de finalización";
+"image_transferred_success" = "Imagen transferida con éxito";
+"transfer_cancelled" = "Transferencia cancelada";
+"transfer" = "Transferir";
+"ensure_target_ready" = "Asegúrese de que el objetivo esté listo";
+"target_not_ready" = "El objetivo no está listo para recibir";

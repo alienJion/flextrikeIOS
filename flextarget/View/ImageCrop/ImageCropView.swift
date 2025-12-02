@@ -5,6 +5,11 @@ import UIKit
 #endif
 
 struct ImageCropView: View {
+    private enum TransferOverlayState {
+        case waiting
+        case transferring
+        case notReady
+    }
     @StateObject private var viewModel = ImageCropViewModel()
     @Environment(\.dismiss) private var dismiss
     @State private var selectedPhotoItem: PhotosPickerItem?
@@ -20,180 +25,305 @@ struct ImageCropView: View {
     @State private var transferProgress: Int = 0
     @State private var showTransferOverlay: Bool = false
     @State private var showCancelAlert: Bool = false
+    @State private var transferOverlayState: TransferOverlayState = .notReady
+    @State private var transferWaitingObserver: NSObjectProtocol?
+    @State private var transferTimeoutObserver: NSObjectProtocol?
     
     // Canvas dimensions (9:16 portrait ratio)
     let canvasRatio: CGFloat = 9.0 / 16.0
+
+    // Compute the displayed guide size given the container size and optional guide aspect
+    private func computeGuideSize(containerSize: CGSize) -> CGSize {
+        if let aspect = guideAspect {
+            let containerAspect = containerSize.width / containerSize.height
+            if aspect > containerAspect {
+                // guide is wider than container -> fit width
+                let w = containerSize.width
+                let h = w / aspect
+                return CGSize(width: w, height: h)
+            } else {
+                // guide is taller (or equal) -> fit height
+                let h = containerSize.height
+                let w = min(containerSize.width, h * aspect)
+                return CGSize(width: w, height: h)
+            }
+        } else {
+            // unknown aspect: fallback to full container
+            return containerSize
+        }
+    }
+
+    // Use a lightweight AnyView wrapper around a small `MainCanvasView` struct to help the compiler.
+    private func mainCanvasView() -> some View {
+        return AnyView(
+            MainCanvasView(
+                viewModel: viewModel,
+                dragTranslation: $dragTranslation,
+                lastScale: $lastScale,
+                pinchScale: $pinchScale,
+                currentContainerSize: $currentContainerSize,
+                currentGuideSize: $currentGuideSize,
+                guideAspect: $guideAspect
+            )
+        )
+    }
+
+    private struct MainCanvasView: View {
+        @ObservedObject var viewModel: ImageCropViewModel
+        @Binding var dragTranslation: CGSize
+        @Binding var lastScale: CGFloat
+        @Binding var pinchScale: CGFloat
+        @Binding var currentContainerSize: CGSize?
+        @Binding var currentGuideSize: CGSize?
+        @Binding var guideAspect: CGFloat?
+
+        private let containerHeight: CGFloat = 480
+
+        var body: some View {
+            GeometryReader { geo in
+                let containerSize = CGSize(width: geo.size.width, height: containerHeight)
+                let guideSize = computeGuideSizeStatic(containerSize: containerSize, guideAspect: guideAspect)
+                let cropSize = guideSize
+
+                ZStack {
+                    if let image = viewModel.selectedImage {
+                        let effectiveOffset = viewModel.clampedOffset(for: CGSize(width: viewModel.offset.width + dragTranslation.width,
+                                                                                  height: viewModel.offset.height + dragTranslation.height), containerSize: containerSize, cropSize: cropSize)
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geo.size.width, height: containerHeight)
+                            .scaleEffect(viewModel.scale, anchor: .center)
+                            .offset(x: effectiveOffset.width, y: effectiveOffset.height)
+                            .clipped()
+                            .gesture(
+                                DragGesture()
+                                    .onChanged { value in
+                                        let proposed = CGSize(width: viewModel.offset.width + value.translation.width,
+                                                              height: viewModel.offset.height + value.translation.height)
+                                        let clamped = viewModel.clampedOffset(for: proposed, containerSize: containerSize, cropSize: cropSize)
+                                        dragTranslation = CGSize(width: clamped.width - viewModel.offset.width,
+                                                                 height: clamped.height - viewModel.offset.height)
+                                    }
+                                    .onEnded { _ in
+                                        let proposed = CGSize(width: viewModel.offset.width + dragTranslation.width,
+                                                              height: viewModel.offset.height + dragTranslation.height)
+                                        viewModel.offset = viewModel.clampedOffset(for: proposed, containerSize: containerSize, cropSize: cropSize)
+                                        dragTranslation = .zero
+                                    }
+                            )
+                            .simultaneousGesture(
+                                MagnificationGesture()
+                                    .onChanged { value in
+                                        pinchScale = value
+                                        let proposed = lastScale * pinchScale
+                                        let clamped = min(max(proposed, viewModel.minScale), viewModel.maxScale)
+                                        viewModel.scale = clamped
+                                        viewModel.offset = viewModel.clampedOffset(for: viewModel.offset, containerSize: containerSize, cropSize: cropSize, scaleOverride: viewModel.scale)
+                                    }
+                                    .onEnded { _ in
+                                        lastScale = viewModel.scale
+                                        pinchScale = 1.0
+                                    }
+                            )
+                            .onChange(of: viewModel.scale) { _ in
+                                viewModel.enforceConstraints(containerSize: containerSize, cropSize: cropSize)
+                            }
+                            .onAppear {
+                                viewModel.enforceConstraints(containerSize: containerSize, cropSize: cropSize)
+                            }
+                            .onChange(of: viewModel.selectedImage) { _ in
+                                viewModel.enforceConstraints(containerSize: containerSize, cropSize: cropSize)
+                            }
+                    }
+
+                    if let cropped = viewModel.croppedImage {
+                        Image(uiImage: cropped)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: guideSize.width, height: guideSize.height)
+                            .clipped()
+                            .allowsHitTesting(false)
+                            .position(x: containerSize.width / 2.0, y: containerSize.height / 2.0)
+                    }
+
+                    Image("custom-target-guide")
+                        .resizable()
+                        .renderingMode(.original)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: guideSize.width, height: guideSize.height)
+                        .allowsHitTesting(false)
+                        .onAppear {
+                            DispatchQueue.main.async {
+                                currentContainerSize = containerSize
+                                currentGuideSize = guideSize
+                            }
+                        }
+
+                    let borderInset: CGFloat = 10.0
+                    Image("custom-target-border")
+                        .resizable()
+                        .renderingMode(.original)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: guideSize.width+borderInset, height: guideSize.height+borderInset)
+                        .allowsHitTesting(false)
+                }
+                .frame(height: containerHeight)
+                .frame(maxWidth: .infinity)
+                .background(Color.black)
+            }
+            .frame(height: containerHeight)
+        }
+
+        private func computeGuideSizeStatic(containerSize: CGSize, guideAspect: CGFloat?) -> CGSize {
+            if let aspect = guideAspect {
+                let containerAspect = containerSize.width / containerSize.height
+                if aspect > containerAspect {
+                    let w = containerSize.width
+                    let h = w / aspect
+                    return CGSize(width: w, height: h)
+                } else {
+                    let h = containerSize.height
+                    let w = min(containerSize.width, h * aspect)
+                    return CGSize(width: w, height: h)
+                }
+            } else {
+                return containerSize
+            }
+        }
+    }
+
+    // MARK: - Controls Subviews
+    private struct ImagePickerControls: View {
+        @Binding var selectedPhotoItem: PhotosPickerItem?
+        @ObservedObject var viewModel: ImageCropViewModel
+        @Binding var lastOffset: CGSize
+        @Binding var dragTranslation: CGSize
+
+        // Helper to load image data and save to temp file URL
+        private func loadFileURL(from item: PhotosPickerItem) async throws -> URL? {
+            guard let imageData = try? await item.loadTransferable(type: Data.self) else {
+                return nil
+            }
+            let tmp = FileManager.default.temporaryDirectory
+            let dest = tmp.appendingPathComponent(UUID().uuidString).appendingPathExtension("jpg")
+            try imageData.write(to: dest)
+            return dest
+        }
+
+        var body: some View {
+            PhotosPicker(selection: $selectedPhotoItem, matching: .images, photoLibrary: .shared()) {
+                HStack(spacing: 10) {
+                    Image(systemName: "photo.fill")
+                    Text(NSLocalizedString("choose_photo", comment: "Choose photo button"))
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal, 18)
+                .background(Color.red)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+                .contentShape(Rectangle())
+                .frame(minHeight: 44)
+            }
+            .onChange(of: selectedPhotoItem) { newValue in
+                Task {
+                    guard let item = newValue else { return }
+
+                    // Try to load the original full-resolution file representation first
+                    if let fileURL = try? await loadFileURL(from: item) {
+                        let tmp = FileManager.default.temporaryDirectory
+                        let dest = tmp.appendingPathComponent(UUID().uuidString).appendingPathExtension(fileURL.pathExtension)
+                        do {
+                            try FileManager.default.copyItem(at: fileURL, to: dest)
+                            if let uiImage = UIImage(contentsOfFile: dest.path) {
+                                print("Loaded full-file image: size=\(uiImage.size) scale=\(uiImage.scale) cg=\(uiImage.cgImage?.width ?? 0)x\(uiImage.cgImage?.height ?? 0)")
+                                await MainActor.run {
+                                    viewModel.selectedImage = uiImage
+                                    viewModel.resetTransform()
+                                    lastOffset = .zero
+                                    dragTranslation = .zero
+                                }
+                                return
+                            }
+                        } catch {
+                            print("Failed to copy photo file representation: \(error)")
+                        }
+                    }
+
+                    // Fallback: try to load a Data transferable and convert to UIImage
+                    if let imageData = try? await item.loadTransferable(type: Data.self) {
+                        let tmp = FileManager.default.temporaryDirectory
+                        let dest = tmp.appendingPathComponent(UUID().uuidString).appendingPathExtension("jpg")
+                        do {
+                            try imageData.write(to: dest)
+                            if let uiImage = UIImage(contentsOfFile: dest.path) {
+                                print("Loaded transferable image from data: size=\(uiImage.size) scale=\(uiImage.scale) cg=\(uiImage.cgImage?.width ?? 0)x\(uiImage.cgImage?.height ?? 0)")
+                                await MainActor.run {
+                                    viewModel.selectedImage = uiImage
+                                    viewModel.resetTransform()
+                                    lastOffset = .zero
+                                    dragTranslation = .zero
+                                }
+                            }
+                        } catch {
+                            print("Failed to write image data to temp file: \(error)")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private struct TransferToolbarItem: View {
+        @ObservedObject var viewModel: ImageCropViewModel
+        @Binding var currentContainerSize: CGSize?
+        @Binding var currentGuideSize: CGSize?
+        @Binding var transferInProgress: Bool
+        @Binding var transferProgress: Int
+        @Binding var showTransferOverlay: Bool
+        @Binding var transferOverlayState: TransferOverlayState
+        var startTransfer: (UIImage) -> Void
+
+        var body: some View {
+            if viewModel.selectedImage != nil {
+                Button(NSLocalizedString("transfer", comment: "Transfer button")) {
+                    // Compute crop frame from last-known container & guide sizes
+                    guard let container = currentContainerSize, let guide = currentGuideSize else {
+                        return
+                    }
+                    // Inset the guide by the border width (10 pts) to avoid cropping into the white border
+                    let inset: CGFloat = 10.0
+                    let cropWidth = max(0, guide.width - inset)
+                    let cropHeight = max(0, guide.height - inset)
+                    let origin = CGPoint(x: (container.width - cropWidth) / 2.0,
+                                         y: (container.height - cropHeight) / 2.0)
+                    let cropFrame = CGRect(origin: origin, size: CGSize(width: cropWidth, height: cropHeight))
+                    // Perform crop
+                    viewModel.cropImage(within: cropFrame, canvasSize: container)
+
+                    // Start transfer if we have a cropped image
+                    #if canImport(UIKit)
+                    if let cropped = viewModel.croppedImage {
+                        startTransfer(cropped)
+                    }
+                    #endif
+                }
+            }
+        }
+    }
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 // Main Canvas Area
-                let containerHeight: CGFloat = 480
-                GeometryReader { geo in
-                    let containerSize = CGSize(width: geo.size.width, height: containerHeight)
-                    // Compute the guide's displayed size (preserve asset aspect) and use it as the crop area
-                    let guideSize: CGSize = {
-                        if let aspect = guideAspect {
-                            let containerAspect = containerSize.width / containerSize.height
-                            if aspect > containerAspect {
-                                // guide is wider than container -> fit width
-                                let w = containerSize.width
-                                let h = w / aspect
-                                return CGSize(width: w, height: h)
-                            } else {
-                                // guide is taller (or equal) -> fit height
-                                let h = containerSize.height
-                                let w = min(containerSize.width, h * aspect)
-                                return CGSize(width: w, height: h)
-                            }
-                        } else {
-                            // unknown aspect: fallback to full container
-                            return containerSize
-                        }
-                    }()
-                    // cropSize is the guide's visible size
-                    let cropSize = guideSize
-                    
-                    ZStack {
-                        if let image = viewModel.selectedImage {
-                            // Image fill area
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: geo.size.width, height: containerHeight)
-                                .scaleEffect(viewModel.scale, anchor: .center)
-                                // Compute effective offset (offset + dragTranslation) clamped to allowed range
-                                .offset(x: viewModel.clampedOffset(for: CGSize(width: viewModel.offset.width + dragTranslation.width,
-                                                                               height: viewModel.offset.height + dragTranslation.height), containerSize: containerSize, cropSize: cropSize).width,
-                                        y: viewModel.clampedOffset(for: CGSize(width: viewModel.offset.width + dragTranslation.width,
-                                                                               height: viewModel.offset.height + dragTranslation.height), containerSize: containerSize, cropSize: cropSize).height)
-                                .clipped()
-                                .gesture(
-                                    DragGesture()
-                                        .onChanged { value in
-                                            // Compute the proposed absolute offset and clamp it immediately
-                                            let proposed = CGSize(width: viewModel.offset.width + value.translation.width,
-                                                                  height: viewModel.offset.height + value.translation.height)
-                                            let clamped = viewModel.clampedOffset(for: proposed, containerSize: containerSize, cropSize: cropSize)
-                                            // Show the clamped translation while dragging
-                                            dragTranslation = CGSize(width: clamped.width - viewModel.offset.width,
-                                                                     height: clamped.height - viewModel.offset.height)
-                                        }
-                                        .onEnded { _ in
-                                            // Commit clamped offset
-                                            let proposed = CGSize(width: viewModel.offset.width + dragTranslation.width,
-                                                                  height: viewModel.offset.height + dragTranslation.height)
-                                            viewModel.offset = viewModel.clampedOffset(for: proposed, containerSize: containerSize, cropSize: cropSize)
-                                            dragTranslation = .zero
-                                        }
-                                )
-                                .simultaneousGesture(
-                                    MagnificationGesture()
-                                        .onChanged { value in
-                                            // value is relative to the gesture start; combine with lastScale
-                                            pinchScale = value
-                                            let proposed = lastScale * pinchScale
-                                            let clamped = min(max(proposed, viewModel.minScale), viewModel.maxScale)
-                                            viewModel.scale = clamped
-                                            // clamp offset live so zoom doesn't reveal background
-                                            viewModel.offset = viewModel.clampedOffset(for: viewModel.offset, containerSize: containerSize, cropSize: cropSize, scaleOverride: viewModel.scale)
-                                        }
-                                        .onEnded { _ in
-                                            lastScale = viewModel.scale
-                                            pinchScale = 1.0
-                                        }
-                                )
-                                .onChange(of: viewModel.scale) { _ in
-                                    viewModel.enforceConstraints(containerSize: containerSize, cropSize: cropSize)
-                                }
-                                .onAppear {
-                                    viewModel.enforceConstraints(containerSize: containerSize, cropSize: cropSize)
-                                }
-                                .onChange(of: viewModel.selectedImage) { _ in
-                                    viewModel.enforceConstraints(containerSize: containerSize, cropSize: cropSize)
-                                }
-                        }
-                        // If we have a cropped image, display it inside the guide
-                        if let cropped = viewModel.croppedImage {
-                            Image(uiImage: cropped)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: guideSize.width, height: guideSize.height)
-                                .clipped()
-                                .allowsHitTesting(false)
-                                // center inside container
-                                .position(x: containerSize.width / 2.0, y: containerSize.height / 2.0)
-                            }
-
-                            // Crop guide image from Assets (vector PDF/SVG as asset)
-                        Image("custom-target-guide")
-                            .resizable()
-                            .renderingMode(.original)
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: guideSize.width, height: guideSize.height)
-                            .allowsHitTesting(false)
-                            .onAppear {
-                                // lazy-load asset aspect when UIKit is available
-                                #if canImport(UIKit)
-                                if guideAspect == nil {
-                                    if let img = UIImage(named: "custom-target-guide") {
-                                        let a = img.size.width / max(1.0, img.size.height)
-                                        guideAspect = a
-                                    }
-                                }
-                                #endif
-                                // publish current sizes for toolbar actions
-                                DispatchQueue.main.async {
-                                    self.currentContainerSize = containerSize
-                                    self.currentGuideSize = guideSize
-                                }
-                            }
-                        // Border overlay (asset) positioned to match the guide
-                        let borderInset: CGFloat = 10.0
-                        Image("custom-target-border")
-                            .resizable()
-                            .renderingMode(.original)
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: guideSize.width+borderInset, height: guideSize.height+borderInset)
-                            .allowsHitTesting(false)
-                    }
-                    .frame(height: containerHeight)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.black)
-                }
-                .frame(height: containerHeight)
+                mainCanvasView()
                 
                 // Controls Section
                 VStack {
                     Spacer()
                     HStack(spacing: 16) {
                         Spacer()
-                        PhotosPicker(selection: $selectedPhotoItem, matching: .images, photoLibrary: .shared()) {
-                            HStack(spacing: 10) {
-                                Image(systemName: "photo.fill")
-                                Text("Choose Photo")
-                            }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 18)
-                            .background(Color.red)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                            .contentShape(Rectangle())
-                            .frame(minHeight: 44)
-                        }
-                        .onChange(of: selectedPhotoItem) { newValue in
-                            Task {
-                                if let data = try? await newValue?.loadTransferable(type: Data.self), let uiImage = UIImage(data: data) {
-                                    await MainActor.run {
-                                        viewModel.selectedImage = uiImage
-                                        viewModel.resetTransform()
-                                        lastOffset = .zero
-                                        dragTranslation = .zero
-                                    }
-                                }
-                            }
-                        }
-
+                        ImagePickerControls(selectedPhotoItem: $selectedPhotoItem, viewModel: viewModel, lastOffset: $lastOffset, dragTranslation: $dragTranslation)
                         // Apply Crop moved to navigation bar as 'Complete'
                         Spacer()
                     }
@@ -205,7 +335,7 @@ struct ImageCropView: View {
                 .frame(minHeight: 120)
                 .background(Color.black)
             }
-            .navigationTitle("Position & Crop")
+//                .navigationTitle(NSLocalizedString("position_and_crop", comment: "Position and crop title"))
             .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
@@ -223,7 +353,7 @@ struct ImageCropView: View {
                     }
                     ToolbarItem(placement: .navigationBarTrailing) {
                         if viewModel.selectedImage != nil {
-                            Button("Complete") {
+                            Button(NSLocalizedString("transfer", comment: "Transfer button")) {
                                 // Compute crop frame from last-known container & guide sizes
                                 guard let container = currentContainerSize, let guide = currentGuideSize else {
                                     return
@@ -243,18 +373,30 @@ struct ImageCropView: View {
                                 if let cropped = viewModel.croppedImage {
                                     transferInProgress = true
                                     transferProgress = 0
+                                    // start in waiting state while device acknowledges readiness
+                                    transferOverlayState = .waiting
                                     showTransferOverlay = true
                                     // Kick off transfer with progress handler
                                     transferManager.transferImage(cropped, named: "cropped-") { progress in
                                         DispatchQueue.main.async {
                                             transferProgress = progress
+                                            // once progress updates, show transferring state
+                                            transferOverlayState = .transferring
                                         }
                                     } completion: { success, message in
                                         DispatchQueue.main.async {
                                             transferInProgress = false
-                                            showTransferOverlay = false
-                                            // Optionally clear the selected source image after transfer
-                                            viewModel.selectedImage = nil
+                                            transferProgress = 0
+                                            // Clear cropped image on both success and failure/timeout.
+                                            // On success, also clear the selected source image and hide overlay.
+                                            viewModel.croppedImage = nil
+                                            if success {
+                                                showTransferOverlay = false
+                                                transferOverlayState = .transferring
+                                                viewModel.selectedImage = nil
+                                            } else {
+                                                // Leave overlay handling to the timeout observer (it will show 'notReady' then hide after 3s)
+                                            }
                                             // You could show a toast or alert here on success/failure
                                         }
                                     }
@@ -274,26 +416,51 @@ struct ImageCropView: View {
                             Color.black.opacity(0.6)
                                 .ignoresSafeArea()
                             VStack(spacing: 16) {
-                                Text("Transferring image...")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                ProgressView(value: Double(transferProgress), total: 100)
-                                    .progressViewStyle(LinearProgressViewStyle(tint: .red))
-                                    .frame(maxWidth: 300)
-                                Text("\(transferProgress)%")
-                                    .foregroundColor(.white)
-                                HStack(spacing: 12) {
+                                switch transferOverlayState {
+                                case .waiting:
+                                    Text(NSLocalizedString("ensure_target_ready", comment: "Ensure the target is ready"))
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .scaleEffect(1.2)
                                     Button(action: {
-                                        // Prompt to cancel
+                                        // Allow user to cancel while waiting
                                         showCancelAlert = true
                                     }) {
-                                        Text("Cancel Transfer")
+                                        Text(NSLocalizedString("cancel_transfer", comment: "Cancel transfer button"))
                                             .padding(.horizontal, 16)
                                             .padding(.vertical, 10)
                                             .background(Color.white)
                                             .foregroundColor(.red)
                                             .cornerRadius(8)
                                     }
+                                case .transferring:
+                                    Text(NSLocalizedString("transferring_image", comment: "Transferring image overlay title"))
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+                                    ProgressView(value: Double(transferProgress), total: 100)
+                                        .progressViewStyle(LinearProgressViewStyle(tint: .red))
+                                        .frame(maxWidth: 300)
+                                    Text("\(transferProgress)%")
+                                        .foregroundColor(.white)
+                                    HStack(spacing: 12) {
+                                        Button(action: {
+                                            // Prompt to cancel
+                                            showCancelAlert = true
+                                        }) {
+                                            Text(NSLocalizedString("cancel_transfer", comment: "Cancel transfer button"))
+                                                .padding(.horizontal, 16)
+                                                .padding(.vertical, 10)
+                                                .background(Color.white)
+                                                .foregroundColor(.red)
+                                                .cornerRadius(8)
+                                        }
+                                    }
+                                case .notReady:
+                                    Text(NSLocalizedString("target_not_ready", comment: "Target not ready to receive"))
+                                        .font(.headline)
+                                        .foregroundColor(.white)
                                 }
                             }
                             .padding(24)
@@ -303,8 +470,8 @@ struct ImageCropView: View {
                     }
                 }
             )
-            .alert("Cancel transfer and go back?", isPresented: $showCancelAlert) {
-                Button("Yes, cancel") {
+                .alert(NSLocalizedString("cancel_transfer_confirm_title", comment: "Cancel transfer confirm title"), isPresented: $showCancelAlert) {
+                    Button(NSLocalizedString("yes_cancel", comment: "Yes cancel button")) {
                     // Cancel and cleanup
                     transferManager.cancelTransfer()
                     transferInProgress = false
@@ -313,9 +480,9 @@ struct ImageCropView: View {
                     viewModel.selectedImage = nil
                     dismiss()
                 }
-                Button("No", role: .cancel) { }
+                    Button(NSLocalizedString("no", comment: "No button"), role: .cancel) { }
             } message: {
-                Text("An image transfer is in progress. If you go back the transfer will be stopped.")
+                    Text(NSLocalizedString("cancel_transfer_message", comment: "Cancel transfer confirm message"))
             }
             .onAppear {
                 // ensure guideAspect is available as early as possible so clamping uses guide bounds
@@ -324,6 +491,38 @@ struct ImageCropView: View {
                     guideAspect = img.size.width / max(1.0, img.size.height)
                 }
                 #endif
+
+                // Observe transfer waiting/timeout notifications to update overlay text/state
+                if transferWaitingObserver == nil {
+                    transferWaitingObserver = NotificationCenter.default.addObserver(forName: .imageTransferWaitingForAck, object: nil, queue: .main) { _ in
+                        transferOverlayState = .waiting
+                        showTransferOverlay = true
+                    }
+                }
+                if transferTimeoutObserver == nil {
+                    transferTimeoutObserver = NotificationCenter.default.addObserver(forName: .imageTransferTargetNotReady, object: nil, queue: .main) { _ in
+                        transferOverlayState = .notReady
+                        showTransferOverlay = true
+                        // After 3 seconds, hide overlay and allow retry
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                            transferInProgress = false
+                            showTransferOverlay = false
+                            transferProgress = 0
+                            // Clear the cropped image so user can re-crop/retry
+                            viewModel.croppedImage = nil
+                        }
+                    }
+                }
+            }
+            .onDisappear {
+                if let obs = transferWaitingObserver {
+                    NotificationCenter.default.removeObserver(obs)
+                    transferWaitingObserver = nil
+                }
+                if let obs = transferTimeoutObserver {
+                    NotificationCenter.default.removeObserver(obs)
+                    transferTimeoutObserver = nil
+                }
             }
         }
         .background(Color.black)
@@ -356,9 +555,9 @@ struct LivePreviewSheet: View {
                         .frame(height: 320)
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 400)
+                            Text(NSLocalizedString("live_preview", comment: "Live preview title"))
                 .clipped()
-                .background(Color.black)
+                            Text(NSLocalizedString("live_preview_description", comment: "Live preview description"))
                 
                 // Information
                 VStack(spacing: 12) {
@@ -366,7 +565,7 @@ struct LivePreviewSheet: View {
                         .font(.headline)
                     Text("This shows how your photo will be positioned and cropped with the silhouette guide.")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                                Text(NSLocalizedString("zoom_level", comment: "Zoom level label"))
                     
                     Divider()
                         .padding(.vertical, 8)
@@ -375,7 +574,7 @@ struct LivePreviewSheet: View {
                         Text("Zoom Level:")
                             .font(.subheadline)
                         Spacer()
-                        Text(String(format: "%.1fx", viewModel.scale))
+                                Text(NSLocalizedString("offset", comment: "Offset label"))
                             .font(.subheadline)
                             .fontWeight(.semibold)
                     }
@@ -389,7 +588,7 @@ struct LivePreviewSheet: View {
                             .foregroundColor(.gray)
                     }
                 }
-                .padding(16)
+                            Text(NSLocalizedString("close_preview", comment: "Close preview button"))
                 .background(Color(.systemBackground))
                 
                 Spacer()
@@ -402,7 +601,7 @@ struct LivePreviewSheet: View {
                         .foregroundColor(.white)
                         .cornerRadius(8)
                 }
-                .padding(16)
+                            Button(NSLocalizedString("close", comment: "Close button")) { dismiss() }
             }
             .navigationTitle("Live Preview")
             .navigationBarTitleDisplayMode(.inline)
