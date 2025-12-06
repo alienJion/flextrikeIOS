@@ -22,7 +22,7 @@ struct Content: Codable {
     let command: String
     let hitArea: String
     let hitPosition: Position
-    let rotationAngle: Int
+    let rotationAngle: Double
     let targetType: String
     let timeDiff: Double
     let device: String?
@@ -39,7 +39,7 @@ struct Content: Codable {
         case targetPos = "targetPos"
     }
 
-    init(command: String, hitArea: String, hitPosition: Position, rotationAngle: Int, targetType: String, timeDiff: Double, device: String? = nil, targetPos: Position? = nil) {
+    init(command: String, hitArea: String, hitPosition: Position, rotationAngle: Double, targetType: String, timeDiff: Double, device: String? = nil, targetPos: Position? = nil) {
         self.command = command
         self.hitArea = hitArea
         self.hitPosition = hitPosition
@@ -48,6 +48,38 @@ struct Content: Codable {
         self.timeDiff = timeDiff
         self.device = device
         self.targetPos = targetPos
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.command = try container.decode(String.self, forKey: .command)
+        self.hitArea = try container.decode(String.self, forKey: .hitArea)
+        self.hitPosition = try container.decode(Position.self, forKey: .hitPosition)
+        
+        // Handle rotationAngle as either Double, Int, or String
+        if let rotAngleDouble = try? container.decode(Double.self, forKey: .rotationAngle) {
+            self.rotationAngle = rotAngleDouble
+        } else if let rotAngleInt = try? container.decode(Int.self, forKey: .rotationAngle) {
+            self.rotationAngle = Double(rotAngleInt)
+        } else if let rotAngleStr = try? container.decode(String.self, forKey: .rotationAngle), let rotAngleDouble = Double(rotAngleStr) {
+            self.rotationAngle = rotAngleDouble
+        } else {
+            self.rotationAngle = 0.0
+        }
+        
+        self.targetType = try container.decode(String.self, forKey: .targetType)
+        
+        // Handle timeDiff as either Double or String
+        if let timeDiffDouble = try? container.decode(Double.self, forKey: .timeDiff) {
+            self.timeDiff = timeDiffDouble
+        } else if let timeDiffStr = try? container.decode(String.self, forKey: .timeDiff), let timeDiffDouble = Double(timeDiffStr) {
+            self.timeDiff = timeDiffDouble
+        } else {
+            self.timeDiff = 0.0
+        }
+        
+        self.device = try container.decodeIfPresent(String.self, forKey: .device)
+        self.targetPos = try container.decodeIfPresent(Position.self, forKey: .targetPos)
     }
 }
 
@@ -133,7 +165,7 @@ private struct TargetDisplayView: View {
                     if let shotWithPos = chosenShot, let targetPos: Position = shotWithPos.content.targetPos {
                         let transformedX = (targetPos.x / 720.0) * frameWidth
                         let transformedY = (targetPos.y / 1280.0) * frameHeight
-                        let rotationRad = Double(shotWithPos.content.rotationAngle)
+                        let rotationRad = shotWithPos.content.rotationAngle
 
                         // Scale the overlay from the design coordinate space (720x1280)
                         // into the current frame so the image size matches the target

@@ -49,9 +49,9 @@ enum UITestDataSeeder {
                         let centerY = 640.0 + Double(i * 9) + jitterY
                         let timeDelta = 0.4 + Double(i) * 0.15
                         // For rotation targets include a sample rotation angle (in radians)
-                        // and a target position. `Content.rotationAngle` is an Int in
-                        // the model; we'll store a small integer radian value (e.g. 1).
-                        let rotAngle = t == "rotation" ? 1 : 0
+                        // and a target position. `Content.rotationAngle` is a Double in
+                        // the model; we'll store a small radian value (e.g. 1.0).
+                        let rotAngle = t == "rotation" ? 1.0 : 0.0
                         // For rotation targets include a `target_pos` with the requested
                         // coordinates (-120, 200). For other targets leave nil.
                         let targetPosValue: Position? = t == "rotation" ? Position(x: 240.0, y: 840.0) : nil
