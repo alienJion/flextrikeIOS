@@ -13,6 +13,7 @@ struct TimerSessionView: View {
 
     let drillSetup: DrillSetup
     let onDrillStart: (TimeInterval) -> Void
+    let onDrillStop: () -> Void
 
     @State private var timerState: TimerState = .idle
     @State private var delayTarget: Date?
@@ -165,7 +166,9 @@ struct TimerSessionView: View {
             // Do nothing while delay is running
             return
         case .running:
-            pauseTimer()
+            // End the drill by calling onDrillStop
+            onDrillStop()
+            resetTimer()
         case .paused:
             // Resume from paused state
             resumeTimer()
@@ -210,6 +213,6 @@ struct TimerSessionView: View {
 
 struct TimerSessionView_Previews: PreviewProvider {
     static var previews: some View {
-        TimerSessionView(drillSetup: DrillSetup(), onDrillStart: { _ in })
+        TimerSessionView(drillSetup: DrillSetup(), onDrillStart: { _ in }, onDrillStop: {})
     }
 }
