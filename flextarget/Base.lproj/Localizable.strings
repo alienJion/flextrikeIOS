@@ -76,6 +76,7 @@
 "fastest_label" = "Fastest";
 "first_shot_label" = "First Shot";
 "score_label" = "Score";
+"factor_label" = "Factor";
 
 /* SubViews */
 "history_record" = "History Record";

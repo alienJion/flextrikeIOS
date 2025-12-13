@@ -75,6 +75,7 @@
 "fastest_label" = "最快";
 "first_shot_label" = "首次射击";
 "score_label" = "分数";
+"factor_label" = "系数";
 
 /* SubViews */
 "history_record" = "历史记录";

@@ -26,6 +26,11 @@ struct DrillSummaryView: View {
         return String(format: "%.2f s", time)
     }
 
+    private func calculateFactor(score: Int, time: TimeInterval) -> Double {
+        guard time > 0 else { return 0.0 }
+        return Double(score) / time
+    }
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -42,7 +47,7 @@ struct DrillSummaryView: View {
                                 NavigationLink(destination: DrillResultView(drillSetup: drillSetup, repeatSummary: summary)) {
                                     summaryCard(
                                         title: String(format: NSLocalizedString("repeat_number", comment: "Repeat number format"), summary.repeatIndex),
-                                        subtitle: "\(summary.numShots) \(NSLocalizedString("shots_label", comment: "Shots label")) • \(format(time: summary.totalTime))",
+                                        subtitle: "\(NSLocalizedString("factor_label", comment: "Factor label")): \(String(format: "%.2f", calculateFactor(score: summary.score, time: summary.totalTime)))",
                                         iconName: "scope",
                                         metrics: metrics(for: summary)
                                     )

@@ -75,6 +75,7 @@
 "fastest_label" = "Más Rápido";
 "first_shot_label" = "Primer Disparo";
 "score_label" = "Puntuación";
+"factor_label" = "Factor";
 
 /* SubViews */
 "history_record" = "Registro Histórico";
