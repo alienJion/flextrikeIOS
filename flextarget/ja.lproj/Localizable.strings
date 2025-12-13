@@ -75,6 +75,7 @@
 "fastest_label" = "最速";
 "first_shot_label" = "最初のショット";
 "score_label" = "スコア";
+"factor_label" = "ファクター";
 
 /* SubViews */
 "history_record" = "履歴記録";

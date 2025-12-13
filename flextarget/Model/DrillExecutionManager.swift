@@ -106,7 +106,7 @@ class DrillExecutionManager {
         for (index, target) in sortedTargets.enumerated() {
             do {
                 let delayValue = randomDelay > 0 ? randomDelay : drillSetup.delay
-                let roundedDelay = (delayValue * 100).rounded() / 100
+                let roundedDelay = Double(String(format: "%.2f", delayValue)) ?? delayValue
                 let content: [String: Any] = [
                     "command": "ready",
                     "delay": roundedDelay,
@@ -480,7 +480,17 @@ class DrillExecutionManager {
         let numShots = adjustedShots.count
         let fastest = adjustedShots.map { $0.content.timeDiff }.min() ?? 0.0
         let firstShot = adjustedShots.first?.content.timeDiff ?? 0.0
-        let totalScore = adjustedShots.reduce(0) { $0 + scoreForHitArea($1.content.hitArea) }
+        var totalScore = adjustedShots.reduce(0) { $0 + scoreForHitArea($1.content.hitArea) }
+        
+        // Auto re-evaluate score: deduct 10 points for each missed target
+        let missedTargetCount = calculateMissedTargets(shots: adjustedShots)
+        let missedTargetPenalty = missedTargetCount * 10
+        totalScore -= missedTargetPenalty
+        
+        if missedTargetCount > 0 {
+            print("Repeat \(repeatIndex): \(missedTargetCount) target(s) missed, penalty: -\(missedTargetPenalty) points")
+        }
+        
         let summary = DrillRepeatSummary(
             repeatIndex: repeatIndex,
             totalTime: totalTime,
@@ -535,19 +545,42 @@ class DrillExecutionManager {
     }
 
     private func scoreForHitArea(_ hitArea: String) -> Int {
-        if hitArea.contains("BlackZone") {
+        let trimmed = hitArea.trimmingCharacters(in: .whitespaces).lowercased()
+        
+        switch trimmed {
+        case "azone":
+            return 5
+        case "czone":
+            return 3
+        case "dzone":
+            return 2
+        case "miss":
+            return 0
+        case "whitezone":
+            return -5
+        case "blackzone":
             return -10
+        case "circlearea": // Paddle
+            return 5
+        case "popperzone": // Popper
+            return 5
+        default:
+            return 0
         }
-        switch hitArea {
-        case "AZone": return 5
-        case "CZone": return 3
-        case "DZone": return 2
-        case "Miss": return 0
-        case "WhiteZone": return -5
-        case "CircleArea": return 5 //Paddle
-        case "PopperZone": return 5 //Popper
-        default: return 0
+    }
+    
+    /// Calculate the number of missed targets in a drill repeat
+    /// A target is considered missed if no shots were received from it
+    private func calculateMissedTargets(shots: [ShotData]) -> Int {
+        guard let targetsSet = drillSetup.targets as? Set<DrillTargetsConfig> else {
+            return 0
         }
+        
+        let expectedTargets = Set(targetsSet.map { $0.targetName ?? "" }.filter { !$0.isEmpty })
+        let shotsDevices = Set(shots.compactMap { $0.device ?? $0.target })
+        
+        let missedTargets = expectedTargets.subtracting(shotsDevices)
+        return missedTargets.count
     }
 
     private struct ShotEvent {
