@@ -231,6 +231,9 @@ struct DrillFormView: View {
                 if let drillSetup = drillSetupForTimer {
                     TimerSessionView(drillSetup: drillSetup, onDrillStart: { delay in
                         startDrill(with: drillSetup, randomDelay: delay)
+                    }, onDrillStop: {
+                        executionManager?.manualStopDrill()
+                        navigateToTimerSession = false
                     })
                 }
             } label: {

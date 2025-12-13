@@ -65,6 +65,19 @@ class DrillExecutionManager {
         stopObservingShots()
     }
     
+    func manualStopDrill() {
+        isStopped = true
+        ackTimeoutTimer?.invalidate()
+        pauseTimer?.invalidate()
+        isWaitingForEnd = false
+        endCommandTime = Date()
+        sendEndCommand()
+        stopObservingShots()
+        let repeatIndex = currentRepeat
+        finalizeRepeat(repeatIndex: repeatIndex)
+        onComplete(repeatSummaries)
+    }
+    
     private func executeNextRepeat() {
         guard !isStopped else { return }
         currentRepeat += 1
