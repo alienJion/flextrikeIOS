@@ -190,3 +190,4 @@
 "drill_in_progress" = "Ejercicio en progreso";
 "processing_shots" = "Procesando disparos";
 "pause_between_repeats" = "Pausa entre repeticiones";
+"repeat_of_total" = "Repetición %d de %d";

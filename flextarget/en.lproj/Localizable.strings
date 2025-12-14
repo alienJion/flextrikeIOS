@@ -179,3 +179,4 @@
 "drill_in_progress" = "Drill is in progress";
 "processing_shots" = "Processing shots";
 "pause_between_repeats" = "Pause between repeats";
+"repeat_of_total" = "Repeat %d of %d";
