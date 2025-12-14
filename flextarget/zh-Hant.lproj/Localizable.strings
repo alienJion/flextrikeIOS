@@ -188,5 +188,6 @@
 "targets_not_ready_message" = "以下標靶未回應:";
 "end_drill" = "結束練習?";
 "drill_in_progress" = "練習進行中";
-"processing_shots" = "正在處理射擊";
+"processing_shots" = "正在處理數據";
 "pause_between_repeats" = "重複間暫停";
+"repeat_of_total" = "第 %d 次 (共 %d 次)";

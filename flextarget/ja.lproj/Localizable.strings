@@ -190,3 +190,4 @@
 "drill_in_progress" = "ドリルが進行中です";
 "processing_shots" = "ショットを処理中";
 "pause_between_repeats" = "リピート間の休止";
+"repeat_of_total" = "%d回目 (%d回中)";

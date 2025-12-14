@@ -10,6 +10,7 @@ class DrillExecutionManager {
     private let onReadinessUpdate: (Int, Int) -> Void
     private let onReadinessTimeout: ([String]) -> Void
     private var randomDelay: TimeInterval
+    private var totalRepeats: Int
     
     private var currentRepeat = 0
     private var ackedDevices = Set<String>()
@@ -33,11 +34,12 @@ class DrillExecutionManager {
     private var drillDuration: TimeInterval?
     private var isReadinessCheckOnly = false
     
-    init(bleManager: BLEManager, drillSetup: DrillSetup, expectedDevices: [String], randomDelay: TimeInterval = 0, onComplete: @escaping ([DrillRepeatSummary]) -> Void, onFailure: @escaping () -> Void, onReadinessUpdate: @escaping (Int, Int) -> Void = { _, _ in }, onReadinessTimeout: @escaping ([String]) -> Void = { _ in }) {
+    init(bleManager: BLEManager, drillSetup: DrillSetup, expectedDevices: [String], randomDelay: TimeInterval = 0, totalRepeats: Int = 1, onComplete: @escaping ([DrillRepeatSummary]) -> Void, onFailure: @escaping () -> Void, onReadinessUpdate: @escaping (Int, Int) -> Void = { _, _ in }, onReadinessTimeout: @escaping ([String]) -> Void = { _ in }) {
         self.bleManager = bleManager
         self.drillSetup = drillSetup
         self.expectedDevices = expectedDevices
         self.randomDelay = randomDelay
+        self.totalRepeats = totalRepeats
         self.onComplete = onComplete
         self.onFailure = onFailure
         self.onReadinessUpdate = onReadinessUpdate
@@ -121,7 +123,7 @@ class DrillExecutionManager {
     private func executeNextRepeat() {
         guard !isStopped else { return }
         currentRepeat += 1
-        print("Starting repeat \(currentRepeat) of \(drillSetup.repeats)")
+        print("Starting repeat \(currentRepeat) of \(totalRepeats)")
         
         // Send ready commands
         sendReadyCommands()

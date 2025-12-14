@@ -31,6 +31,7 @@ struct TimerSessionView: View {
     
     // Drill execution properties
     @State private var executionManager: DrillExecutionManager?
+    @State private var readinessManager: DrillExecutionManager? // For between-repeats readiness checks
     @State private var expectedDevices: [String] = []
     
     // Target readiness properties
@@ -149,10 +150,17 @@ struct TimerSessionView: View {
                 }
                 .padding()
                 
+                if totalRepeats > 1 {
+                    Text(String(format: NSLocalizedString("repeat_of_total", comment: "Repeat X of Y"), currentRepeat, totalRepeats))
+                        .font(.title2.weight(.semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal)
+                }
+                
                 Spacer()
                 
                 // Target readiness status at the bottom
-                if timerState == .idle {
+                if timerState == .idle || isPauseActive {
                     VStack(spacing: 8) {
                         if readinessTimeoutOccurred {
                             Text(NSLocalizedString("targets_not_ready", comment: "Targets not ready"))
@@ -196,9 +204,12 @@ struct TimerSessionView: View {
         }
         .onDisappear {
             stopUpdateTimer()
+            readinessManager?.stopExecution()
+            readinessManager = nil
         }
         .onReceive(NotificationCenter.default.publisher(for: .bleNetlinkForwardReceived)) { notification in
             executionManager?.handleNetlinkForward(notification)
+            readinessManager?.handleNetlinkForward(notification)
         }
     }
 
@@ -249,6 +260,7 @@ struct TimerSessionView: View {
             drillSetup: drillSetup,
             expectedDevices: expectedDevices,
             randomDelay: 0, // Not used for readiness check
+            totalRepeats: Int(drillSetup.repeats),
             onComplete: { summaries in
                 // Not used for readiness check
             },
@@ -304,6 +316,7 @@ struct TimerSessionView: View {
             drillSetup: drillSetup,
             expectedDevices: expectedDevices,
             randomDelay: randomDelayValue,
+            totalRepeats: totalRepeats,
             onComplete: { summaries in
                 DispatchQueue.main.async {
                     if let summary = summaries.first {
@@ -383,6 +396,39 @@ struct TimerSessionView: View {
                         isPauseActive = true
                         pauseRemaining = Double(drillSetup.pause)
                         shouldContinueRepeats = false
+                        // Reset readiness state and perform check for next repeat
+                        readyTargetsCount = 0
+                        nonResponsiveTargets = []
+                        readinessTimeoutOccurred = false
+                        
+                        // Create new readiness manager for between-repeats check
+                        let readinessManager = DrillExecutionManager(
+                            bleManager: bleManager,
+                            drillSetup: drillSetup,
+                            expectedDevices: expectedDevices,
+                            randomDelay: 0, // Not used for readiness check
+                            totalRepeats: totalRepeats,
+                            onComplete: { summaries in
+                                // Not used for readiness check
+                            },
+                            onFailure: {
+                                // Not used for readiness check
+                            },
+                            onReadinessUpdate: { readyCount, totalCount in
+                                DispatchQueue.main.async {
+                                    self.readyTargetsCount = readyCount
+                                }
+                            },
+                            onReadinessTimeout: { nonResponsiveList in
+                                DispatchQueue.main.async {
+                                    self.nonResponsiveTargets = nonResponsiveList
+                                    self.readinessTimeoutOccurred = true
+                                }
+                            }
+                        )
+                        
+                        self.readinessManager = readinessManager
+                        readinessManager.performReadinessCheck()
                     } else {
                         stopUpdateTimer()
                         dismiss()
@@ -394,6 +440,8 @@ struct TimerSessionView: View {
                 pauseRemaining = max(0, pauseRemaining - 0.05)
                 if pauseRemaining <= 0 {
                     isPauseActive = false
+                    readinessManager?.stopExecution()
+                    readinessManager = nil
                     resetTimer()
                     startSequence()
                 }
@@ -426,6 +474,7 @@ struct TimerSessionView: View {
         case .running:
             // End the drill by calling manualStopDrill and show grace period
             executionManager?.manualStopDrill()
+            timerState = .idle  // Stop the elapsed timer display
             gracePeriodActive = true
             gracePeriodRemaining = gracePeriodDuration
             stopUpdateTimer()
