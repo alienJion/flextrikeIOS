@@ -45,6 +45,7 @@ struct TimerSessionView: View {
     @State private var accumulatedSummaries: [DrillRepeatSummary] = []
     @State private var isPauseActive: Bool = false
     @State private var pauseRemaining: TimeInterval = 0
+    @State private var drillEndedEarly: Bool = false
 
     var body: some View {
         ZStack {
@@ -189,13 +190,8 @@ struct TimerSessionView: View {
         .alert(NSLocalizedString("end_drill", comment: "End drill alert title"), isPresented: $showEndDrillAlert) {
             Button(NSLocalizedString("cancel", comment: "Cancel button"), role: .cancel) { }
             Button(NSLocalizedString("confirm", comment: "Confirm button"), role: .destructive) {
-                // User confirmed drill end - use manualStopDrill to ensure grace period and finalization
-                executionManager?.manualStopRepeat()
-                timerState = .idle
-                gracePeriodActive = true
-                gracePeriodRemaining = gracePeriodDuration
-                stopUpdateTimer()
-                startUpdateTimer()
+                // User confirmed to end entire drill - complete current repeat and finalize drill
+                endDrillEarly()
             }
         } message: {
             Text(NSLocalizedString("drill_in_progress", comment: "Drill in progress"))
@@ -356,8 +352,12 @@ struct TimerSessionView: View {
                         print("Collected repeat \(completedSummary.repeatIndex) summary, total collected: \(accumulatedSummaries.count)")
                     }
                     
-                    // Check if more repeats remain
-                    if currentRepeat < totalRepeats {
+                    // Check if drill was ended early or all repeats are complete
+                    if drillEndedEarly || currentRepeat >= totalRepeats {
+                        // Drill completed (either manually ended or all repeats done) - finalize drill
+                        stopUpdateTimer()
+                        executionManager?.completeDrill()
+                    } else if currentRepeat < totalRepeats {
                         // More repeats to go - start pause and prepare next repeat
                         isPauseActive = true
                         pauseRemaining = Double(drillSetup.pause)
@@ -373,10 +373,6 @@ struct TimerSessionView: View {
                         // Set the next repeat in the manager and perform readiness check
                         executionManager?.setCurrentRepeat(currentRepeat)
                         executionManager?.performReadinessCheck()
-                    } else {
-                        // All repeats completed - finalize drill
-                        stopUpdateTimer()
-                        executionManager?.completeDrill()
                     }
                 }
             }
@@ -431,11 +427,33 @@ struct TimerSessionView: View {
     }
 
     private func handleBackButtonTap() {
-        if timerState == .standby || timerState == .running {
+        if timerState == .standby || timerState == .running || gracePeriodActive || isPauseActive {
             showEndDrillAlert = true
         } else {
             dismiss()
         }
+    }
+    
+    private func endDrillEarly() {
+        // Mark that drill was ended early by user
+        drillEndedEarly = true
+        
+        // If already in grace period or pause, just proceed to complete the drill
+        if gracePeriodActive || isPauseActive {
+            stopUpdateTimer()
+            executionManager?.completeDrill()
+            return
+        }
+        
+        // Otherwise, stop the current repeat and trigger grace period
+        executionManager?.manualStopRepeat()
+        timerState = .idle
+        gracePeriodActive = true
+        gracePeriodRemaining = gracePeriodDuration
+        stopUpdateTimer()
+        startUpdateTimer()
+        
+        // Grace period timer will check drillEndedEarly flag and complete drill instead of continuing
     }
 
     private func pauseTimer() {
