@@ -337,32 +337,6 @@ private struct TargetDisplayView: View {
                             }
                             .frame(width: overlayBaseWidth * scaleX, height: overlayBaseHeight * scaleY)
                             .rotationEffect(Angle(radians: rotationRad))
-
-                            // Front: Missed bullets (no rotation)
-                            ForEach(shots.indices, id: \.self) { index in
-                                let shot = shots[index]
-                                if display.matches(shot), let shotTargetPos = shot.content.targetPos, !isScoringZone(shot.content.hitArea) {
-                                    let dx = shot.content.hitPosition.x - shotTargetPos.x
-                                    let dy = shot.content.hitPosition.y - shotTargetPos.y
-                                    let scaledDx = dx * scaleX
-                                    let scaledDy = dy * scaleY
-
-                                    ZStack {
-                                        Image("bullet_hole2")
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(width: 16, height: 16)
-
-                                        if selectedShotIndex == index {
-                                            Circle()
-                                                .stroke(Color.yellow, lineWidth: 2.5)
-                                                .frame(width: 21, height: 21)
-                                                .scaleEffect(pulsingShotIndex == index ? pulseScale : 1.0)
-                                        }
-                                    }
-                                    .offset(x: scaledDx, y: scaledDy)
-                                }
-                            }
                         }
                         .frame(width: overlayBaseWidth * scaleX, height: overlayBaseHeight * scaleY)
                         .position(x: transformedX, y: transformedY)
@@ -446,7 +420,7 @@ private struct TargetDisplayView: View {
                         }
                     }
 
-                    // Non-scoring shots rendered on top
+                    // Non-scoring shots rendered on top (fixed position for all target types)
                     ForEach(shots.indices, id: \.self) { index in
                         let shot = shots[index]
                         if display.matches(shot) && !isScoringZone(shot.content.hitArea) {
