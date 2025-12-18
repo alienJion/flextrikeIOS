@@ -1,6 +1,7 @@
 import SwiftUI
 import AVFoundation
 import UniformTypeIdentifiers
+import PhotosUI
 
 // MARK: - Custom TextEditor with Gray Background
 struct CustomTextEditor: UIViewRepresentable {
@@ -71,7 +72,7 @@ struct DescriptionVideoSectionView: View {
     
     @State private var isGeneratingThumbnail: Bool = false
     @State private var isDownloadingVideo: Bool = false
-    @State private var showFilePicker: Bool = false
+    @State private var selectedVideoItem: PhotosPickerItem? = nil
     @FocusState private var isDescriptionFocused: Bool
     
     var body: some View {
@@ -114,7 +115,7 @@ struct DescriptionVideoSectionView: View {
             }
             
             // Demo Video Upload
-            Button(action: { showFilePicker = true }) {
+            PhotosPicker(selection: $selectedVideoItem, matching: .videos) {
                 VStack {
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(style: StrokeStyle(lineWidth: 1, dash: [4]))
@@ -153,7 +154,7 @@ struct DescriptionVideoSectionView: View {
                                                 Button(action: {
                                                     demoVideoThumbnail = nil
                                                     demoVideoURL = nil
-                                                    showFilePicker = false
+                                                    selectedVideoItem = nil
                                                 }) {
                                                     Image(systemName: "xmark.circle.fill")
                                                         .resizable()
@@ -185,23 +186,33 @@ struct DescriptionVideoSectionView: View {
                         )
                 }
             }
-            .fileImporter(
-                isPresented: $showFilePicker,
-                allowedContentTypes: [.video],
-                onCompletion: { result in
-                    switch result {
-                    case .success(let url):
-                        handleSelectedVideo(url)
-                    case .failure(let error):
-                        print("File picker error: \(error)")
-                    }
-                }
-            )
         }
         .onChange(of: demoVideoURL) { _ in
             // Process the selected video URL
             if let url = demoVideoURL {
                 processSelectedVideo(url)
+            }
+        }
+        .onChange(of: selectedVideoItem) { newItem in
+            Task {
+                if let item = newItem {
+                    do {
+                        if let videoURL = try await item.loadTransferable(type: URL.self) {
+                            await MainActor.run {
+                                handleSelectedVideo(videoURL)
+                            }
+                        } else if let videoData = try await item.loadTransferable(type: Data.self) {
+                            // Fallback: save data to temp file
+                            if let tempURL = writeDataToTemp(data: videoData, ext: "mov") {
+                                await MainActor.run {
+                                    handleSelectedVideo(tempURL)
+                                }
+                            }
+                        }
+                    } catch {
+                        print("Failed to load video from PhotosPicker: \(error)")
+                    }
+                }
             }
         }
     }

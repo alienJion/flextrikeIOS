@@ -468,7 +468,7 @@ class DrillExecutionManager {
     }
 
     private func finalizeRepeat(repeatIndex: Int) {
-        guard let startTime = currentRepeatStartTime else {
+        guard currentRepeatStartTime != nil else {
             print("[DrillExecutionManager] No start time for repeat \(repeatIndex), skipping summary")
             return
         }

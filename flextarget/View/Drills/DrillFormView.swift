@@ -30,7 +30,6 @@ struct DrillFormView: View {
     @State private var drillName: String = ""
     @State private var description: String = ""
     @State private var demoVideoURL: URL? = nil
-    @State private var showFilePicker: Bool = false
     @State private var demoVideoThumbnail: UIImage? = nil
     @State private var thumbnailFileURL: URL? = nil
     @State private var showVideoPlayer: Bool = false
@@ -145,7 +144,7 @@ struct DrillFormView: View {
                                 )
                                 .sheet(isPresented: $showVideoPlayer) {
                                     if let url = demoVideoURL {
-                                        VideoPlayerView(url: url)
+                                        VideoPlayerView(url: url, isPresented: $showVideoPlayer)
                                     }
                                 }
                             }

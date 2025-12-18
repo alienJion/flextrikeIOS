@@ -1,15 +1,41 @@
-//
-//  VideoPlayerView.swift
-//  opencvtestminimal
-//
-//  Created by Kai Yang on 2025/7/8.
-//
-
-
 import SwiftUI
 import AVKit
 
-struct VideoPlayerView: UIViewControllerRepresentable {
+struct VideoPlayerView: View {
+    let url: URL
+    @Binding var isPresented: Bool
+    var onComplete: (() -> Void)?
+
+    var body: some View {
+        ZStack {
+            Color.black
+                .ignoresSafeArea()
+            
+            VideoPlayerController(url: url, onComplete: onComplete)
+            
+            // Close button
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .resizable()
+                            .frame(width: 32, height: 32)
+                            .foregroundColor(.white)
+                            .background(Color.black.opacity(0.5))
+                            .clipShape(Circle())
+                            .padding(16)
+                    }
+                }
+                Spacer()
+            }
+        }
+    }
+}
+
+struct VideoPlayerController: UIViewControllerRepresentable {
     let url: URL
     var onComplete: (() -> Void)?
 
@@ -18,6 +44,9 @@ struct VideoPlayerView: UIViewControllerRepresentable {
         let controller = AVPlayerViewController()
         controller.player = player
         controller.showsPlaybackControls = true
+        
+        // Auto-play the video
+        player.play()
 
         NotificationCenter.default.addObserver(
             context.coordinator,
