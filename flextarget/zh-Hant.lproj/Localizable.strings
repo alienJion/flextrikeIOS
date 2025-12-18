@@ -202,6 +202,8 @@
 "hit_area_popperzone" = "擊倒";
 "hit_area_blackzone" = "黑區";
 "hit_area_blackzoneleft" = "黑區左";
+"hit_area_blackzoneright" = "黑區右";
+"hit_area_whitezone" = "白區";
 "hit_area_blackzone" = "黑區";
 "hit_area_blackzoneleft" = "黑區左";
 "hit_area_circlearea" = "擊倒";

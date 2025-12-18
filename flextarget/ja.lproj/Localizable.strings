@@ -202,6 +202,8 @@
 "hit_area_popperzone" = "ノックダウン";
 "hit_area_blackzone" = "ブラックゾーン";
 "hit_area_blackzoneleft" = "ブラックゾーン左";
+"hit_area_blackzoneright" = "ブラックゾーン右";
+"hit_area_whitezone" = "ホワイトゾーン";
 "hit_area_blackzone" = "ブラックゾーン";
 "hit_area_blackzoneleft" = "ブラックゾーン左";
 "hit_area_circlearea" = "ノックダウン";

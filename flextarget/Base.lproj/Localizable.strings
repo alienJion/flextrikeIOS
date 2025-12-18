@@ -153,5 +153,7 @@
 "hit_area_popperzone" = "Knocked Down";
 "hit_area_blackzone" = "Black zone";
 "hit_area_blackzoneleft" = "Black zone left";
+"hit_area_blackzoneright" = "Black zone right";
+"hit_area_whitezone" = "White zone";
 "hit_area_blackzone" = "Black zone";
 "hit_area_blackzoneleft" = "Black zone left";

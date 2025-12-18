@@ -491,6 +491,10 @@ struct DrillResultView: View {
             return NSLocalizedString("hit_area_blackzone", comment: "Black zone")
         case "blackzoneleft":
             return NSLocalizedString("hit_area_blackzoneleft", comment: "Black zone left")
+        case "blackzoneright":
+            return NSLocalizedString("hit_area_blackzoneright", comment: "Black zone right")
+        case "whitezone":
+            return NSLocalizedString("hit_area_whitezone", comment: "White zone")
         default:
             return hitArea
         }

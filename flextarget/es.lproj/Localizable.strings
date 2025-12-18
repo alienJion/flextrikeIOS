@@ -202,6 +202,8 @@
 "hit_area_popperzone" = "Derribado";
 "hit_area_blackzone" = "Zona negra";
 "hit_area_blackzoneleft" = "Zona negra izquierda";
+"hit_area_blackzoneright" = "Zona negra derecha";
+"hit_area_whitezone" = "Zona blanca";
 "hit_area_blackzone" = "Zona negra";
 "hit_area_blackzoneleft" = "Zona negra izquierda";
 "hit_area_circlearea" = "Derribado";
