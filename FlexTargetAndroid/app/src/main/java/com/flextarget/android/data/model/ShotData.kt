@@ -38,14 +38,19 @@ data class Content(
     @SerializedName("tt") val tt: String? = null,
     @SerializedName("td") val td: Double? = null,
     @SerializedName("tgt_pos") val tgtPos: Position? = null,
-    @SerializedName("rep") val rep: Int? = null
+    @SerializedName("rep") val rep: Int? = null,
+
+    // iOS format keys for compatibility
+    @SerializedName("hitArea") val hitAreaIOS: String? = null,
+    @SerializedName("timeDiff") val timeDiffIOS: Double? = null,
+    @SerializedName("targetType") val targetTypeIOS: String? = null
 ) {
     // Computed properties to handle both old and new formats
     val actualCommand: String
         get() = cmd ?: command
 
     val actualHitArea: String
-        get() = ha ?: hitArea
+        get() = ha ?: hitAreaIOS ?: hitArea
 
     val actualHitPosition: Position
         get() = hp ?: hitPosition
@@ -54,10 +59,10 @@ data class Content(
         get() = rot ?: rotationAngle
 
     val actualTargetType: String
-        get() = tt ?: targetType
+        get() = tt ?: targetTypeIOS ?: targetType
 
     val actualTimeDiff: Double
-        get() = td ?: timeDiff
+        get() = td ?: timeDiffIOS ?: timeDiff
 
     val actualTargetPos: Position?
         get() = tgtPos ?: targetPos

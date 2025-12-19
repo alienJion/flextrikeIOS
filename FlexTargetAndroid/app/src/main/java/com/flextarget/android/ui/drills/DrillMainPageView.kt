@@ -20,8 +20,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.flextarget.android.data.ble.BLEManager
+import com.flextarget.android.data.local.entity.DrillResultWithShots
+import com.flextarget.android.data.local.entity.DrillSetupEntity
+import com.flextarget.android.data.model.DrillRepeatSummary
+import com.flextarget.android.data.model.ShotData
 import com.flextarget.android.ui.qr.QRScannerView
 import com.flextarget.android.ui.ble.ConnectSmartTargetView
+import com.google.gson.Gson
 
 @Composable
 fun DrillMainPageView(
@@ -31,11 +36,26 @@ fun DrillMainPageView(
     var showConnectView by remember { mutableStateOf(false) }
     var showInfo by remember { mutableStateOf(false) }
     var showQRScanner by remember { mutableStateOf(false) }
+    var selectedDrillSetup by remember { mutableStateOf<DrillSetupEntity?>(null) }
+    var selectedDrillSummaries by remember { mutableStateOf<List<DrillRepeatSummary>?>(null) }
 
     if (showDrillList) {
         DrillListView(
             bleManager = bleManager,
             onBack = { showDrillList = false }
+        )
+    } else if (selectedDrillSetup != null && selectedDrillSummaries != null) {
+        // Show drill summary view
+        DrillSummaryView(
+            drillSetup = selectedDrillSetup!!,
+            summaries = selectedDrillSummaries!!,
+            onBack = { 
+                selectedDrillSetup = null
+                selectedDrillSummaries = null
+            },
+            onViewResult = { summary ->
+                // TODO: Navigate to individual result view
+            }
         )
     } else {
         MainContent(
@@ -43,7 +63,48 @@ fun DrillMainPageView(
             onShowDrillList = { showDrillList = true },
             onShowConnectView = { showConnectView = true },
             onShowInfo = { showInfo = true },
-            onShowQRScanner = { showQRScanner = true }
+            onShowQRScanner = { showQRScanner = true },
+            onDrillSelected = { results -> 
+                // Convert results to drill setup and summaries
+                val firstResult = results.firstOrNull()
+                if (firstResult != null) {
+                    // Get drill setup (this is a simplified approach - in real app might need repository)
+                    // For now, create a mock drill setup
+                    val mockSetup = DrillSetupEntity(
+                        name = "Recent Drill",
+                        desc = "Recent training session"
+                    )
+                    
+                    // Convert results to summaries
+                    val summaries = results.mapIndexed { index, result ->
+                        val shots = result.shots.mapNotNull { shot ->
+                            shot.data?.let { data ->
+                                try {
+                                    com.google.gson.Gson().fromJson(data, ShotData::class.java)
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            }
+                        }
+                        val totalTime = if (result.drillResult.totalTime > 0) result.drillResult.totalTime else shots.sumOf { it.content.actualTimeDiff }
+                        val fastestShot = shots.minOfOrNull { it.content.actualTimeDiff } ?: 0.0
+                        val totalScore = shots.sumOf { com.flextarget.android.data.model.ScoringUtility.scoreForHitArea(it.content.actualHitArea) }.toDouble()
+                        
+                        DrillRepeatSummary(
+                            repeatIndex = index + 1,
+                            totalTime = totalTime,
+                            numShots = shots.size,
+                            firstShot = shots.firstOrNull()?.content?.actualTimeDiff ?: 0.0,
+                            fastest = fastestShot,
+                            score = totalScore.toInt(),
+                            shots = shots
+                        )
+                    }
+                    
+                    selectedDrillSetup = mockSetup
+                    selectedDrillSummaries = summaries
+                }
+            }
         )
     }
 
@@ -90,7 +151,8 @@ private fun MainContent(
     onShowDrillList: () -> Unit,
     onShowConnectView: () -> Unit,
     onShowInfo: () -> Unit,
-    onShowQRScanner: () -> Unit
+    onShowQRScanner: () -> Unit,
+    onDrillSelected: (List<DrillResultWithShots>) -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -105,7 +167,8 @@ private fun MainContent(
             RecentTrainingView(
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
-                    .padding(top = 16.dp)
+                    .padding(top = 16.dp),
+                onDrillSelected = onDrillSelected
             )
 
             // Menu Buttons

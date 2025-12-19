@@ -36,10 +36,7 @@ fun DrillListView(
     val context = LocalContext.current
     val viewModel: DrillListViewModel = viewModel(
         factory = com.flextarget.android.ui.viewmodel.DrillListViewModel.Factory(
-            DrillSetupRepository(
-                FlexTargetDatabase.getDatabase(LocalContext.current).drillSetupDao(),
-                FlexTargetDatabase.getDatabase(LocalContext.current).drillTargetsConfigDao()
-            )
+            DrillSetupRepository.getInstance(LocalContext.current)
         )
     )
     val coroutineScope = rememberCoroutineScope()
@@ -49,6 +46,8 @@ fun DrillListView(
     var showDrillForm by remember { mutableStateOf(false) }
     var drillFormMode by remember { mutableStateOf(DrillFormMode.ADD) }
     var selectedDrill by remember { mutableStateOf<DrillSetupEntity?>(null) }
+    var showDrillRecord by remember { mutableStateOf(false) }
+    var selectedDrillForRecord by remember { mutableStateOf<DrillSetupEntity?>(null) }
 
     val drillSetups by viewModel.drillSetups.collectAsState(initial = emptyList())
 
@@ -314,14 +313,24 @@ fun DrillListView(
                 // Refresh the list or handle the saved drill
                 showDrillForm = false
             },
+            onShowHistory = { drill ->
+                selectedDrillForRecord = drill
+                showDrillRecord = true
+                showDrillForm = false
+            },
             viewModel = viewModel(
                 factory = com.flextarget.android.ui.viewmodel.DrillFormViewModel.Factory(
-                    DrillSetupRepository(
-                        FlexTargetDatabase.getDatabase(LocalContext.current).drillSetupDao(),
-                        FlexTargetDatabase.getDatabase(LocalContext.current).drillTargetsConfigDao()
-                    )
+                    DrillSetupRepository.getInstance(LocalContext.current)
                 )
             )
+        )
+    }
+
+    // Drill Record
+    if (showDrillRecord && selectedDrillForRecord != null) {
+        DrillRecordView(
+            drillSetup = selectedDrillForRecord!!,
+            onBack = { showDrillRecord = false }
         )
     }
 

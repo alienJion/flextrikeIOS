@@ -24,6 +24,7 @@ import com.flextarget.android.data.ble.BLEManager
 import com.flextarget.android.data.local.FlexTargetDatabase
 import com.flextarget.android.data.local.entity.DrillSetupEntity
 import com.flextarget.android.data.local.entity.DrillTargetsConfigEntity
+import com.flextarget.android.data.repository.DrillResultRepository
 import com.flextarget.android.data.repository.DrillSetupRepository
 import com.flextarget.android.ui.viewmodel.DrillFormViewModel
 import com.flextarget.android.data.model.DrillRepeatSummary
@@ -51,6 +52,7 @@ fun DrillFormView(
     existingDrill: DrillSetupEntity? = null,
     onBack: () -> Unit,
     onDrillSaved: (DrillSetupEntity) -> Unit = {},
+    onShowHistory: (DrillSetupEntity) -> Unit = {},
     viewModel: DrillFormViewModel
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -122,7 +124,18 @@ fun DrillFormView(
                     }
                 },
                 actions = {
-                    if (currentScreen == DrillFormScreen.TARGET_CONFIG) {
+                    if (currentScreen == DrillFormScreen.FORM && existingDrill != null) {
+                        // History button for existing drills
+                        IconButton(onClick = {
+                            existingDrill?.let { onShowHistory(it) }
+                        }) {
+                            Icon(
+                                Icons.Default.Settings,
+                                contentDescription = "Drill History",
+                                tint = Color.Red
+                            )
+                        }
+                    } else if (currentScreen == DrillFormScreen.TARGET_CONFIG) {
                         val maxTargets = bleManager.networkDevices.size
                         val canAddMore = targets.size < maxTargets
                         IconButton(
@@ -410,6 +423,7 @@ private fun FormScreen(
                 drillSetup = timerSessionDrill!!,
                 targets = timerSessionTargets,
                 bleManager = androidBleManager,
+                drillResultRepository = DrillResultRepository.getInstance(LocalContext.current),
                 onDrillComplete = { summaries ->
                     println("[DrillFormView] onDrillComplete called with ${summaries.size} summaries")
                     summaries.forEach { summary ->

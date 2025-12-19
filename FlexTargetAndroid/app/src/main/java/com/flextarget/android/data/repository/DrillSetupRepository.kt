@@ -1,5 +1,7 @@
 package com.flextarget.android.data.repository
 
+import android.content.Context
+import com.flextarget.android.data.local.FlexTargetDatabase
 import com.flextarget.android.data.local.dao.*
 import com.flextarget.android.data.local.entity.*
 import kotlinx.coroutines.flow.Flow
@@ -15,6 +17,23 @@ class DrillSetupRepository(
     private val drillSetupDao: DrillSetupDao,
     private val targetConfigDao: DrillTargetsConfigDao
 ) {
+    
+    companion object {
+        @Volatile
+        private var INSTANCE: DrillSetupRepository? = null
+        
+        fun getInstance(context: Context): DrillSetupRepository {
+            return INSTANCE ?: synchronized(this) {
+                val database = FlexTargetDatabase.getDatabase(context)
+                val instance = DrillSetupRepository(
+                    database.drillSetupDao(),
+                    database.drillTargetsConfigDao()
+                )
+                INSTANCE = instance
+                instance
+            }
+        }
+    }
     
     // Observe all drill setups
     val allDrillSetups: Flow<List<DrillSetupEntity>> = drillSetupDao.getAllDrillSetups()

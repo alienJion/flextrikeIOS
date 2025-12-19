@@ -18,11 +18,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.flextarget.android.data.local.entity.DrillResultEntity
+import com.flextarget.android.data.local.entity.ShotEntity
+import com.flextarget.android.data.repository.DrillResultRepository
+import com.google.gson.Gson
+import kotlinx.coroutines.launch
+import java.util.Date
+import java.util.UUID
 import androidx.compose.ui.unit.sp
 import com.flextarget.android.R
 import java.util.*
 import java.util.Timer
-import java.util.Date
 import java.util.TimerTask
 import com.flextarget.android.data.ble.AndroidBLEManager
 import com.flextarget.android.data.ble.BLEManager
@@ -46,11 +52,13 @@ fun TimerSessionView(
     drillSetup: DrillSetupEntity,
     targets: List<DrillTargetsConfigEntity>,
     bleManager: AndroidBLEManager,
+    drillResultRepository: DrillResultRepository,
     onDrillComplete: (List<DrillRepeatSummary>) -> Unit,
     onDrillFailed: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     var timerState by remember { mutableStateOf(TimerState.IDLE) }
     var delayTarget by remember { mutableStateOf<Date?>(null) }
@@ -286,6 +294,43 @@ fun TimerSessionView(
                 // Use the summaries parameter directly - this is the correct data from completeDrill()
                 accumulatedSummaries = summaries
                 println("[TimerSessionView] Using ${summaries.size} summaries from onComplete parameter")
+
+                // Save drill results to database
+                coroutineScope.launch {
+                    try {
+                        val sessionId = UUID.randomUUID()
+                        val gson = Gson()
+
+                        summaries.forEach { summary ->
+                            val drillResult = DrillResultEntity(
+                                id = summary.id,
+                                date = Date(),
+                                drillId = drillSetup.id,
+                                sessionId = sessionId,
+                                totalTime = summary.totalTime,
+                                drillSetupId = drillSetup.id
+                            )
+
+                            val shots = summary.shots.map { shotData ->
+                                ShotEntity(
+                                    id = UUID.randomUUID(),
+                                    data = gson.toJson(shotData),
+                                    timestamp = Date(),
+                                    drillResultId = drillResult.id
+                                )
+                            }
+
+                            drillResultRepository.insertDrillResultWithShots(drillResult, shots)
+                            println("[TimerSessionView] Saved drill result ${drillResult.id} with ${shots.size} shots")
+                        }
+
+                        println("[TimerSessionView] Successfully saved ${summaries.size} drill results")
+                    } catch (e: Exception) {
+                        println("[TimerSessionView] Error saving drill results: ${e.message}")
+                        e.printStackTrace()
+                    }
+                }
+
                 onDrillComplete(accumulatedSummaries)
                 // NOTE: Do NOT navigate here - let parent view handle navigation
             },
