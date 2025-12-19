@@ -283,18 +283,9 @@ fun TimerSessionView(
                 summaries.forEach { summary ->
                     println("[TimerSessionView] Summary ${summary.repeatIndex}: ${summary.numShots} shots, score: ${summary.score}")
                 }
-                // Always collect from manager's summaries, ignoring the summaries parameter
-                executionManager?.summaries?.let { sumMap ->
-                    val collected = if (sumMap is Map<*, *>) {
-                        sumMap.values.filterIsInstance<DrillRepeatSummary>()
-                    } else if (sumMap is List<*>) {
-                        sumMap.filterIsInstance<DrillRepeatSummary>()
-                    } else {
-                        emptyList()
-                    }
-                    accumulatedSummaries = collected
-                    println("[TimerSessionView] Collected ${collected.size} summaries from manager")
-                }
+                // Use the summaries parameter directly - this is the correct data from completeDrill()
+                accumulatedSummaries = summaries
+                println("[TimerSessionView] Using ${summaries.size} summaries from onComplete parameter")
                 onDrillComplete(accumulatedSummaries)
                 // NOTE: Do NOT navigate here - let parent view handle navigation
             },

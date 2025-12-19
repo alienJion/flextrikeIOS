@@ -449,67 +449,53 @@ class DrillExecutionManager(
 
             println("[DrillExecutionManager] ✅ finalizeRepeat($repeatIndex) - found ${sortedShots.size} shots")
 
-            // Calculate total time: use time_diff of last shot (original value from shot data)
-            var totalTime = 0.0
+        // Calculate timeDiffs from received times
+        val timeDiffs = sortedShots.map { event ->
+            (event.receivedAt.time - startTime.time) / 1000.0
+        }
 
-            sortedShots.lastOrNull()?.shot?.content?.actualTimeDiff?.let { lastShotTimeDiff ->
-                totalTime = lastShotTimeDiff
-                println("Total time calculation - using last shot time_diff: $totalTime")
-            } ?: run {
-                println("Warning: No shots with time_diff for repeat $repeatIndex, using fallback calculation")
-                // Fallback to old method if drill_duration available
-                drillDuration?.let { duration ->
-                    val timerDelay = if (randomDelay > 0) randomDelay else drillSetup.delay
-                    totalTime = maxOf(0.0, duration - timerDelay)
-                    println("Fallback total time - drill_duration: $duration, delay_time: $timerDelay, total: $totalTime")
-                } ?: run {
-                    totalTime = 0.0
-                    println("No valid time calculation available for repeat $repeatIndex, setting total time to 0.0")
-                }
-            }
+        val totalTime = timeDiffs.maxOrNull() ?: 0.0
+        val firstShot = timeDiffs.minOrNull() ?: 0.0
+        
+        // Calculate fastest as the smallest time gap between consecutive shots
+        val fastest = if (timeDiffs.size >= 2) {
+            timeDiffs.zipWithNext { a, b -> b - a }.minOrNull() ?: firstShot
+        } else {
+            firstShot // If only one shot, fastest is the same as first shot
+        }
 
-            // Recalculate timeDiff: first shot keeps original time_diff, subsequent shots show difference from previous shot's time_diff
-            // time_diff from shot data is already: timing of shot on target device - timing when repeat starts
-            val adjustedShots = sortedShots.mapIndexed { index, event ->
-                val newTimeDiff = if (index == 0) {
-                    // First shot keeps original time_diff
-                    event.shot.content.actualTimeDiff
-                } else {
-                    // Subsequent shots: current shot's time_diff - previous shot's time_diff
-                    event.shot.content.actualTimeDiff - sortedShots[index - 1].shot.content.actualTimeDiff
-                }
+        println("[DrillExecutionManager] Calculated times - totalTime: $totalTime, firstShot: $firstShot, fastest: $fastest")
 
-                val adjustedContent = Content(
-                    command = event.shot.content.actualCommand,
-                    hitArea = event.shot.content.actualHitArea,
-                    hitPosition = event.shot.content.actualHitPosition,
-                    rotationAngle = event.shot.content.actualRotationAngle,
-                    targetType = event.shot.content.actualTargetType,
-                    timeDiff = newTimeDiff,
-                    device = event.shot.content.device,
-                    targetPos = event.shot.content.actualTargetPos,
-                    `repeat` = event.shot.content.actualRepeat
-                )
+        // Create adjusted shots with calculated timeDiffs
+        val adjustedShots = sortedShots.mapIndexed { index, event ->
+            val adjustedContent = Content(
+                command = event.shot.content.actualCommand,
+                hitArea = event.shot.content.actualHitArea,
+                hitPosition = event.shot.content.actualHitPosition,
+                rotationAngle = event.shot.content.actualRotationAngle,
+                targetType = event.shot.content.actualTargetType,
+                timeDiff = timeDiffs[index],  // Use calculated absolute time
+                device = event.shot.content.device,
+                targetPos = event.shot.content.actualTargetPos,
+                `repeat` = event.shot.content.actualRepeat
+            )
 
-                ShotData(
-                    target = event.shot.target,
-                    content = adjustedContent,
-                    type = event.shot.type,
-                    action = event.shot.action,
-                    device = event.shot.device
-                )
-            }
+            ShotData(
+                target = event.shot.target,
+                content = adjustedContent,
+                type = event.shot.type,
+                action = event.shot.action,
+                device = event.shot.device
+            )
+        }
 
-            val numShots = adjustedShots.size
-            val fastest = adjustedShots.map { it.content.actualTimeDiff }.minOrNull() ?: 0.0
-            val firstShot = adjustedShots.firstOrNull()?.content?.actualTimeDiff ?: 0.0
+        val numShots = adjustedShots.size
 
-            // Group shots by target/device
-            val shotsByTarget = mutableMapOf<String, MutableList<ShotData>>()
-            for (shot in adjustedShots) {
-                val device = shot.device ?: shot.target ?: "unknown"
-                shotsByTarget.getOrPut(device) { mutableListOf() }.add(shot)
-            }
+        val shotsByTarget = mutableMapOf<String, MutableList<ShotData>>()
+        for (shot in adjustedShots) {
+            val device = shot.device ?: shot.target ?: "unknown"
+            shotsByTarget.getOrPut(device) { mutableListOf() }.add(shot)
+        }
 
             // Process shots: keep best 2 per target, BUT for paddle and popper targets, keep all shots
             val bestShotsPerTarget = mutableListOf<ShotData>()

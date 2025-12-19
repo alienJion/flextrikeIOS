@@ -39,7 +39,7 @@ fun DrillSummaryView(
 ) {
     println("[DrillSummaryView] Rendering with ${summaries.size} summaries")
     summaries.forEach { summary ->
-        println("[DrillSummaryView] Summary ${summary.repeatIndex}: ${summary.numShots} shots, score: ${summary.score}")
+        println("[DrillSummaryView] Summary ${summary.repeatIndex}: totalTime=${summary.totalTime}, firstShot=${summary.firstShot}, fastest=${summary.fastest}, numShots=${summary.numShots}, score: ${summary.score}")
     }
     val originalScores = remember { mutableStateMapOf<UUID, Int>() }
 
@@ -263,8 +263,14 @@ private fun MetricView(
     metric: SummaryMetric,
     modifier: Modifier = Modifier
 ) {
+    // Extract numeric value for animation, but display the full formatted string
+    val numericValue = metric.value
+        .replace(" s", "")  // Remove time unit
+        .replace(",", "")  // Remove commas if any
+        .toFloatOrNull() ?: 0f
+
     val animatedValue by animateFloatAsState(
-        targetValue = metric.value.toFloatOrNull() ?: 0f,
+        targetValue = numericValue,
         animationSpec = tween(durationMillis = 500),
         label = "metric_animation"
     )
@@ -304,11 +310,16 @@ private fun MetricView(
             )
         }
 
-        // Value
+        // Value - animate the numeric part but display with proper formatting
         Text(
-            text = if (metric.value.contains(".")) {
+            text = if (metric.value.contains(" s")) {
+                // For time values, animate the number but keep the "s" unit
+                String.format("%.2f s", animatedValue)
+            } else if (metric.value.contains(".")) {
+                // For other decimal values, animate them
                 String.format("%.2f", animatedValue)
             } else {
+                // For integer values, display as-is
                 metric.value
             },
             style = MaterialTheme.typography.titleMedium,
@@ -396,6 +407,7 @@ private fun RestoreButton(onClick: () -> Unit) {
 
 // Helper functions
 private fun getMetricsForSummary(summary: DrillRepeatSummary): List<SummaryMetric> {
+    println("[DrillSummaryView] getMetricsForSummary - summary.totalTime: ${summary.totalTime}, summary.firstShot: ${summary.firstShot}, summary.fastest: ${summary.fastest}")
     return listOf(
         SummaryMetric(
             icon = Icons.Default.Info,
