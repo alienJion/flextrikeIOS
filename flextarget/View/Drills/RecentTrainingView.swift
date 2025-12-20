@@ -168,7 +168,7 @@ struct RecentTrainingView: View {
             // Create summaries for all results in the session with proper repeat indices
             var summaries: [DrillRepeatSummary] = []
             for (index, result) in drillResults.enumerated() {
-                let shots = convertShots(result.shots)
+                let shots = result.decodedShots
                 let summary = DrillRepeatSummary(
                     repeatIndex: index + 1,
                     totalTime: result.effectiveTotalTime,

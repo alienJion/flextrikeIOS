@@ -108,11 +108,11 @@ fun DrillMainPageView(
         )
     }
 
-    // TODO: Implement sheets for ConnectSmartTargetWrapper, InformationPage, QRScannerView
     if (showConnectView) {
         ConnectSmartTargetView(
             bleManager = bleManager,
-            onDismiss = { showConnectView = false }
+            onDismiss = { showConnectView = false },
+            isAlreadyConnected = bleManager.isConnected
         )
     }
 
@@ -160,14 +160,15 @@ private fun MainContent(
             .background(Color.Black)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.statusBars),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Recent Training (moved to subview)
             RecentTrainingView(
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
-                    .padding(top = 16.dp),
+                    .padding(top = 80.dp), // Increased from 16.dp to 80.dp to account for BLE status toolbar
                 onDrillSelected = onDrillSelected
             )
 

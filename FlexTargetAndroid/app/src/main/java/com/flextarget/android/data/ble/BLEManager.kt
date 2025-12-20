@@ -40,13 +40,23 @@ class BLEManager private constructor() {
     var showErrorAlert by mutableStateOf(false)
 
     // Shot notification callback
-    var onShotReceived: ((Map<String, Any>) -> Unit)? = null
+    var onShotReceived: ((com.flextarget.android.data.model.ShotData) -> Unit)? = null
+
+    // Netlink forward message callback
+    var onNetlinkForwardReceived: ((Map<String, Any>) -> Unit)? = null
 
     val connectedPeripheralName: String?
         get() = connectedPeripheral?.name
 
     fun initialize(context: Context) {
-        androidBLEManager = AndroidBLEManager(context)
+        androidBLEManager = AndroidBLEManager(context).apply {
+            onShotReceived = { shotData ->
+                this@BLEManager.onShotReceived?.invoke(shotData)
+            }
+            onNetlinkForwardReceived = { message ->
+                this@BLEManager.onNetlinkForwardReceived?.invoke(message)
+            }
+        }
     }
 
     fun startScan() {

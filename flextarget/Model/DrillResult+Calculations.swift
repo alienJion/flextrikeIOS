@@ -18,13 +18,6 @@ extension DrillResult {
                 print("Failed to decode shot data: \(error)")
                 return nil
             }
-        }.sorted { shot1, shot2 in
-            // Sort by timestamp if available, otherwise by timeDiff
-            if let timestamp1 = shot1.content.timeDiff as TimeInterval?,
-               let timestamp2 = shot2.content.timeDiff as TimeInterval? {
-                return timestamp1 < timestamp2
-            }
-            return false
         }
     }
     

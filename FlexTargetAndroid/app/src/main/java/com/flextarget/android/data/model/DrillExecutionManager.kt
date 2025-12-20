@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.google.gson.Gson
 import java.util.*
+import com.flextarget.android.data.ble.BLEManager
 import java.util.Timer
 import java.util.Date
 import java.util.TimerTask

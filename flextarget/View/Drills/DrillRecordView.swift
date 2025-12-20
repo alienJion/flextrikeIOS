@@ -79,10 +79,10 @@ struct DrillRecordView: View {
         return result.sorted { ($0.sessions.first?.firstResult.date ?? Date()) > ($1.sessions.first?.firstResult.date ?? Date()) }
     }
 
-    private func createDrillRepeatSummary(from result: DrillResult) -> DrillRepeatSummary {
-        let shots = convertShots(result.shots)
+    private func createDrillRepeatSummary(from result: DrillResult, index: Int) -> DrillRepeatSummary {
+        let shots = result.decodedShots
         return DrillRepeatSummary(
-            repeatIndex: 1,
+            repeatIndex: index + 1,
             totalTime: result.effectiveTotalTime,
             numShots: shots.count,
             firstShot: shots.first?.content.timeDiff ?? 0,
@@ -106,7 +106,9 @@ struct DrillRecordView: View {
                         ForEach(group.sessions, id: \.firstResult.objectID) { session in
                             NavigationLink(destination: DrillSummaryView(
                                 drillSetup: session.firstResult.drillSetup!,
-                                summaries: session.allResults.map { createDrillRepeatSummary(from: $0) }
+                                summaries: session.allResults.enumerated().map { index, result in
+                                    createDrillRepeatSummary(from: result, index: index)
+                                }
                             )) {
                                 DrillRecordRowView(
                                     model: DrillRecordRowView.Model(

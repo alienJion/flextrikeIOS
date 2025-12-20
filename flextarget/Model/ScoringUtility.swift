@@ -16,9 +16,9 @@ class ScoringUtility {
         case "dzone":
             return 2
         case "miss":
-            return 0
+            return 15
         case "whitezone":
-            return -10
+            return -25
         case "blackzone":
             return -10
         case "circlearea": // Paddle

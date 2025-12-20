@@ -22,6 +22,28 @@ struct DrillSummaryView: View {
         ]
     }
 
+    private func hitZoneMetrics(for summary: DrillRepeatSummary) -> [SummaryMetric] {
+        let aZoneCount = summary.shots.filter { $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "azone" }.count
+        let cZoneCount = summary.shots.filter { $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "czone" }.count
+        let dZoneCount = summary.shots.filter { $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "dzone" }.count
+        let noShootCount = summary.shots.filter { 
+            let area = $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            return area == "blackzone" || area == "whitezone"
+        }.count
+        let missCount = summary.shots.filter { 
+            let area = $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            return area == "miss" || area == "m" || area.isEmpty
+        }.count
+
+        return [
+            SummaryMetric(iconName: "a.circle.fill", label: "A", value: "\(aZoneCount)"),
+            SummaryMetric(iconName: "c.circle.fill", label: "C", value: "\(cZoneCount)"),
+            SummaryMetric(iconName: "d.circle.fill", label: "D", value: "\(dZoneCount)"),
+            SummaryMetric(iconName: "xmark.circle.fill", label: "N", value: "\(noShootCount)"),
+            SummaryMetric(iconName: "slash.circle.fill", label: "M", value: "\(missCount)")
+        ]
+    }
+
     private func format(time: TimeInterval) -> String {
         guard time.isFinite, time > 0 else { return "--" }
         return String(format: "%.2f s", time)
@@ -75,9 +97,17 @@ struct DrillSummaryView: View {
                                 NavigationLink(destination: DrillResultView(drillSetup: drillSetup, repeatSummary: summaries[index])) {
                                     summaryCard(
                                         title: String(format: NSLocalizedString("repeat_number", comment: "Repeat number format"), summaries[index].repeatIndex),
-                                        subtitle: "\(NSLocalizedString("factor_label", comment: "Factor label")): \(String(format: "%.2f", calculateFactor(score: summaries[index].score, time: summaries[index].totalTime)))",
+                                        subtitle: HStack(spacing: 2) {
+                                            Text("\(NSLocalizedString("factor_label", comment: "Factor label")):")
+                                                .font(.system(size: 14, weight: .medium))
+                                                .foregroundColor(Color.white.opacity(0.7))
+                                            Text(String(format: "%.2f", calculateFactor(score: summaries[index].score, time: summaries[index].totalTime)))
+                                                .font(.system(size: 18, weight: .bold))
+                                                .foregroundColor(.red)
+                                        },
                                         iconName: "scope",
                                         metrics: metrics(for: summaries[index]),
+                                        hitZoneMetrics: hitZoneMetrics(for: summaries[index]),
                                         summaryIndex: index
                                     )
                                 }
@@ -146,7 +176,7 @@ struct DrillSummaryView: View {
         .background(Color.black)
     }
 
-    private func summaryCard(title: String, subtitle: String, iconName: String, metrics: [SummaryMetric], summaryIndex: Int) -> some View {
+    private func summaryCard(title: String, subtitle: some View, iconName: String, metrics: [SummaryMetric], hitZoneMetrics: [SummaryMetric], summaryIndex: Int) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .center, spacing: 12) {
                 ZStack {
@@ -168,9 +198,7 @@ struct DrillSummaryView: View {
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.white)
 
-                    Text(subtitle)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(Color.white.opacity(0.7))
+                    subtitle
                 }
 
                 Spacer()
@@ -189,8 +217,16 @@ struct DrillSummaryView: View {
             Divider()
                 .overlay(Color.white.opacity(0.2))
 
+            // First row: Current metrics
             HStack(spacing: 12) {
                 ForEach(metrics) { metric in
+                    metricView(metric)
+                }
+            }
+
+            // Second row: Hit zone metrics
+            HStack(spacing: 12) {
+                ForEach(hitZoneMetrics) { metric in
                     metricView(metric)
                 }
             }
