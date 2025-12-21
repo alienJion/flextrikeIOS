@@ -79,7 +79,7 @@ enum UITestDataSeeder {
                 }
 
                 try context.save()
-                print("[UITestDataSeeder] seeded sample drill '")
+                print("[UITestDataSeeder] seeded sample drill '\(markerName)'")
             } catch {
                 print("[UITestDataSeeder] failed to seed: \(error)")
             }

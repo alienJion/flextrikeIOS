@@ -1,5 +1,6 @@
 import Foundation
 import CoreData
+import SwiftUI
 
 /// Utility class for drill scoring calculations
 class ScoringUtility {
@@ -98,5 +99,56 @@ class ScoringUtility {
         
         // Ensure score never goes below 0
         return max(0, totalScore)
+    }
+    
+    /// Calculate score based on adjusted hit zone metrics
+    static func calculateScoreFromAdjustedHitZones(_ adjustedHitZones: [String: Int]?, drillSetup: DrillSetup?) -> Int {
+        guard let adjustedHitZones = adjustedHitZones else { return 0 }
+        
+        let aCount = adjustedHitZones["A"] ?? 0
+        let cCount = adjustedHitZones["C"] ?? 0
+        let dCount = adjustedHitZones["D"] ?? 0
+        let nCount = adjustedHitZones["N"] ?? 0  // No-shoot zones
+        // Misses don't contribute to score
+        
+        // Calculate base score from adjusted counts
+        // A=5, C=3, D=2, N=-10 (black zone) or -25 (white zone), M=0 (misses don't contribute)
+        var totalScore = (aCount * 5) + (cCount * 3) + (dCount * 2)
+        
+        // Apply penalties for no-shoot zones
+        // Assume half are black zone (-10) and half are white zone (-25) for average penalty
+        let avgNoShootPenalty = nCount > 0 ? (nCount / 2 * (-10) + (nCount + 1) / 2 * (-25)) : 0
+        totalScore += avgNoShootPenalty
+        
+        // Apply missed target penalty (10 points per missed target)
+        // We need to estimate missed targets from the adjusted data
+        // This is an approximation since we don't have exact target information
+        let missedTargetCount = max(0, ScoringUtility.estimateMissedTargetsFromAdjustedCounts(adjustedHitZones, drillSetup: drillSetup))
+        let missedTargetPenalty = missedTargetCount * 10
+        totalScore -= missedTargetPenalty
+        
+        // Ensure score never goes below 0
+        return max(0, totalScore)
+    }
+    
+    /// Estimate missed targets from adjusted hit zone counts
+    static func estimateMissedTargetsFromAdjustedCounts(_ adjustedHitZones: [String: Int], drillSetup: DrillSetup?) -> Int {
+        guard let drillSetup = drillSetup,
+              let targetsSet = drillSetup.targets as? Set<DrillTargetsConfig> else {
+            return 0
+        }
+        
+        let expectedTargets = targetsSet.count
+        let aCount = adjustedHitZones["A"] ?? 0
+        let cCount = adjustedHitZones["C"] ?? 0
+        let dCount = adjustedHitZones["D"] ?? 0
+        let nCount = adjustedHitZones["N"] ?? 0
+        
+        // Estimate targets hit: assume each target gets at most 2 scoring shots
+        // This is a rough approximation
+        let estimatedTargetsHit = min(expectedTargets, (aCount + cCount + dCount + nCount + 1) / 2)
+        let missedTargets = max(0, expectedTargets - estimatedTargetsHit)
+        
+        return missedTargets
     }
 }

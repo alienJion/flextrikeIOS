@@ -1,28 +1,46 @@
 import SwiftUI
 import CoreData
+import Foundation
 
 struct DrillSummaryView: View {
     let drillSetup: DrillSetup
     @State var summaries: [DrillRepeatSummary]
     @State private var originalScores: [UUID: Int] = [:]
+    @State private var editingSummary: DrillRepeatSummary? = nil
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.managedObjectContext) private var viewContext
 
     private var drillName: String {
         drillSetup.name ?? "Untitled Drill"
     }
 
     private func metrics(for summary: DrillRepeatSummary) -> [SummaryMetric] {
-        [
+        // Calculate effective score using adjusted hit zones if available
+        let effectiveScore = summary.adjustedHitZones != nil ? 
+            ScoringUtility.calculateScoreFromAdjustedHitZones(summary.adjustedHitZones!, drillSetup: drillSetup) : 
+            summary.score
+        
+        return [
             SummaryMetric(iconName: "clock.arrow.circlepath", label: NSLocalizedString("total_time_label", comment: "Total time metric label"), value: format(time: summary.totalTime)),
             SummaryMetric(iconName: "scope", label: NSLocalizedString("shots_metric_label", comment: "Shots metric label"), value: "\(summary.numShots)"),
             SummaryMetric(iconName: "bolt.circle", label: NSLocalizedString("fastest_label", comment: "Fastest shot label"), value: format(time: summary.fastest)),
             SummaryMetric(iconName: "timer", label: NSLocalizedString("first_shot_label", comment: "First shot label"), value: format(time: summary.firstShot)),
-            SummaryMetric(iconName: "flame.fill", label: NSLocalizedString("score_label", comment: "Score label"), value: "\(summary.score)")
+            SummaryMetric(iconName: "flame.fill", label: NSLocalizedString("score_label", comment: "Score label"), value: "\(effectiveScore)")
         ]
     }
 
     private func hitZoneMetrics(for summary: DrillRepeatSummary) -> [SummaryMetric] {
+        if let adjusted = summary.adjustedHitZones {
+            return [
+                SummaryMetric(iconName: "a.circle.fill", label: "A", value: "\(adjusted["A"] ?? 0)"),
+                SummaryMetric(iconName: "c.circle.fill", label: "C", value: "\(adjusted["C"] ?? 0)"),
+                SummaryMetric(iconName: "d.circle.fill", label: "D", value: "\(adjusted["D"] ?? 0)"),
+                SummaryMetric(iconName: "xmark.circle.fill", label: "N", value: "\(adjusted["N"] ?? 0)"),
+                SummaryMetric(iconName: "slash.circle.fill", label: "M", value: "\(adjusted["M"] ?? 0)")
+            ]
+        }
+        
         let aZoneCount = summary.shots.filter { $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "azone" }.count
         let cZoneCount = summary.shots.filter { $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "czone" }.count
         let dZoneCount = summary.shots.filter { $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "dzone" }.count
@@ -121,6 +139,38 @@ struct DrillSummaryView: View {
         .navigationBarHidden(true)
         .onAppear {
             initializeOriginalScores()
+        }
+        .sheet(item: $editingSummary) { summary in
+            SummaryEditSheet(
+                summary: summary,
+                onSave: { updatedZones in
+                    // Find the index of the summary being edited
+                    if let index = summaries.firstIndex(where: { $0.id == summary.id }) {
+                        summaries[index].adjustedHitZones = updatedZones
+                        // Persist to Core Data
+                        if let drillResultId = summaries[index].drillResultId {
+                            let fetchRequest = NSFetchRequest<DrillResult>(entityName: "DrillResult")
+                            fetchRequest.predicate = NSPredicate(format: "id == %@", drillResultId as CVarArg)
+                            do {
+                                let results = try viewContext.fetch(fetchRequest)
+                                if let result = results.first {
+                                    if let jsonData = try? JSONEncoder().encode(updatedZones),
+                                       let jsonString = String(data: jsonData, encoding: .utf8) {
+                                        result.adjustedHitZones = jsonString
+                                        try viewContext.save()
+                                    }
+                                }
+                            } catch {
+                                print("Failed to save adjusted hit zones: \(error)")
+                            }
+                        }
+                    }
+                    editingSummary = nil
+                },
+                onCancel: {
+                    editingSummary = nil
+                }
+            )
         }
     }
 
@@ -226,8 +276,14 @@ struct DrillSummaryView: View {
 
             // Second row: Hit zone metrics
             HStack(spacing: 12) {
-                ForEach(hitZoneMetrics) { metric in
-                    metricView(metric)
+                ForEach(hitZoneMetrics.indices, id: \.self) { metricIndex in
+                    let metric = hitZoneMetrics[metricIndex]
+                    Button(action: {
+                        editingSummary = summaries[summaryIndex]
+                    }) {
+                        metricView(metric)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
         }
@@ -382,5 +438,139 @@ struct RestoreButton: View {
                 isPressed = pressing
             }
         })
+    }
+}
+
+// MARK: - Summary Edit Sheet
+struct SummaryEditSheet: View {
+    let summary: DrillRepeatSummary
+    let onSave: ([String: Int]) -> Void
+    let onCancel: () -> Void
+    
+    @State private var aCount: Int
+    @State private var cCount: Int
+    @State private var dCount: Int
+    @State private var nCount: Int
+    @State private var mCount: Int
+    
+    init(summary: DrillRepeatSummary, onSave: @escaping ([String: Int]) -> Void, onCancel: @escaping () -> Void) {
+        self.summary = summary
+        self.onSave = onSave
+        self.onCancel = onCancel
+        
+        let adjusted = summary.adjustedHitZones
+        
+        let aZoneCount = summary.shots.filter { $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "azone" }.count
+        let cZoneCount = summary.shots.filter { $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "czone" }.count
+        let dZoneCount = summary.shots.filter { $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "dzone" }.count
+        let noShootCount = summary.shots.filter { 
+            let area = $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            return area == "blackzone" || area == "whitezone"
+        }.count
+        let missCount = summary.shots.filter { 
+            let area = $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            return area == "miss" || area == "m" || area.isEmpty
+        }.count
+        
+        _aCount = State(initialValue: adjusted?["A"] ?? aZoneCount)
+        _cCount = State(initialValue: adjusted?["C"] ?? cZoneCount)
+        _dCount = State(initialValue: adjusted?["D"] ?? dZoneCount)
+        _nCount = State(initialValue: adjusted?["N"] ?? noShootCount)
+        _mCount = State(initialValue: adjusted?["M"] ?? missCount)
+    }
+    
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            
+            VStack(spacing: 20) {
+                // Header with title and close button
+                HStack {
+                    Text("Edit Hit Zone Counts")
+                        .font(.title)
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        onCancel()
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                            .font(.title2)
+                    }
+                }
+                
+                VStack(spacing: 16) {
+                    zoneStepper(label: "A Zone", icon: "a.circle.fill", count: $aCount)
+                    zoneStepper(label: "C Zone", icon: "c.circle.fill", count: $cCount)
+                    zoneStepper(label: "D Zone", icon: "d.circle.fill", count: $dCount)
+                    zoneStepper(label: "No Shoot", icon: "xmark.circle.fill", count: $nCount)
+                    zoneStepper(label: "Miss", icon: "slash.circle.fill", count: $mCount)
+                }
+                
+                Spacer()
+                
+                HStack(spacing: 20) {
+                    Button("Cancel") {
+                        onCancel()
+                    }
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(8)
+                    
+                    Button("Save") {
+                        let updated = [
+                            "A": aCount,
+                            "C": cCount,
+                            "D": dCount,
+                            "N": nCount,
+                            "M": mCount
+                        ]
+                        onSave(updated)
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.green)
+                    .cornerRadius(8)
+                }
+                .padding(.horizontal)
+            }
+            .padding()
+        }
+    }
+    
+    private func zoneStepper(label: String, icon: String, count: Binding<Int>) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(.red)
+                .frame(width: 30)
+            
+            Text(label)
+                .foregroundColor(.white)
+                .frame(width: 80, alignment: .leading)
+            
+            Spacer()
+            
+            HStack {
+                Button(action: { if count.wrappedValue > 0 { count.wrappedValue -= 1 } }) {
+                    Image(systemName: "minus.circle")
+                        .foregroundColor(.red)
+                }
+                
+                Text("\(count.wrappedValue)")
+                    .foregroundColor(.white)
+                    .frame(width: 40)
+                
+                Button(action: { count.wrappedValue += 1 }) {
+                    Image(systemName: "plus.circle")
+                        .foregroundColor(.red)
+                }
+            }
+        }
+        .padding(.horizontal)
     }
 }

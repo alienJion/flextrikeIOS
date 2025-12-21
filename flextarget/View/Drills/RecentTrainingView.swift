@@ -169,14 +169,21 @@ struct RecentTrainingView: View {
             var summaries: [DrillRepeatSummary] = []
             for (index, result) in drillResults.enumerated() {
                 let shots = result.decodedShots
+                var adjustedHitZones: [String: Int]? = nil
+                if let adjustedData = result.adjustedHitZones?.data(using: .utf8) {
+                    adjustedHitZones = try? JSONDecoder().decode([String: Int].self, from: adjustedData)
+                }
                 let summary = DrillRepeatSummary(
+                    id: result.id ?? UUID(),
                     repeatIndex: index + 1,
                     totalTime: result.effectiveTotalTime,
                     numShots: shots.count,
                     firstShot: shots.first?.content.timeDiff ?? 0,
                     fastest: result.fastestShot,
                     score: Int(result.totalScore),
-                    shots: shots
+                    shots: shots,
+                    drillResultId: result.id,
+                    adjustedHitZones: adjustedHitZones
                 )
                 summaries.append(summary)
             }

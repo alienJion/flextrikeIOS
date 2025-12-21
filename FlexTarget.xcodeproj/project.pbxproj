@@ -9,11 +9,13 @@
 /* Begin PBXBuildFile section */
 		2A606D222E0FBF010006A6DB /* SVGKit in Frameworks */ = {isa = PBXBuildFile; productRef = 2A606D212E0FBF010006A6DB /* SVGKit */; };
 		2A606D242E0FBF010006A6DB /* SVGKitSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 2A606D232E0FBF010006A6DB /* SVGKitSwift */; };
+		2A930F132EF78B0B00F40BCB /* DrillResult+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A930F122EF78B0B00F40BCB /* DrillResult+CoreDataProperties.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		2A4B28F42E2F57F1001C9926 /* 首页.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "首页.png"; sourceTree = "<group>"; };
 		2A717F532E22A82E002CBD1E /* Flex-Target-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Flex-Target-Info.plist"; sourceTree = "<group>"; };
+		2A930F122EF78B0B00F40BCB /* DrillResult+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "DrillResult+CoreDataProperties.swift"; path = "flextarget/Model/DrillResult+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		2AEA529E2E07F37C009C0C68 /* FlexTarget.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlexTarget.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2AF12A1C2E5B1A0100000000 /* flextarget/Base.lproj */ = {isa = PBXFileReference; lastKnownFileType = folder.lprojdata; path = flextarget/Base.lproj; sourceTree = "<group>"; };
 		2AF12A1C2E5B1A0100000001 /* flextarget/en.lproj */ = {isa = PBXFileReference; lastKnownFileType = folder.lprojdata; path = flextarget/en.lproj; sourceTree = "<group>"; };
@@ -96,6 +98,7 @@
 		2AEA52952E07F37C009C0C68 = {
 			isa = PBXGroup;
 			children = (
+				2A930F122EF78B0B00F40BCB /* DrillResult+CoreDataProperties.swift */,
 				2A4B28F52E2F57F1001C9926 /* UIDesign */,
 				2A717F532E22A82E002CBD1E /* Flex-Target-Info.plist */,
 				2AEA52A02E07F37C009C0C68 /* flextarget */,
@@ -198,6 +201,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2A930F132EF78B0B00F40BCB /* DrillResult+CoreDataProperties.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

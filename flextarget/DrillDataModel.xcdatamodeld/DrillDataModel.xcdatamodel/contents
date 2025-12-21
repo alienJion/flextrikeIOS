@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1" systemVersion="11A491" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24411" systemVersion="24G90" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="DrillResult" representedClassName="DrillResult" syncable="YES">
+        <attribute name="adjustedHitZones" optional="YES" attributeType="String"/>
         <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="drillId" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="sessionId" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="totalTime" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <relationship name="drillSetup" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DrillSetup" inverseName="results" inverseEntity="DrillSetup"/>
@@ -10,16 +12,16 @@
     </entity>
     <entity name="DrillSetup" representedClassName="DrillSetup" syncable="YES">
         <attribute name="delay" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
-        <attribute name="desc" optional="YES" attributeType="String"/>
         <attribute name="demoVideoURL" optional="YES" attributeType="URI"/>
+        <attribute name="desc" optional="YES" attributeType="String"/>
         <attribute name="drillDuration" optional="YES" attributeType="Double" defaultValueString="5.0" usesScalarValueType="YES"/>
-        <attribute name="repeats" optional="YES" attributeType="Integer 32" defaultValueString="1" usesScalarValueType="YES"/>
-        <attribute name="pause" optional="YES" attributeType="Integer 32" defaultValueString="5" usesScalarValueType="YES"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="pause" optional="YES" attributeType="Integer 32" defaultValueString="5" usesScalarValueType="YES"/>
+        <attribute name="repeats" optional="YES" attributeType="Integer 32" defaultValueString="1" usesScalarValueType="YES"/>
         <attribute name="thumbnailURL" optional="YES" attributeType="URI"/>
         <relationship name="results" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DrillResult" inverseName="drillSetup" inverseEntity="DrillResult"/>
-        <relationship name="targets" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DrillTargetsConfig" inverseName="targets" inverseEntity="DrillTargetsConfig"/>
+        <relationship name="targets" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DrillTargetsConfig"/>
     </entity>
     <entity name="DrillTargetsConfig" representedClassName="DrillTargetsConfig" syncable="YES">
         <attribute name="countedShots" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
@@ -31,14 +33,8 @@
         <relationship name="drillSetup" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DrillSetup" inverseName="targets" inverseEntity="DrillSetup"/>
     </entity>
     <entity name="Shot" representedClassName="Shot" syncable="YES">
-        <attribute name="data" optional="YES" attributeType="String" usesScalarValueType="NO"/>
+        <attribute name="data" optional="YES" attributeType="String"/>
         <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="drillResult" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DrillResult" inverseName="shots" inverseEntity="DrillResult"/>
     </entity>
-    <elements>
-        <element name="DrillResult" positionX="-63" positionY="-18" width="128" height="89"/>
-        <element name="DrillSetup" positionX="-225" positionY="-18" width="128" height="149"/>
-        <element name="DrillTargetsConfig" positionX="-225" positionY="180" width="128" height="134"/>
-        <element name="Shot" positionX="-36" positionY="99" width="128" height="74"/>
-    </elements>
 </model>

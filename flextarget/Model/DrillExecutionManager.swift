@@ -613,7 +613,9 @@ class DrillExecutionManager {
             firstShot: firstShot,
             fastest: fastest,
             score: totalScore,
-            shots: adjustedShots
+            shots: adjustedShots,
+            drillResultId: nil,
+            adjustedHitZones: nil
         )
 
         if repeatIndex - 1 < repeatSummaries.count {
