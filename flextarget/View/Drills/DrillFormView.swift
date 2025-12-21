@@ -562,8 +562,8 @@ struct DrillFormView: View {
             drillSetup.thumbnailURL = standardizedURL
         }
         
-        drillSetup.repeats = repeatsValue
-        drillSetup.pause = pauseValue
+        drillSetup.repeats = Int32(repeatsValue)
+        drillSetup.pause = Int32(pauseValue)
         drillSetup.drillDuration = drillDuration
         
         print("Creating drill setup with:")
@@ -641,8 +641,8 @@ struct DrillFormView: View {
         drillSetup.desc = description
         drillSetup.demoVideoURL = demoVideoURL
         drillSetup.thumbnailURL = thumbnailFileURL
-        drillSetup.repeats = repeatsValue
-        drillSetup.pause = pauseValue
+        drillSetup.repeats = Int32(repeatsValue)
+        drillSetup.pause = Int32(pauseValue)
         drillSetup.drillDuration = drillDuration
         
         // Update targets: reuse existing ones by ID, create only new ones
@@ -863,6 +863,7 @@ struct DrillFormView: View {
         
         for summary in summaries {
             let drillResult = DrillResult(context: context)
+            drillResult.id = UUID()
             drillResult.drillId = drillId
             drillResult.sessionId = sessionId
             drillResult.date = Date()
@@ -925,8 +926,8 @@ struct DrillFormView_Previews: PreviewProvider {
         drillSetup.name = "Sample Drill"
         drillSetup.desc = "A sample drill for testing"
         drillSetup.delay = 5.0
-        drillSetup.repeats = 1
-        drillSetup.pause = 5
+        drillSetup.repeats = Int32(1)
+        drillSetup.pause = Int32(5)
         drillSetup.drillDuration = 15.0
         
         let target = DrillTargetsConfig(context: context)

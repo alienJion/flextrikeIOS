@@ -15,13 +15,14 @@ object ScoringUtility {
     fun scoreForHitArea(hitArea: String): Int {
         val trimmed = hitArea.trim().lowercase()
         return when (trimmed) {
-            "a", "azone", "circlearea" -> 5
-            "c", "czone" -> 3
-            "d", "dzone" -> 2
-            "miss", "m" -> 0
-            "whitezone", "w" -> -10
-            "blackzone", "b" -> -10
-            "popperzone", "p" -> 5 // Popper
+            "azone" -> 5
+            "czone" -> 3
+            "dzone" -> 2
+            "miss" -> -15
+            "whitezone" -> -25
+            "blackzone" -> -10
+            "circlearea" -> 5 // Paddle
+            "popperzone" -> 5 // Popper
             else -> 0
         }
     }

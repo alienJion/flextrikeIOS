@@ -65,6 +65,7 @@ enum UITestDataSeeder {
 
                 // Create DrillResult and shots
                 let result = DrillResult(context: context)
+                result.id = UUID()
                 result.drillId = drillSetup.id
                 result.date = Date()
                 result.drillSetup = drillSetup

@@ -83,7 +83,13 @@ struct DrillRecordView: View {
         let shots = result.decodedShots
         var adjustedHitZones: [String: Int]? = nil
         if let adjustedData = result.adjustedHitZones?.data(using: .utf8) {
-            adjustedHitZones = try? JSONDecoder().decode([String: Int].self, from: adjustedData)
+            do {
+                adjustedHitZones = try JSONDecoder().decode([String: Int].self, from: adjustedData)
+            } catch {
+                print("createDrillRepeatSummary: Failed to decode adjustedHitZones: \(error)")
+            }
+        } else {
+            print("createDrillRepeatSummary: adjustedHitZones string is nil or empty for result \(result.id ?? UUID())")
         }
         return DrillRepeatSummary(
             id: result.id ?? UUID(),

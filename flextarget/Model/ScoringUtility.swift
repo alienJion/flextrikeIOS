@@ -17,7 +17,7 @@ class ScoringUtility {
         case "dzone":
             return 2
         case "miss":
-            return 15
+            return -15
         case "whitezone":
             return -25
         case "blackzone":
@@ -109,16 +109,21 @@ class ScoringUtility {
         let cCount = adjustedHitZones["C"] ?? 0
         let dCount = adjustedHitZones["D"] ?? 0
         let nCount = adjustedHitZones["N"] ?? 0  // No-shoot zones
-        // Misses don't contribute to score
+        let peCount = adjustedHitZones["PE"] ?? 0  // Penalty count
+        let mCount = adjustedHitZones["M"] ?? 0
         
         // Calculate base score from adjusted counts
-        // A=5, C=3, D=2, N=-10 (black zone) or -25 (white zone), M=0 (misses don't contribute)
-        var totalScore = (aCount * 5) + (cCount * 3) + (dCount * 2)
+        // A=5, C=3, D=2, N=-10 (black zone) or -25 (white zone), M=-15
+        var totalScore = (aCount * 5) + (cCount * 3) + (dCount * 2) + (mCount * -15)
         
         // Apply penalties for no-shoot zones
         // Assume half are black zone (-10) and half are white zone (-25) for average penalty
         let avgNoShootPenalty = nCount > 0 ? (nCount / 2 * (-10) + (nCount + 1) / 2 * (-25)) : 0
         totalScore += avgNoShootPenalty
+        
+        // Apply penalty deductions (10 points per PE)
+        let penaltyDeduction = peCount * 10
+        totalScore -= penaltyDeduction
         
         // Apply missed target penalty (10 points per missed target)
         // We need to estimate missed targets from the adjusted data

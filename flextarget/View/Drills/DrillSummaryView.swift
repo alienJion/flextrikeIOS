@@ -6,10 +6,21 @@ struct DrillSummaryView: View {
     let drillSetup: DrillSetup
     @State var summaries: [DrillRepeatSummary]
     @State private var originalScores: [UUID: Int] = [:]
+    @State private var penaltyCounts: [UUID: Int] = [:]
     @State private var editingSummary: DrillRepeatSummary? = nil
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.managedObjectContext) private var environmentContext
+
+    // Use the shared persistence controller's viewContext as a fallback to
+    // ensure we always point at a live store even if the environment is missing
+    private var viewContext: NSManagedObjectContext {
+        if let coordinator = environmentContext.persistentStoreCoordinator,
+           coordinator.persistentStores.isEmpty == false {
+            return environmentContext
+        }
+        return PersistenceController.shared.container.viewContext
+    }
 
     private var drillName: String {
         drillSetup.name ?? "Untitled Drill"
@@ -31,7 +42,8 @@ struct DrillSummaryView: View {
     }
 
     private func hitZoneMetrics(for summary: DrillRepeatSummary) -> [SummaryMetric] {
-        if let adjusted = summary.adjustedHitZones {
+        if let adjusted = summary.adjustedHitZones,
+           adjusted.keys.contains(where: { ["A", "C", "D", "N", "M"].contains($0) }) {
             return [
                 SummaryMetric(iconName: "a.circle.fill", label: "A", value: "\(adjusted["A"] ?? 0)"),
                 SummaryMetric(iconName: "c.circle.fill", label: "C", value: "\(adjusted["C"] ?? 0)"),
@@ -75,20 +87,129 @@ struct DrillSummaryView: View {
     private func deductScore(at index: Int) {
         guard index >= 0 && index < summaries.count else { return }
         
-        let deductionAmount = 10
+        let summaryId = summaries[index].id
+        
         withAnimation(.easeInOut(duration: 0.3)) {
-            summaries[index].score -= deductionAmount
+            penaltyCounts[summaryId, default: 0] += 1
         }
+        
+        // Recalculate score using centralized ScoringUtility
+        recalculateScore(at: index)
+        
+        // Save penalty count to Core Data
+        savePenaltyCount(at: index)
     }
 
     private func restoreScore(at index: Int) {
         guard index >= 0 && index < summaries.count else { return }
         
-        if let originalScore = originalScores[summaries[index].id] {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                summaries[index].score = originalScore
-            }
+        let summaryId = summaries[index].id
+        
+        withAnimation(.easeInOut(duration: 0.3)) {
+            penaltyCounts[summaryId] = 0
         }
+        
+        // Recalculate score using centralized ScoringUtility
+        recalculateScore(at: index)
+        
+        // Save penalty count (reset to 0) to Core Data
+        savePenaltyCount(at: index)
+    }
+
+    private func recalculateScore(at index: Int) {
+        guard index >= 0 && index < summaries.count else { return }
+        
+        let summaryId = summaries[index].id
+        let penaltyCount = penaltyCounts[summaryId, default: 0]
+        
+        // Get current adjusted hit zones or create from shots
+        var adjustedZones = summaries[index].adjustedHitZones ?? [:]
+        
+        // If this is the first time adjusting, initialize with adjusted hit zone counts (after applying scoring rules)
+        if adjustedZones.isEmpty {
+            // Apply the same scoring logic as ScoringUtility.calculateTotalScore to get the effective counts
+            let shots = summaries[index].shots
+            
+            // Group shots by target/device
+            var shotsByTarget: [String: [ShotData]] = [:]
+            for shot in shots {
+                let device = shot.device ?? shot.target ?? "unknown"
+                if shotsByTarget[device] == nil {
+                    shotsByTarget[device] = []
+                }
+                shotsByTarget[device]?.append(shot)
+            }
+            
+            // Count shots that actually contribute to score (best 2 per target, excluding no-shoot zones)
+            var effectiveAZoneCount = 0
+            var effectiveCZoneCount = 0
+            var effectiveDZoneCount = 0
+            var effectiveNoShootCount = 0
+            var effectiveMissCount = 0
+            
+            for (_, targetShots) in shotsByTarget {
+                // Detect target type from shots
+                let targetType = targetShots.first?.content.targetType.lowercased() ?? ""
+                let isPaddleOrPopper = targetType == "paddle" || targetType == "popper"
+                
+                let noShootZoneShots = targetShots.filter { shot in
+                    let trimmed = shot.content.hitArea.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                    return trimmed == "whitezone" || trimmed == "blackzone"
+                }
+                
+                let otherShots = targetShots.filter { shot in
+                    let trimmed = shot.content.hitArea.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                    return trimmed != "whitezone" && trimmed != "blackzone"
+                }
+                
+                // Count no-shoot zones (always included)
+                effectiveNoShootCount += noShootZoneShots.count
+                
+                // For paddle and popper: count all scoring shots; for others: count best 2
+                let scoringShots: [ShotData]
+                if isPaddleOrPopper {
+                    scoringShots = otherShots
+                } else {
+                    let sortedOtherShots = otherShots.sorted {
+                        Double(ScoringUtility.scoreForHitArea($0.content.hitArea)) > Double(ScoringUtility.scoreForHitArea($1.content.hitArea))
+                    }
+                    scoringShots = Array(sortedOtherShots.prefix(2))
+                }
+                
+                // Count effective shots by zone
+                for shot in scoringShots {
+                    let area = shot.content.hitArea.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                    switch area {
+                    case "azone":
+                        effectiveAZoneCount += 1
+                    case "czone":
+                        effectiveCZoneCount += 1
+                    case "dzone":
+                        effectiveDZoneCount += 1
+                    case "miss", "m":
+                        effectiveMissCount += 1
+                    default:
+                        break
+                    }
+                }
+            }
+            
+            adjustedZones["A"] = effectiveAZoneCount
+            adjustedZones["C"] = effectiveCZoneCount
+            adjustedZones["D"] = effectiveDZoneCount
+            adjustedZones["N"] = effectiveNoShootCount
+            adjustedZones["M"] = effectiveMissCount
+        }
+        
+        // Update the penalty count
+        adjustedZones["PE"] = penaltyCount
+        
+        // Update the summary
+        summaries[index].adjustedHitZones = adjustedZones
+        
+        // Recalculate score using centralized ScoringUtility
+        let recalculatedScore = ScoringUtility.calculateScoreFromAdjustedHitZones(adjustedZones, drillSetup: drillSetup)
+        summaries[index].score = recalculatedScore
     }
 
     private func initializeOriginalScores() {
@@ -96,6 +217,41 @@ struct DrillSummaryView: View {
             if originalScores[summary.id] == nil {
                 originalScores[summary.id] = summary.score
             }
+            if penaltyCounts[summary.id] == nil {
+                // Load penalty count from adjusted hit zones if available
+                let peCount = summary.adjustedHitZones?["PE"] ?? 0
+                penaltyCounts[summary.id] = peCount
+            }
+        }
+    }
+    
+    private func savePenaltyCount(at index: Int) {
+        guard index >= 0 && index < summaries.count else { return }
+        
+        // The adjustedHitZones are already updated by recalculateScore()
+        // Just save the current adjustedHitZones to Core Data
+        if let drillResultId = summaries[index].drillResultId,
+           let adjustedZones = summaries[index].adjustedHitZones {
+            let fetchRequest = NSFetchRequest<DrillResult>(entityName: "DrillResult")
+            fetchRequest.predicate = NSPredicate(format: "id == %@", drillResultId as CVarArg)
+            do {
+                let results = try viewContext.fetch(fetchRequest)
+                if let result = results.first {
+                    if let jsonData = try? JSONEncoder().encode(adjustedZones),
+                       let jsonString = String(data: jsonData, encoding: .utf8) {
+                        result.adjustedHitZones = jsonString
+                        try viewContext.save()
+                    } else {
+                        print("savePenaltyCount: Failed to encode JSON")
+                    }
+                } else {
+                    print("savePenaltyCount: No DrillResult found with id \(drillResultId)")
+                }
+            } catch {
+                print("Failed to save penalty count: \(error)")
+            }
+        } else {
+            print("savePenaltyCount: drillResultId is nil or adjustedHitZones is nil")
         }
     }
 
@@ -146,7 +302,14 @@ struct DrillSummaryView: View {
                 onSave: { updatedZones in
                     // Find the index of the summary being edited
                     if let index = summaries.firstIndex(where: { $0.id == summary.id }) {
-                        summaries[index].adjustedHitZones = updatedZones
+                        // Use the PE count from the edit sheet
+                        var finalZones = updatedZones
+                        
+                        summaries[index].adjustedHitZones = finalZones
+                        
+                        // Update penalty count state
+                        penaltyCounts[summary.id] = finalZones["PE"] ?? 0
+                        
                         // Persist to Core Data
                         if let drillResultId = summaries[index].drillResultId {
                             let fetchRequest = NSFetchRequest<DrillResult>(entityName: "DrillResult")
@@ -154,7 +317,7 @@ struct DrillSummaryView: View {
                             do {
                                 let results = try viewContext.fetch(fetchRequest)
                                 if let result = results.first {
-                                    if let jsonData = try? JSONEncoder().encode(updatedZones),
+                                    if let jsonData = try? JSONEncoder().encode(finalZones),
                                        let jsonString = String(data: jsonData, encoding: .utf8) {
                                         result.adjustedHitZones = jsonString
                                         try viewContext.save()
@@ -256,7 +419,7 @@ struct DrillSummaryView: View {
                 // PE Button for penalty deduction
                 PenaltyButton(action: {
                     deductScore(at: summaryIndex)
-                })
+                }, penaltyCount: penaltyCounts[summaries[summaryIndex].id, default: 0])
                 
                 // Restore Button
                 RestoreButton(action: {
@@ -381,6 +544,7 @@ private struct SummaryMetric: Identifiable {
 struct PenaltyButton: View {
     @State private var isPressed = false
     let action: () -> Void
+    let penaltyCount: Int
     
     var body: some View {
         Button(action: action) {
@@ -393,9 +557,17 @@ struct PenaltyButton: View {
                             .stroke(Color.orange, lineWidth: 2)
                     )
 
-                Text("PE")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.orange)
+                VStack(spacing: 0) {
+                    Text("PE")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.orange)
+                    
+                    if penaltyCount > 0 {
+                        Text("\(penaltyCount)")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.orange)
+                    }
+                }
             }
             .shadow(color: Color.orange.opacity(0.3), radius: 6, x: 0, y: 3)
         }
@@ -452,6 +624,7 @@ struct SummaryEditSheet: View {
     @State private var dCount: Int
     @State private var nCount: Int
     @State private var mCount: Int
+    @State private var peCount: Int
     
     init(summary: DrillRepeatSummary, onSave: @escaping ([String: Int]) -> Void, onCancel: @escaping () -> Void) {
         self.summary = summary
@@ -477,6 +650,7 @@ struct SummaryEditSheet: View {
         _dCount = State(initialValue: adjusted?["D"] ?? dZoneCount)
         _nCount = State(initialValue: adjusted?["N"] ?? noShootCount)
         _mCount = State(initialValue: adjusted?["M"] ?? missCount)
+        _peCount = State(initialValue: adjusted?["PE"] ?? 0)
     }
     
     var body: some View {
@@ -507,6 +681,7 @@ struct SummaryEditSheet: View {
                     zoneStepper(label: "D Zone", icon: "d.circle.fill", count: $dCount)
                     zoneStepper(label: "No Shoot", icon: "xmark.circle.fill", count: $nCount)
                     zoneStepper(label: "Miss", icon: "slash.circle.fill", count: $mCount)
+                    zoneStepper(label: "Penalty", icon: "minus.circle.fill", count: $peCount)
                 }
                 
                 Spacer()
@@ -527,7 +702,8 @@ struct SummaryEditSheet: View {
                             "C": cCount,
                             "D": dCount,
                             "N": nCount,
-                            "M": mCount
+                            "M": mCount,
+                            "PE": peCount
                         ]
                         onSave(updated)
                     }

@@ -629,6 +629,7 @@ struct DrillResultView: View {
         }
         
         let drillResult = DrillResult(context: context)
+        drillResult.id = UUID()
         drillResult.drillId = drillId
         drillResult.date = Date()
         drillResult.drillSetup = drillSetup
