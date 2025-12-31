@@ -248,9 +248,9 @@ struct TargetRowView: View {
             ]
         case "cqb":
             return [
-                "cqb_enemy_swing",
-                "cqb_enemy_front",
-                "cqb_enemy_moving"
+                "cqb_swing",
+                "cqb_front",
+                "cqb_move"
             ]
         default:
             return []
