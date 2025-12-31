@@ -184,3 +184,10 @@
 "leaderboard_title" = "Leaderboard";
 "submit_to_leaderboard_button" = "Submit to Leaderboard";
 "select_athlete_title" = "Select Athlete";
+
+/* Leaderboard submission errors */
+"error_title" = "Error";
+"duplicate_submission_title" = "Duplicate Submission";
+"duplicate_submission_message" = "This drill is already submitted to the leaderboard for this athlete.";
+"missing_drill_result_id_message" = "Missing drill result id";
+"no_drill_result_found_message" = "No drill result found";

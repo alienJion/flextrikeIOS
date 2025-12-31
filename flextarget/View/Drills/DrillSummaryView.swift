@@ -639,6 +639,7 @@ struct SummaryEditSheet: View {
     @State private var showAthletePicker: Bool = false
     @State private var showLeaderboard: Bool = false
     @State private var showError: Bool = false
+    @State private var errorTitle: String = NSLocalizedString("error_title", comment: "Generic error title")
     @State private var errorMessage: String = ""
     
     @State private var aCount: Int
@@ -756,10 +757,12 @@ struct SummaryEditSheet: View {
         .sheet(isPresented: $showAthletePicker) {
             NavigationView {
                 AthletePickerSheet { athlete in
-                    submitToLeaderboard(athlete: athlete)
+                    let didSubmit = submitToLeaderboard(athlete: athlete)
                     showAthletePicker = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        showLeaderboard = true
+                    if didSubmit {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            showLeaderboard = true
+                        }
                     }
                 }
                 .preferredColorScheme(.dark)
@@ -775,7 +778,7 @@ struct SummaryEditSheet: View {
         }
         .alert(isPresented: $showError) {
             Alert(
-                title: Text("Error"),
+                title: Text(errorTitle),
                 message: Text(errorMessage),
                 dismissButton: .default(Text(NSLocalizedString("ok", comment: "OK button")))
             )
@@ -813,12 +816,16 @@ struct SummaryEditSheet: View {
         .padding(.horizontal)
     }
 
-    private func submitToLeaderboard(athlete: Athlete) {
+    @discardableResult
+    private func submitToLeaderboard(athlete: Athlete) -> Bool {
         guard let drillResultId = summary.drillResultId else {
-            errorMessage = "Missing drill result id"
+            errorTitle = NSLocalizedString("error_title", comment: "Generic error title")
+            errorMessage = NSLocalizedString("missing_drill_result_id_message", comment: "Missing drill result id")
             showError = true
-            return
+            return false
         }
+
+        let athleteInContext = (try? viewContext.existingObject(with: athlete.objectID)) as? Athlete ?? athlete
 
         let fetchRequest = NSFetchRequest<DrillResult>(entityName: "DrillResult")
         fetchRequest.predicate = NSPredicate(format: "id == %@", drillResultId as CVarArg)
@@ -827,9 +834,20 @@ struct SummaryEditSheet: View {
         do {
             let result = try viewContext.fetch(fetchRequest).first
             guard let result else {
-                errorMessage = "No DrillResult found"
+                errorTitle = NSLocalizedString("error_title", comment: "Generic error title")
+                errorMessage = NSLocalizedString("no_drill_result_found_message", comment: "No drill result found")
                 showError = true
-                return
+                return false
+            }
+
+            let duplicateFetch = NSFetchRequest<LeaderboardEntry>(entityName: "LeaderboardEntry")
+            duplicateFetch.predicate = NSPredicate(format: "drillResult == %@ AND athlete == %@", result, athleteInContext)
+            duplicateFetch.fetchLimit = 1
+            if let _ = try viewContext.fetch(duplicateFetch).first {
+                errorTitle = NSLocalizedString("duplicate_submission_title", comment: "Duplicate submission title")
+                errorMessage = NSLocalizedString("duplicate_submission_message", comment: "Duplicate submission message")
+                showError = true
+                return false
             }
 
             let factor: Double = summary.totalTime > 0 ? (Double(summary.score) / summary.totalTime) : 0
@@ -840,14 +858,17 @@ struct SummaryEditSheet: View {
             entry.baseFactor = factor
             entry.adjustment = 0
             entry.scoreFactor = factor
-            entry.athlete = athlete
+            entry.athlete = athleteInContext
             entry.drillResult = result
 
             try viewContext.save()
+            return true
         } catch {
             viewContext.rollback()
+            errorTitle = NSLocalizedString("error_title", comment: "Generic error title")
             errorMessage = error.localizedDescription
             showError = true
+            return false
         }
     }
 }

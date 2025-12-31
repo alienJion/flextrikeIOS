@@ -236,6 +236,13 @@
 "penalty_label" = "Penalización";
 "cancel_button" = "Cancelar";
 "save_button" = "Guardar";
+
+/* Errores de envío al ranking */
+"error_title" = "Error";
+"duplicate_submission_title" = "Envío duplicado";
+"duplicate_submission_message" = "Este ejercicio ya se envió al ranking para este atleta.";
+"missing_drill_result_id_message" = "Falta el ID del resultado del ejercicio";
+"no_drill_result_found_message" = "No se encontró el resultado del ejercicio";
 "hit_area_circlearea" = "Derribado";
 "hit_area_standarea" = "Derribado";
 "hit_area_popperzone" = "Derribado";

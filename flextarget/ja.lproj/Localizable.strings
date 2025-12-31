@@ -238,6 +238,13 @@
 "penalty_label" = "ペナルティ";
 "cancel_button" = "キャンセル";
 "save_button" = "保存";
+
+/* ランキング送信エラー */
+"error_title" = "エラー";
+"duplicate_submission_title" = "重複送信";
+"duplicate_submission_message" = "このドリルはこの選手ですでにランキングに送信されています。";
+"missing_drill_result_id_message" = "ドリル結果IDがありません";
+"no_drill_result_found_message" = "ドリル結果が見つかりません";
 "hit_area_circlearea" = "ノックダウン";
 "hit_area_standarea" = "ノックダウン";
 "hit_area_popperzone" = "ノックダウン";

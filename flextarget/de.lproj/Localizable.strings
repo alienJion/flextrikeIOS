@@ -237,6 +237,13 @@
 "penalty_label" = "Strafe";
 "cancel_button" = "Abbrechen";
 "save_button" = "Speichern";
+
+/* Rangliste - Einreichungsfehler */
+"error_title" = "Fehler";
+"duplicate_submission_title" = "Doppelte Einreichung";
+"duplicate_submission_message" = "Diese Übung wurde für diesen Athleten bereits an die Rangliste gesendet.";
+"missing_drill_result_id_message" = "Drill-Ergebnis-ID fehlt";
+"no_drill_result_found_message" = "Kein Drill-Ergebnis gefunden";
 "hit_area_circlearea" = "Umgeworfen";
 "hit_area_standarea" = "Umgeworfen";
 "hit_area_popperzone" = "Umgeworfen";

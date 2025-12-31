@@ -236,6 +236,13 @@
 "penalty_label" = "罰分";
 "cancel_button" = "取消";
 "save_button" = "儲存";
+
+/* 排行榜提交錯誤 */
+"error_title" = "錯誤";
+"duplicate_submission_title" = "重複提交";
+"duplicate_submission_message" = "此訓練已為此運動員提交到排行榜。";
+"missing_drill_result_id_message" = "缺少訓練結果 ID";
+"no_drill_result_found_message" = "未找到訓練結果";
 "hit_area_circlearea" = "擊倒";
 "hit_area_standarea" = "擊倒";
 "hit_area_popperzone" = "擊倒";

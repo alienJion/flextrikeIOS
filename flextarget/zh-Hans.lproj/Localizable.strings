@@ -235,3 +235,10 @@
 "penalty_label" = "罚分";
 "cancel_button" = "取消";
 "save_button" = "保存";
+
+/* 排行榜提交错误 */
+"error_title" = "错误";
+"duplicate_submission_title" = "重复提交";
+"duplicate_submission_message" = "该训练已为该运动员提交到排行榜。";
+"missing_drill_result_id_message" = "缺少训练结果 ID";
+"no_drill_result_found_message" = "未找到训练结果";
