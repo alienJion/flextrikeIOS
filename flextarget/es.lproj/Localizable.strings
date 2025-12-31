@@ -4,8 +4,23 @@
 "target_connected" = "Objetivo Conectado";
 "target_disconnected" = "Objetivo Desconectado";
 "drills" = "Ejercicios";
+"athletes" = "Atletas";
 "ipsc_questionaries" = "Cuestionarios IPSC";
 "idpa_questionaries" = "Cuestionarios IDPA";
+
+/* AthletesManagementView */
+"athletes_title" = "Atletas";
+"new_athlete" = "Nuevo Atleta";
+"athlete_name" = "Nombre";
+"athlete_club" = "Club";
+"select_avatar" = "Seleccionar avatar";
+"add_athlete" = "Añadir atleta";
+"athletes_empty" = "Aún no hay atletas";
+
+/* Leaderboard */
+"leaderboard_title" = "Clasificación";
+"submit_to_leaderboard_button" = "Enviar a la clasificación";
+"select_athlete_title" = "Seleccionar atleta";
 
 /* DrillFormView */
 "drill_setup" = "Configuración de Ejercicio";

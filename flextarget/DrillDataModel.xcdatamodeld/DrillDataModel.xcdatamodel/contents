@@ -8,6 +8,7 @@
         <attribute name="sessionId" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="totalTime" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <relationship name="drillSetup" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DrillSetup" inverseName="results" inverseEntity="DrillSetup"/>
+        <relationship name="leaderboardEntries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="LeaderboardEntry" inverseName="drillResult" inverseEntity="LeaderboardEntry"/>
         <relationship name="shots" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Shot" inverseName="drillResult" inverseEntity="Shot"/>
     </entity>
     <entity name="DrillSetup" representedClassName="DrillSetup" syncable="YES">
@@ -34,6 +35,22 @@
         <attribute name="targetType" optional="YES" attributeType="String"/>
         <attribute name="timeout" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <relationship name="drillSetup" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DrillSetup" inverseName="targets" inverseEntity="DrillSetup"/>
+    </entity>
+    <entity name="Athlete" representedClassName="Athlete" syncable="YES">
+        <attribute name="avatarData" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="club" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <relationship name="leaderboardEntries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="LeaderboardEntry" inverseName="athlete" inverseEntity="LeaderboardEntry"/>
+    </entity>
+    <entity name="LeaderboardEntry" representedClassName="LeaderboardEntry" syncable="YES">
+        <attribute name="adjustment" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="baseFactor" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="scoreFactor" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <relationship name="athlete" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Athlete" inverseName="leaderboardEntries" inverseEntity="Athlete"/>
+        <relationship name="drillResult" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DrillResult" inverseName="leaderboardEntries" inverseEntity="DrillResult"/>
     </entity>
     <entity name="Shot" representedClassName="Shot" syncable="YES">
         <attribute name="data" optional="YES" attributeType="String"/>

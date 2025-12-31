@@ -4,8 +4,18 @@
 "target_connected" = "Target Connected";
 "target_disconnected" = "Target Disconnected";
 "drills" = "Drills";
+"athletes" = "Athletes";
 "ipsc_questionaries" = "IPSC Questionaries";
 "idpa_questionaries" = "IDPA Questionaries";
+
+/* AthletesManagementView */
+"athletes_title" = "Athletes";
+"new_athlete" = "New Athlete";
+"athlete_name" = "Name";
+"athlete_club" = "Club";
+"select_avatar" = "Select avatar";
+"add_athlete" = "Add Athlete";
+"athletes_empty" = "No athletes yet";
 
 /* DrillFormView */
 "drill_setup" = "Drill Setup";
@@ -169,3 +179,8 @@
 "penalty_label" = "Penalty";
 "cancel_button" = "Cancel";
 "save_button" = "Save";
+
+/* Leaderboard */
+"leaderboard_title" = "Leaderboard";
+"submit_to_leaderboard_button" = "Submit to Leaderboard";
+"select_athlete_title" = "Select Athlete";

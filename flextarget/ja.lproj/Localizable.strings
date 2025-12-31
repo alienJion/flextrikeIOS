@@ -4,8 +4,23 @@
 "target_connected" = "ターゲット接続済み";
 "target_disconnected" = "ターゲット未接続";
 "drills" = "ドリル";
+"athletes" = "選手";
 "ipsc_questionaries" = "IPSC質問票";
 "idpa_questionaries" = "IDPA質問票";
+
+/* AthletesManagementView */
+"athletes_title" = "選手";
+"new_athlete" = "新しい選手";
+"athlete_name" = "名前";
+"athlete_club" = "クラブ";
+"select_avatar" = "アバターを選択";
+"add_athlete" = "選手を追加";
+"athletes_empty" = "まだ選手がいません";
+
+/* Leaderboard */
+"leaderboard_title" = "ランキング";
+"submit_to_leaderboard_button" = "ランキングに送信";
+"select_athlete_title" = "選手を選択";
 
 /* DrillFormView */
 "drill_setup" = "ドリル設定";

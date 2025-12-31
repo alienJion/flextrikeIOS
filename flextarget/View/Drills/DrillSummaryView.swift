@@ -623,6 +623,23 @@ struct SummaryEditSheet: View {
     let summary: DrillRepeatSummary
     let onSave: ([String: Int]) -> Void
     let onCancel: () -> Void
+
+    @Environment(\.managedObjectContext) private var environmentContext
+
+    // Use the shared persistence controller's viewContext as a fallback to
+    // ensure we always point at a live store even if the environment is missing
+    private var viewContext: NSManagedObjectContext {
+        if let coordinator = environmentContext.persistentStoreCoordinator,
+           coordinator.persistentStores.isEmpty == false {
+            return environmentContext
+        }
+        return PersistenceController.shared.container.viewContext
+    }
+
+    @State private var showAthletePicker: Bool = false
+    @State private var showLeaderboard: Bool = false
+    @State private var showError: Bool = false
+    @State private var errorMessage: String = ""
     
     @State private var aCount: Int
     @State private var cCount: Int
@@ -690,6 +707,20 @@ struct SummaryEditSheet: View {
                 }
                 
                 Spacer()
+
+                Button(NSLocalizedString("submit_to_leaderboard_button", comment: "Submit to leaderboard button")) {
+                    showAthletePicker = true
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.red.opacity(0.8), lineWidth: 1)
+                )
+                .padding(.horizontal)
                 
                 HStack(spacing: 20) {
                     Button(NSLocalizedString("cancel_button", comment: "Cancel button text")) {
@@ -722,6 +753,33 @@ struct SummaryEditSheet: View {
             }
             .padding()
         }
+        .sheet(isPresented: $showAthletePicker) {
+            NavigationView {
+                AthletePickerSheet { athlete in
+                    submitToLeaderboard(athlete: athlete)
+                    showAthletePicker = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        showLeaderboard = true
+                    }
+                }
+                .preferredColorScheme(.dark)
+            }
+            .environment(\.managedObjectContext, viewContext)
+        }
+        .sheet(isPresented: $showLeaderboard) {
+            NavigationView {
+                LeaderboardView()
+                    .preferredColorScheme(.dark)
+            }
+            .environment(\.managedObjectContext, viewContext)
+        }
+        .alert(isPresented: $showError) {
+            Alert(
+                title: Text("Error"),
+                message: Text(errorMessage),
+                dismissButton: .default(Text(NSLocalizedString("ok", comment: "OK button")))
+            )
+        }
     }
     
     private func zoneStepper(label: String, icon: String, count: Binding<Int>) -> some View {
@@ -753,5 +811,43 @@ struct SummaryEditSheet: View {
             }
         }
         .padding(.horizontal)
+    }
+
+    private func submitToLeaderboard(athlete: Athlete) {
+        guard let drillResultId = summary.drillResultId else {
+            errorMessage = "Missing drill result id"
+            showError = true
+            return
+        }
+
+        let fetchRequest = NSFetchRequest<DrillResult>(entityName: "DrillResult")
+        fetchRequest.predicate = NSPredicate(format: "id == %@", drillResultId as CVarArg)
+        fetchRequest.fetchLimit = 1
+
+        do {
+            let result = try viewContext.fetch(fetchRequest).first
+            guard let result else {
+                errorMessage = "No DrillResult found"
+                showError = true
+                return
+            }
+
+            let factor: Double = summary.totalTime > 0 ? (Double(summary.score) / summary.totalTime) : 0
+
+            let entry = LeaderboardEntry(context: viewContext)
+            entry.id = UUID()
+            entry.createdAt = Date()
+            entry.baseFactor = factor
+            entry.adjustment = 0
+            entry.scoreFactor = factor
+            entry.athlete = athlete
+            entry.drillResult = result
+
+            try viewContext.save()
+        } catch {
+            viewContext.rollback()
+            errorMessage = error.localizedDescription
+            showError = true
+        }
     }
 }

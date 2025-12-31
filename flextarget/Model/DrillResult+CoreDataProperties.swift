@@ -25,7 +25,25 @@ extension DrillResult {
     @NSManaged public var adjustedHitZones: String?
     @NSManaged public var id: UUID?
     @NSManaged public var drillSetup: DrillSetup?
+    @NSManaged public var leaderboardEntries: NSSet?
     @NSManaged public var shots: NSSet?
+
+}
+
+// MARK: Generated accessors for leaderboardEntries
+extension DrillResult {
+
+    @objc(addLeaderboardEntriesObject:)
+    @NSManaged public func addToLeaderboardEntries(_ value: LeaderboardEntry)
+
+    @objc(removeLeaderboardEntriesObject:)
+    @NSManaged public func removeFromLeaderboardEntries(_ value: LeaderboardEntry)
+
+    @objc(addLeaderboardEntries:)
+    @NSManaged public func addToLeaderboardEntries(_ values: NSSet)
+
+    @objc(removeLeaderboardEntries:)
+    @NSManaged public func removeFromLeaderboardEntries(_ values: NSSet)
 
 }
 

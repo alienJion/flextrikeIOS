@@ -4,8 +4,23 @@
 "target_connected" = "目標已連接";
 "target_disconnected" = "目標未連接";
 "drills" = "訓練";
+"athletes" = "運動員";
 "ipsc_questionaries" = "IPSC 問題集";
 "idpa_questionaries" = "IDPA 問題集";
+
+/* AthletesManagementView */
+"athletes_title" = "運動員";
+"new_athlete" = "新增運動員";
+"athlete_name" = "姓名";
+"athlete_club" = "俱樂部";
+"select_avatar" = "選擇頭像";
+"add_athlete" = "新增運動員";
+"athletes_empty" = "尚無運動員";
+
+/* Leaderboard */
+"leaderboard_title" = "排行榜";
+"submit_to_leaderboard_button" = "提交到排行榜";
+"select_athlete_title" = "選擇運動員";
 
 /* DrillFormView */
 "drill_setup" = "訓練設定";

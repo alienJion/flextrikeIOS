@@ -59,6 +59,7 @@ struct flextargetApp: App {
                 .tint(.red)
             }
             }
+            .environment(\.managedObjectContext, persistenceController.container.viewContext)
             // Run UITest seeder after the app UI appears (debug only)
             .onAppear {
                 #if DEBUG
