@@ -9,6 +9,7 @@
 
 /* DrillFormView */
 "drill_setup" = "Configuración de Ejercicio";
+"drill_mode" = "Modo de Ejercicio";
 
 /* DrillListView */
 "my_drills" = "Mis Ejercicios";
@@ -113,8 +114,11 @@
 "drill_history" = "Historial de Ejercicios";
 "drill_replay" = "Repetición de Ejercicio";
 "select_device" = "Seleccionar Dispositivo";
-"select_target_type" = "Seleccionar Tipo de Objetivo";
-
+"select_target_type" = "Seleccionar Tipo de Objetivo";"select_action" = "Seleccionar Acción";
+"action" = "Acción";
+"duration" = "Duración";
+"select_duration" = "Seleccionar Duración";
+"duration_value_format" = "%.1fs";
 /* DrillFormView */
 "start_drill" = "Iniciar Ejercicio";
 "save_drill" = "Guardar Ejercicio";

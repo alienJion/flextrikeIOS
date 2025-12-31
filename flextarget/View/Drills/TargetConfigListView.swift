@@ -5,20 +5,10 @@ struct TargetConfigListView: View {
     let deviceList: [NetworkDevice]
     @Binding var targetConfigs: [DrillTargetsConfigData]
     let onDone: () -> Void
+    let drillMode: String
     
     @Environment(\.dismiss) private var dismiss
     @State private var showDisabledMessage = false
-
-    private let iconNames = [
-        "hostage",
-        "ipsc",
-        "paddle",
-        "popper",
-        "rotation",
-        "special_1",
-        "special_2",
-        "testTarget"
-    ]
 
     var body: some View {
         ZStack {
@@ -60,7 +50,8 @@ struct TargetConfigListView: View {
             ForEach($targetConfigs, id: \.id) { $config in
                 TargetRowView(
                     config: $config,
-                    availableDevices: availableDevices(for: config)
+                    availableDevices: availableDevices(for: config),
+                    drillMode: drillMode
                 )
             }
             .onMove { indices, newOffset in
@@ -154,11 +145,24 @@ struct TargetConfigListView: View {
         saveTargetConfigs()
     }
 
+    private func defaultTargetType() -> String {
+        switch drillMode {
+        case "ipsc":
+            return "ipsc"
+        case "idpa":
+            return "idpa"
+        case "cqb":
+            return "ipsc"
+        default:
+            return "ipsc"
+        }
+    }
+
     private func appendTarget(named name: String) {
         let newConfig = DrillTargetsConfigData(
             seqNo: targetConfigs.count + 1,
             targetName: name,
-            targetType: "ipsc",
+            targetType: defaultTargetType(),
             timeout: 30.0,
             countedShots: 5
         )
@@ -170,7 +174,7 @@ struct TargetConfigListView: View {
         let newConfig = DrillTargetsConfigData(
             seqNo: nextSeqNo,
             targetName: "",
-            targetType: "ipsc",
+            targetType: defaultTargetType(),
             timeout: 30.0,
             countedShots: 5
         )
@@ -204,136 +208,149 @@ struct TargetConfigListView: View {
 struct TargetRowView: View {
     @Binding var config: DrillTargetsConfigData
     let availableDevices: [NetworkDevice]
+    var drillMode: String = "ipsc"
 
     // Single active sheet state
     @State private var activeSheet: ActiveSheet? = nil
 
     private enum ActiveSheet: Identifiable {
-        case name
         case type
+        case action
+        case duration
 
-        var id: Int { self == .name ? 0 : 1 }
+        var id: Int { 
+            switch self {
+            case .type: return 0
+            case .action: return 1
+            case .duration: return 2
+            }
+        }
     }
 
-    private let iconNames = [
-        "hostage",
-        "ipsc",
-        "paddle",
-        "popper",
-        "rotation",
-        "special_1",
-        "special_2",
-    ]
+    private var iconNames: [String] {
+        switch drillMode {
+        case "ipsc":
+            return [
+                "ipsc",
+                "hostage",
+                "paddle",
+                "popper",
+                "rotation",
+                "special_1",
+                "special_2"
+            ]
+        case "idpa":
+            return [
+                "idpa",
+                "idpa_ns",
+                "idpa_hard_cover_1",
+                "idpa_hard_cover_2"
+            ]
+        case "cqb":
+            return [
+                "ipsc",
+                "hostage",
+                "special_1",
+                "special_2",
+                "idpa",
+                "idpa_ns",
+                "idpa_hard_cover_1",
+                "idpa_hard_cover_2"
+            ]
+        default:
+            return []
+        }
+    }
 
     var body: some View {
-        HStack(spacing: 16) {
-            // 1) seqNo
-//            Text("\(config.seqNo)")
-//                .foregroundColor(.white)
-//                .frame(width: 20, alignment: .leading)
-//                .font(.system(size: 16, weight: .medium))
+        VStack(spacing: 12) {
+            // Title row
+            Text(config.targetName.isEmpty ? NSLocalizedString("select_device", comment: "Select Device placeholder") : config.targetName)
+                .foregroundColor(.red)
+                .font(.system(size: 16, weight: .semibold))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            // 2) Device (targetName)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(NSLocalizedString("device", comment: "Device label"))
-                    .foregroundColor(.gray)
-                    .font(.system(size: 12))
-                
-                HStack {
-                    Text(config.targetName.isEmpty ? "Select Device" : config.targetName)
-                        .foregroundColor(.red)
-                        .font(.system(size: 14))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .layoutPriority(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+            Divider().background(Color.gray.opacity(0.4))
 
-                    // chevron button only
-                    Button(action: {
-                        activeSheet = .name
-                    }) {
-                        Image(systemName: "chevron.down")
-                            .foregroundColor(.red)
-                            .font(.system(size: 12))
-                            .frame(width: 36, height: 24)
-                    }
-                    .buttonStyle(.plain)
-                    .contentShape(Rectangle())
-                    .disabled(activeSheet != nil)
+            // Details rows
+            VStack(spacing: 12) {
+                cardColumn(title: NSLocalizedString("type", comment: "Type label"), value: config.targetType, icon: config.targetType, action: { activeSheet = .type })
+
+                if drillMode == "cqb" {
+                    cardColumn(title: NSLocalizedString("action", comment: "Action label"), value: config.action.isEmpty ? NSLocalizedString("select_action", comment: "Select action") : config.action, icon: nil, action: { activeSheet = .action })
+
+                    cardColumn(title: NSLocalizedString("duration", comment: "Duration label"), value: config.duration == 0 ? NSLocalizedString("select_duration", comment: "Select duration") : String(format: NSLocalizedString("duration_value_format", comment: "Duration value"), config.duration), icon: nil, action: { activeSheet = .duration })
                 }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 12)
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(6)
             }
-            .frame(maxWidth: .infinity)
-
-            // Link icon
-            Image(systemName: "link")
-                .foregroundColor(.gray)
-                .font(.system(size: 16))
-
-            // 3) TargetType (icon)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(NSLocalizedString("type", comment: "Type label"))
-                    .foregroundColor(.gray)
-                    .font(.system(size: 12))
-                
-                HStack {
-                    Image(config.targetType)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 20, height: 20)
-                        .foregroundColor(.white)
-
-                    Text(config.targetType)
-                        .foregroundColor(.white)
-                        .font(.system(size: 14))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .layoutPriority(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    // chevron button only
-                    Button(action: {
-                        activeSheet = .type
-                    }) {
-                        Image(systemName: "chevron.down")
-                            .foregroundColor(.white)
-                            .font(.system(size: 12))
-                            .frame(width: 36, height: 24)
-                    }
-                    .buttonStyle(.plain)
-                    .contentShape(Rectangle())
-                    .disabled(activeSheet != nil)
-                }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 12)
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(6)
-            }
-            .frame(maxWidth: .infinity)
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 16)
-        .listRowBackground(Color.black.opacity(0.8))
-        .listRowInsets(EdgeInsets())
+        .padding(16)
+        .background(Color.gray.opacity(0.15))
+        .cornerRadius(12)
+        .listRowBackground(Color.clear)
+        .buttonStyle(.plain)
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
-            case .name:
-                TargetNamePickerView(
-                    availableDevices: availableDevices,
-                    selectedDevice: $config.targetName,
-                    onDone: { activeSheet = nil }
-                )
             case .type:
                 TargetTypePickerView(
                     iconNames: iconNames,
                     selectedType: $config.targetType,
                     onDone: { activeSheet = nil }
                 )
+            case .action:
+                ActionPickerView(
+                    selectedAction: $config.action,
+                    onDone: { activeSheet = nil }
+                )
+            case .duration:
+                ActionDurationPickerView(
+                    selectedDuration: $config.duration,
+                    onDone: { activeSheet = nil }
+                )
             }
         }
+    }
+
+    @ViewBuilder
+    private func cardColumn(title: String, value: String, icon: String? = nil, action: @escaping () -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .foregroundColor(.gray)
+                .font(.system(size: 12))
+
+            Button(action: action) {
+                HStack {
+                    if let icon {
+                        Image(icon)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 20, height: 20)
+                            .foregroundColor(.white)
+                    }
+
+                    Text(value)
+                        .foregroundColor(.white)
+                        .font(.system(size: 14))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .layoutPriority(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Image(systemName: "chevron.down")
+                        .foregroundColor(.white)
+                        .font(.system(size: 12))
+                        .frame(width: 36, height: 24)
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(6)
+            }
+            .buttonStyle(.plain)
+            .disabled(activeSheet != nil)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 struct TargetNamePickerView: View {
@@ -439,6 +456,104 @@ struct TargetTypePickerView: View {
     }
 }
 
+struct ActionPickerView: View {
+    @Binding var selectedAction: String
+    var onDone: (() -> Void)? = nil
+    
+    private let actions = ["flash", "swing_left", "swing_right", "run_through", "run_through_reverse"]
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                List {
+                    ForEach(actions, id: \.self) { action in
+                        Button(action: {
+                            selectedAction = action
+                            onDone?()
+                        }) {
+                            HStack {
+                                Text(action)
+                                    .foregroundColor(.white)
+                                Spacer()
+                                if selectedAction == action {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(.red)
+                                }
+                            }
+                            .padding(.vertical, 12)
+                        }
+                        .listRowBackground(Color.gray.opacity(0.2))
+                    }
+                }
+                .listStyle(.plain)
+                .background(Color.black)
+                .scrollContentBackgroundHidden()
+            }
+            .navigationTitle("Select Action")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        onDone?()
+                    }
+                    .foregroundColor(.red)
+                }
+            }
+            .navigationViewStyle(.stack)
+        }
+    }
+}
+
+struct ActionDurationPickerView: View {
+    @Binding var selectedDuration: Double
+    var onDone: (() -> Void)? = nil
+    
+    private let durations = [1.5, 2.5, 3.5, 5.0]
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                List {
+                    ForEach(durations, id: \.self) { duration in
+                        Button(action: {
+                            selectedDuration = duration
+                            onDone?()
+                        }) {
+                            HStack {
+                                Text(String(format: "%.1fs", duration))
+                                    .foregroundColor(.white)
+                                Spacer()
+                                if selectedDuration == duration {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(.red)
+                                }
+                            }
+                            .padding(.vertical, 12)
+                        }
+                        .listRowBackground(Color.gray.opacity(0.2))
+                    }
+                }
+                .listStyle(.plain)
+                .background(Color.black)
+                .scrollContentBackgroundHidden()
+            }
+            .navigationTitle("Select Duration")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        onDone?()
+                    }
+                    .foregroundColor(.red)
+                }
+            }
+            .navigationViewStyle(.stack)
+        }
+    }
+}
+
 #Preview {
     let mockDevices = [
         NetworkDevice(name: "Target 1", mode: "active"),
@@ -453,5 +568,5 @@ struct TargetTypePickerView: View {
         DrillTargetsConfigData(seqNo: 3, targetName: "Target 3", targetType: "popper", timeout: 20.0, countedShots: 1)
     ]
     
-    TargetConfigListView(deviceList: mockDevices, targetConfigs: .constant(mockConfigs), onDone: {})
+    TargetConfigListView(deviceList: mockDevices, targetConfigs: .constant(mockConfigs), onDone: {}, drillMode: "ipsc")
 }

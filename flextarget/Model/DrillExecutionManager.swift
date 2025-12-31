@@ -159,7 +159,8 @@ class DrillExecutionManager {
                     "countedShots": target.countedShots,
                     "repeat": currentRepeat,
                     "isFirst": index == 0,
-                    "isLast": index == sortedTargets.count - 1
+                    "isLast": index == sortedTargets.count - 1,
+                    "mode": drillSetup.mode ?? "ipsc"
                 ]
                 let message: [String: Any] = [
                     "action": "netlink_forward",
@@ -170,6 +171,24 @@ class DrillExecutionManager {
                 let messageString = String(data: messageData, encoding: .utf8)!
                 print("Sending ready message for target \(target.targetName ?? ""), length: \(messageData.count)")
                 bleManager.writeJSON(messageString)
+                
+                // Send animation_config if CQB mode and action is set
+                if drillSetup.mode == "cqb", let action = target.action, !action.isEmpty {
+                    let animationContent: [String: Any] = [
+                        "command": "animation_config",
+                        "action": action,
+                        "duration": target.duration
+                    ]
+                    let animationMessage: [String: Any] = [
+                        "action": "netlink_forward",
+                        "dest": target.targetName ?? "",
+                        "content": animationContent
+                    ]
+                    let animationData = try JSONSerialization.data(withJSONObject: animationMessage, options: [])
+                    let animationString = String(data: animationData, encoding: .utf8)!
+                    print("Sending animation_config for target \(target.targetName ?? "")")
+                    bleManager.writeJSON(animationString)
+                }
                 
                 #if targetEnvironment(simulator)
                 // In simulator, mock some shot received notifications after sending ready command

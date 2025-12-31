@@ -9,6 +9,7 @@
 
 /* DrillFormView */
 "drill_setup" = "Drill Setup";
+"drill_mode" = "Drill Mode";
 
 /* DrillListView */
 "my_drills" = "My Drills";
@@ -111,6 +112,11 @@
 "drill_replay" = "Drill Replay";
 "select_device" = "Select Device";
 "select_target_type" = "Select Target Type";
+"select_action" = "Select Action";
+"action" = "Action";
+"duration" = "Duration";
+"select_duration" = "Select Duration";
+"duration_value_format" = "%.1fs";
 
 /* DrillFormView */
 "start_drill" = "Start Drill";

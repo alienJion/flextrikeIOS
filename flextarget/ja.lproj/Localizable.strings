@@ -9,6 +9,7 @@
 
 /* DrillFormView */
 "drill_setup" = "ドリル設定";
+"drill_mode" = "ドリルモード";
 
 /* DrillListView */
 "my_drills" = "マイドリル";
@@ -114,6 +115,11 @@
 "drill_replay" = "ドリル再生";
 "select_device" = "デバイスを選択";
 "select_target_type" = "ターゲットタイプを選択";
+"select_action" = "アクションを選択";
+"action" = "アクション";
+"duration" = "期間";
+"select_duration" = "期間を選択";
+"duration_value_format" = "%.1fs";
 
 /* DrillFormView */
 "start_drill" = "ドリルを開始";

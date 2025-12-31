@@ -9,6 +9,7 @@
 
 /* DrillFormView */
 "drill_setup" = "训练设置";
+"drill_mode" = "训练模式";
 
 /* DrillListView */
 "my_drills" = "我的训练";
@@ -113,8 +114,11 @@
 "drill_history" = "训练历史";
 "drill_replay" = "训练回放";
 "select_device" = "选择设备";
-"select_target_type" = "选择标靶类型";
-
+"select_target_type" = "选择标靶类型";"select_action" = "选择动作";
+"action" = "动作";
+"duration" = "持续时间";
+"select_duration" = "选择持续时间";
+"duration_value_format" = "%.1fs";
 /* DrillFormView */
 "start_drill" = "进入训练";
 "save_drill" = "保存训练";

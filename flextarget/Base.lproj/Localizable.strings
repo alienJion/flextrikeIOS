@@ -9,6 +9,7 @@
 
 /* DrillFormView */
 "drill_setup" = "Drill Setup";
+"drill_mode" = "Drill Mode";
 
 /* DrillListView */
 "my_drills" = "My Drills";

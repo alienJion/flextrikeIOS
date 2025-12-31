@@ -9,6 +9,7 @@
 
 /* DrillFormView */
 "drill_setup" = "Übung-Setup";
+"drill_mode" = "Übungsmodus";
 
 /* DrillListView */
 "my_drills" = "Meine Übungen";
@@ -139,6 +140,10 @@
 
 /* Duration Configuration */
 "select_duration" = "Dauer auswählen";
+"select_action" = "Aktion auswählen";
+"action" = "Aktion";
+"duration" = "Dauer";
+"duration_value_format" = "%.1fs";
 
 /* Drill Execution - Back Navigation */
 "continue_button" = "Fortfahren";

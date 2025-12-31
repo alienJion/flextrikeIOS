@@ -697,6 +697,7 @@ struct PreviewContent: View {
         mockDrillSetup.name = "Test Drill"
         mockDrillSetup.desc = "Test drill description"
         mockDrillSetup.delay = 2.0
+        mockDrillSetup.mode = "ipsc"
         
         // Add mock targets
         let mockTarget = DrillTargetsConfig(context: context)

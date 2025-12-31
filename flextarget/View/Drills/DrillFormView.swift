@@ -38,6 +38,7 @@ struct DrillFormView: View {
     @State private var repeatsValue: Int = 1
     @State private var pauseValue: Int = 5
     @State private var drillDuration: Double = 5
+    @State private var drillMode: String = "ipsc"
     @State private var targets: [DrillTargetsConfigData] = []
     @State private var isTargetListReceived: Bool = false
     @State private var targetConfigs: [DrillTargetsConfigData] = []
@@ -87,6 +88,7 @@ struct DrillFormView: View {
             _repeatsValue = State(initialValue: Int(drillSetup.repeats))
             _pauseValue = State(initialValue: Int(drillSetup.pause))
             _drillDuration = State(initialValue: drillSetup.drillDuration)
+            _drillMode = State(initialValue: drillSetup.mode ?? "ipsc")
             
             let coreDataTargets = (drillSetup.targets as? Set<DrillTargetsConfig>) ?? []
             let targetsArray = coreDataTargets.sorted(by: { $0.seqNo < $1.seqNo }).map { $0.toStruct() }
@@ -159,6 +161,12 @@ struct DrillFormView: View {
                             .background(Color.gray.opacity(0.2))
                             .cornerRadius(20)
                             .padding(.horizontal)
+
+                            DrillModeSelectionView(
+                                drillMode: $drillMode,
+                                disabled: isEditingDisabled
+                            )
+                            .padding(.horizontal)
                             
                             // Delay of Set Starting
                             RepeatsConfigView(
@@ -184,7 +192,8 @@ struct DrillFormView: View {
                                 targetConfigs: $targetConfigs,
                                 onTargetConfigDone: { targets = targetConfigs },
                                 disabled: isEditingDisabled,
-                                onDisabledTap: { showTargetConfigAlert = true }
+                                onDisabledTap: { showTargetConfigAlert = true },
+                                drillMode: drillMode
                             )
                             .padding(.horizontal)
                             
@@ -581,6 +590,7 @@ struct DrillFormView: View {
         drillSetup.repeats = Int32(repeatsValue)
         drillSetup.pause = Int32(pauseValue)
         drillSetup.drillDuration = drillDuration
+        drillSetup.mode = drillMode
         
         print("Creating drill setup with:")
         print("  name: \(drillName)")
@@ -598,6 +608,8 @@ struct DrillFormView: View {
             target.targetType = targetData.targetType
             target.timeout = targetData.timeout
             target.countedShots = Int32(targetData.countedShots)
+            target.action = targetData.action
+            target.duration = targetData.duration
             
             // Use the Core Data generated method to establish relationship
             drillSetup.addToTargets(target)
@@ -660,6 +672,7 @@ struct DrillFormView: View {
         drillSetup.repeats = Int32(repeatsValue)
         drillSetup.pause = Int32(pauseValue)
         drillSetup.drillDuration = drillDuration
+        drillSetup.mode = drillMode
         
         // Update targets: reuse existing ones by ID, create only new ones
         let existingTargets = (drillSetup.targets as? Set<DrillTargetsConfig>) ?? []
@@ -696,6 +709,8 @@ struct DrillFormView: View {
             target.targetType = targetData.targetType
             target.timeout = targetData.timeout
             target.countedShots = Int32(targetData.countedShots)
+            target.action = targetData.action
+            target.duration = targetData.duration
         }
         
         // Remove targets that are no longer needed
@@ -969,6 +984,7 @@ struct DrillFormView_Previews: PreviewProvider {
         drillSetup.repeats = Int32(1)
         drillSetup.pause = Int32(5)
         drillSetup.drillDuration = 15.0
+        drillSetup.mode = "ipsc"
         
         let target = DrillTargetsConfig(context: context)
         target.id = UUID()
