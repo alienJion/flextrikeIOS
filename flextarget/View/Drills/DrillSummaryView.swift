@@ -53,24 +53,15 @@ struct DrillSummaryView: View {
             ]
         }
         
-        let aZoneCount = summary.shots.filter { $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "azone" }.count
-        let cZoneCount = summary.shots.filter { $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "czone" }.count
-        let dZoneCount = summary.shots.filter { $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "dzone" }.count
-        let noShootCount = summary.shots.filter { 
-            let area = $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-            return area == "blackzone" || area == "whitezone"
-        }.count
-        let missCount = summary.shots.filter { 
-            let area = $0.content.hitArea.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-            return area == "miss" || area == "m" || area.isEmpty
-        }.count
+        // Use centralized ScoringUtility to get effective counts for fallback
+        let effectiveCounts = ScoringUtility.calculateEffectiveCounts(shots: summary.shots)
 
         return [
-            SummaryMetric(iconName: "a.circle.fill", label: "A", value: "\(aZoneCount)"),
-            SummaryMetric(iconName: "c.circle.fill", label: "C", value: "\(cZoneCount)"),
-            SummaryMetric(iconName: "d.circle.fill", label: "D", value: "\(dZoneCount)"),
-            SummaryMetric(iconName: "xmark.circle.fill", label: "N", value: "\(noShootCount)"),
-            SummaryMetric(iconName: "slash.circle.fill", label: "M", value: "\(missCount)")
+            SummaryMetric(iconName: "a.circle.fill", label: "A", value: "\(effectiveCounts["A"] ?? 0)"),
+            SummaryMetric(iconName: "c.circle.fill", label: "C", value: "\(effectiveCounts["C"] ?? 0)"),
+            SummaryMetric(iconName: "d.circle.fill", label: "D", value: "\(effectiveCounts["D"] ?? 0)"),
+            SummaryMetric(iconName: "xmark.circle.fill", label: "N", value: "\(effectiveCounts["N"] ?? 0)"),
+            SummaryMetric(iconName: "slash.circle.fill", label: "M", value: "\(effectiveCounts["M"] ?? 0)")
         ]
     }
 
@@ -131,78 +122,14 @@ struct DrillSummaryView: View {
         
         // If this is the first time adjusting, initialize with adjusted hit zone counts (after applying scoring rules)
         if adjustedZones.isEmpty {
-            // Apply the same scoring logic as ScoringUtility.calculateTotalScore to get the effective counts
-            let shots = summaries[index].shots
+            // Use centralized ScoringUtility to get effective counts
+            let effectiveCounts = ScoringUtility.calculateEffectiveCounts(shots: summaries[index].shots)
             
-            // Group shots by target/device
-            var shotsByTarget: [String: [ShotData]] = [:]
-            for shot in shots {
-                let device = shot.device ?? shot.target ?? "unknown"
-                if shotsByTarget[device] == nil {
-                    shotsByTarget[device] = []
-                }
-                shotsByTarget[device]?.append(shot)
-            }
-            
-            // Count shots that actually contribute to score (best 2 per target, excluding no-shoot zones)
-            var effectiveAZoneCount = 0
-            var effectiveCZoneCount = 0
-            var effectiveDZoneCount = 0
-            var effectiveNoShootCount = 0
-            var effectiveMissCount = 0
-            
-            for (_, targetShots) in shotsByTarget {
-                // Detect target type from shots
-                let targetType = targetShots.first?.content.targetType.lowercased() ?? ""
-                let isPaddleOrPopper = targetType == "paddle" || targetType == "popper"
-                
-                let noShootZoneShots = targetShots.filter { shot in
-                    let trimmed = shot.content.hitArea.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-                    return trimmed == "whitezone" || trimmed == "blackzone"
-                }
-                
-                let otherShots = targetShots.filter { shot in
-                    let trimmed = shot.content.hitArea.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-                    return trimmed != "whitezone" && trimmed != "blackzone"
-                }
-                
-                // Count no-shoot zones (always included)
-                effectiveNoShootCount += noShootZoneShots.count
-                
-                // For paddle and popper: count all scoring shots; for others: count best 2
-                let scoringShots: [ShotData]
-                if isPaddleOrPopper {
-                    scoringShots = otherShots
-                } else {
-                    let sortedOtherShots = otherShots.sorted {
-                        Double(ScoringUtility.scoreForHitArea($0.content.hitArea)) > Double(ScoringUtility.scoreForHitArea($1.content.hitArea))
-                    }
-                    scoringShots = Array(sortedOtherShots.prefix(2))
-                }
-                
-                // Count effective shots by zone
-                for shot in scoringShots {
-                    let area = shot.content.hitArea.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-                    switch area {
-                    case "azone":
-                        effectiveAZoneCount += 1
-                    case "czone":
-                        effectiveCZoneCount += 1
-                    case "dzone":
-                        effectiveDZoneCount += 1
-                    case "miss", "m":
-                        effectiveMissCount += 1
-                    default:
-                        break
-                    }
-                }
-            }
-            
-            adjustedZones["A"] = effectiveAZoneCount
-            adjustedZones["C"] = effectiveCZoneCount
-            adjustedZones["D"] = effectiveDZoneCount
-            adjustedZones["N"] = effectiveNoShootCount
-            adjustedZones["M"] = effectiveMissCount
+            adjustedZones["A"] = effectiveCounts["A"] ?? 0
+            adjustedZones["C"] = effectiveCounts["C"] ?? 0
+            adjustedZones["D"] = effectiveCounts["D"] ?? 0
+            adjustedZones["N"] = effectiveCounts["N"] ?? 0
+            adjustedZones["M"] = effectiveCounts["M"] ?? 0
         }
         
         // Update the penalty count (manual + auto from missed targets)

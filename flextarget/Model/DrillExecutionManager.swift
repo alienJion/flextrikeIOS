@@ -599,7 +599,15 @@ class DrillExecutionManager {
             // For paddle and popper: keep all shots; for others: keep best 2
             let selectedOtherShots: [ShotData]
             if isPaddleOrPopper {
-                selectedOtherShots = otherShots
+                let validShots = otherShots.filter { s in
+                    let a = s.content.hitArea.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                    return a != "miss" && a != "m" && !a.isEmpty
+                }
+                if validShots.count >= 2 {
+                    selectedOtherShots = validShots
+                } else {
+                    selectedOtherShots = otherShots
+                }
             } else {
                 let sortedOtherShots = otherShots.sorted {
                     ScoringUtility.scoreForHitArea($0.content.hitArea) > ScoringUtility.scoreForHitArea($1.content.hitArea)
