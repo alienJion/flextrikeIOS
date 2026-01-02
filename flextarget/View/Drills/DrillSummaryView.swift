@@ -840,16 +840,6 @@ struct SummaryEditSheet: View {
                 return false
             }
 
-            let duplicateFetch = NSFetchRequest<LeaderboardEntry>(entityName: "LeaderboardEntry")
-            duplicateFetch.predicate = NSPredicate(format: "drillResult == %@ AND athlete == %@", result, athleteInContext)
-            duplicateFetch.fetchLimit = 1
-            if let _ = try viewContext.fetch(duplicateFetch).first {
-                errorTitle = NSLocalizedString("duplicate_submission_title", comment: "Duplicate submission title")
-                errorMessage = NSLocalizedString("duplicate_submission_message", comment: "Duplicate submission message")
-                showError = true
-                return false
-            }
-
             let factor: Double = summary.totalTime > 0 ? (Double(summary.score) / summary.totalTime) : 0
 
             let entry = LeaderboardEntry(context: viewContext)

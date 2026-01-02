@@ -35,6 +35,9 @@ struct AthletesManagementView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
+                .onTapGesture {
+                    hideKeyboard()
+                }
 
             List {
                 Section(header: Text(NSLocalizedString("new_athlete", comment: "New athlete section header"))
@@ -44,12 +47,12 @@ struct AthletesManagementView: View {
                         avatarPreview(data: selectedAvatarData)
 
                         VStack(spacing: 10) {
-                            TextField(NSLocalizedString("athlete_name", comment: "Athlete name placeholder"), text: $name)
+                            TextField(NSLocalizedString("athlete_name", comment: "Athlete name placeholder"), text: $name, prompt: Text(NSLocalizedString("athlete_name", comment: "Athlete name placeholder")).foregroundColor(.white.opacity(0.6)))
                                 .textInputAutocapitalization(.words)
                                 .disableAutocorrection(true)
                                 .foregroundColor(.white)
 
-                            TextField(NSLocalizedString("athlete_club", comment: "Athlete club placeholder"), text: $club)
+                            TextField(NSLocalizedString("athlete_club", comment: "Athlete club placeholder"), text: $club, prompt: Text(NSLocalizedString("athlete_club", comment: "Athlete club placeholder")).foregroundColor(.white.opacity(0.6)))
                                 .textInputAutocapitalization(.words)
                                 .disableAutocorrection(true)
                                 .foregroundColor(.white)
@@ -121,6 +124,11 @@ struct AthletesManagementView: View {
             }
             .scrollContentBackground(.hidden)
             .listStyle(.plain)
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    hideKeyboard()
+                }
+            )
         }
         .navigationTitle(NSLocalizedString("athletes_title", comment: "Athletes screen title"))
         .navigationBarBackButtonHidden(true)

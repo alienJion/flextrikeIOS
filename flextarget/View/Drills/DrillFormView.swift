@@ -105,7 +105,7 @@ struct DrillFormView: View {
             ZStack {
                 Color.black.ignoresSafeArea()
                     .onTapGesture {
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        hideKeyboard()
                     }
                 
                 VStack(spacing: 20) {
@@ -219,6 +219,11 @@ struct DrillFormView: View {
                             handleDeviceListUpdate(notification)
                         }
                         .ignoresSafeArea(.keyboard, edges: .bottom)
+                        .simultaneousGesture(
+                            TapGesture().onEnded {
+                                hideKeyboard()
+                            }
+                        )
                     }
                 }
             .environment(\.managedObjectContext, viewContext)

@@ -24,6 +24,13 @@ struct LeaderboardView: View {
                         .onTapGesture {
                             openLinkedSummary(for: entry)
                         }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                deleteEntry(entry)
+                            } label: {
+                                Label(NSLocalizedString("delete", comment: "Delete"), systemImage: "trash")
+                            }
+                        }
                         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -93,6 +100,16 @@ struct LeaderboardView: View {
             drillResultId: result.id,
             adjustedHitZones: adjustedHitZones
         )
+    }
+
+    private func deleteEntry(_ entry: LeaderboardEntry) {
+        viewContext.delete(entry)
+        do {
+            try viewContext.save()
+        } catch {
+            viewContext.rollback()
+            print("Failed to delete LeaderboardEntry: \(error)")
+        }
     }
 
     private func row(rank: Int, entry: LeaderboardEntry, isEven: Bool) -> some View {

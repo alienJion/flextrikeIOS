@@ -152,7 +152,7 @@ struct TargetConfigListView: View {
         case "idpa":
             return "idpa"
         case "cqb":
-            return "cqb_enemy_front"
+            return "cqb_front"
         default:
             return "ipsc"
         }
@@ -257,6 +257,29 @@ struct TargetRowView: View {
         }
     }
 
+    private func allowedActions(for targetType: String) -> [String] {
+        guard drillMode == "cqb" else { return [] }
+        switch targetType {
+        case "cqb_front":
+            return ["flash"]
+        case "cqb_swing":
+            return ["swing_left", "swing_right"]
+        case "cqb_move":
+            return ["run_through", "run_through_reverse"]
+        default:
+            return ["flash", "swing_left", "swing_right", "run_through", "run_through_reverse"]
+        }
+    }
+
+    private func normalizeActionForCurrentTargetType() {
+        guard drillMode == "cqb" else { return }
+        let allowed = allowedActions(for: config.targetType)
+        guard let firstAllowed = allowed.first else { return }
+        if config.action.isEmpty || !allowed.contains(config.action) {
+            config.action = firstAllowed
+        }
+    }
+
     var body: some View {
         VStack(spacing: 12) {
             // Title row
@@ -274,7 +297,9 @@ struct TargetRowView: View {
                 cardColumn(title: NSLocalizedString("type", comment: "Type label"), value: config.targetType, icon: config.targetType, action: { activeSheet = .type })
 
                 if drillMode == "cqb" {
+                    let allowed = allowedActions(for: config.targetType)
                     cardColumn(title: NSLocalizedString("action", comment: "Action label"), value: config.action.isEmpty ? NSLocalizedString("select_action", comment: "Select action") : config.action, icon: nil, action: { activeSheet = .action })
+                        .disabled(allowed.count <= 1)
 
                     cardColumn(title: NSLocalizedString("duration", comment: "Duration label"), value: config.duration == 0 ? NSLocalizedString("select_duration", comment: "Select duration") : String(format: NSLocalizedString("duration_value_format", comment: "Duration value"), config.duration), icon: nil, action: { activeSheet = .duration })
                 }
@@ -296,6 +321,7 @@ struct TargetRowView: View {
             case .action:
                 ActionPickerView(
                     selectedAction: $config.action,
+                    actions: allowedActions(for: config.targetType),
                     onDone: { activeSheet = nil }
                 )
             case .duration:
@@ -304,6 +330,12 @@ struct TargetRowView: View {
                     onDone: { activeSheet = nil }
                 )
             }
+        }
+        .onAppear {
+            normalizeActionForCurrentTargetType()
+        }
+        .onChange(of: config.targetType) { _ in
+            normalizeActionForCurrentTargetType()
         }
     }
 
@@ -453,9 +485,14 @@ struct TargetTypePickerView: View {
 
 struct ActionPickerView: View {
     @Binding var selectedAction: String
+    let actions: [String]
     var onDone: (() -> Void)? = nil
-    
-    private let actions = ["flash", "swing_left", "swing_right", "run_through", "run_through_reverse"]
+
+    init(selectedAction: Binding<String>, actions: [String] = ["flash", "swing_left", "swing_right", "run_through", "run_through_reverse"], onDone: (() -> Void)? = nil) {
+        self._selectedAction = selectedAction
+        self.actions = actions
+        self.onDone = onDone
+    }
     
     var body: some View {
         NavigationView {
