@@ -4,11 +4,14 @@ import CoreData
 // MARK: - DrillResult Calculations Extension
 extension DrillResult {
     
-    /// Decode all shots from the drill result
+    /// Decode all shots from the drill result, sorted by timestamp to preserve order
     var decodedShots: [ShotData] {
         guard let shotsSet = shots as? Set<Shot> else { return [] }
         
-        return shotsSet.compactMap { shot in
+        // Sort shots by timestamp (which stores the absolute time_diff in ms) to ensure correct order
+        let sortedShots = shotsSet.sorted { $0.timestamp < $1.timestamp }
+        
+        return sortedShots.compactMap { shot in
             guard let data = shot.data,
                   let jsonData = data.data(using: .utf8) else { return nil }
             

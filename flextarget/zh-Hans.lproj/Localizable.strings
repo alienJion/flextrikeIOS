@@ -92,6 +92,7 @@
 "first_shot_label" = "首枪";
 "score_label" = "分数";
 "factor_label" = "系数";
+"watch_replay_button" = "观看回放";
 
 /* SubViews */
 "history_record" = "历史记录";

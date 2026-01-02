@@ -25,7 +25,7 @@ enum UITestDataSeeder {
                 drillSetup.repeats = 1
 
                 // three target configs
-                let types = ["hostage", "rotation", "paddle"]
+                let types = ["hostage", "ipsc", "rotation"]
                 var seq: Int32 = 1
                 var generatedShots: [ShotData] = []
                 for t in types {
@@ -71,11 +71,14 @@ enum UITestDataSeeder {
                 result.drillSetup = drillSetup
                 result.totalTime = generatedShots.map { $0.content.timeDiff }.reduce(0, +)
 
+                var cumulativeTime: Double = 0
                 for sd in generatedShots {
+                    cumulativeTime += sd.content.timeDiff
                     let shotEntity = Shot(context: context)
                     let data = try JSONEncoder().encode(sd)
                     shotEntity.data = String(data: data, encoding: .utf8)
-                    shotEntity.timestamp = Date()
+                    // Store absolute time_diff in milliseconds as an integer
+                    shotEntity.timestamp = Int64(cumulativeTime * 1000)
                     shotEntity.drillResult = result
                 }
 

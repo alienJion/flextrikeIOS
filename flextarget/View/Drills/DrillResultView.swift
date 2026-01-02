@@ -649,7 +649,9 @@ struct DrillResultView: View {
             drillResult.totalTime = repeatSummary.totalTime
         }
         
+        var cumulativeTime: Double = 0
         for shotData in shots {
+            cumulativeTime += shotData.content.timeDiff
             let shot = Shot(context: context)
             do {
                 let jsonData = try JSONEncoder().encode(shotData)
@@ -658,7 +660,8 @@ struct DrillResultView: View {
                 print("Failed to encode shot data: \(error)")
                 shot.data = nil
             }
-            shot.timestamp = Date()
+            // Store absolute time_diff in milliseconds as an integer
+            shot.timestamp = Int64(cumulativeTime * 1000)
             shot.drillResult = drillResult
         }
         

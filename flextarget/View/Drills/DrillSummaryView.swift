@@ -273,22 +273,46 @@ struct DrillSummaryView: View {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 20) {
                             ForEach(summaries.indices, id: \.self) { index in
-                                NavigationLink(destination: DrillResultView(drillSetup: drillSetup, repeatSummary: summaries[index])) {
-                                    summaryCard(
-                                        title: String(format: NSLocalizedString("repeat_number", comment: "Repeat number format"), summaries[index].repeatIndex),
-                                        subtitle: HStack(spacing: 2) {
-                                            Text("\(NSLocalizedString("factor_label", comment: "Factor label")):")
-                                                .font(.system(size: 14, weight: .medium))
-                                                .foregroundColor(Color.white.opacity(0.7))
-                                            Text(String(format: "%.2f", calculateFactor(score: summaries[index].score, time: summaries[index].totalTime)))
-                                                .font(.system(size: 18, weight: .bold))
-                                                .foregroundColor(.red)
-                                        },
-                                        iconName: "scope",
-                                        metrics: metrics(for: summaries[index]),
-                                        hitZoneMetrics: hitZoneMetrics(for: summaries[index]),
-                                        summaryIndex: index
-                                    )
+                                VStack(spacing: 12) {
+                                    NavigationLink(destination: DrillResultView(drillSetup: drillSetup, repeatSummary: summaries[index])) {
+                                        summaryCard(
+                                            title: String(format: NSLocalizedString("repeat_number", comment: "Repeat number format"), summaries[index].repeatIndex),
+                                            subtitle: HStack(spacing: 2) {
+                                                Text("\(NSLocalizedString("factor_label", comment: "Factor label")):")
+                                                    .font(.system(size: 14, weight: .medium))
+                                                    .foregroundColor(Color.white.opacity(0.7))
+                                                Text(String(format: "%.2f", calculateFactor(score: summaries[index].score, time: summaries[index].totalTime)))
+                                                    .font(.system(size: 18, weight: .bold))
+                                                    .foregroundColor(.red)
+                                            },
+                                            iconName: "scope",
+                                            metrics: metrics(for: summaries[index]),
+                                            hitZoneMetrics: hitZoneMetrics(for: summaries[index]),
+                                            summaryIndex: index
+                                        )
+                                    }
+                                    
+                                    NavigationLink(destination: DrillReplayView(drillSetup: drillSetup, shots: summaries[index].shots)) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "play.circle.fill")
+                                                .font(.system(size: 16, weight: .bold))
+                                            Text(NSLocalizedString("watch_replay_button", comment: "Watch replay button text"))
+                                                .font(.system(size: 14, weight: .bold))
+                                                .kerning(0.5)
+                                        }
+                                        .foregroundColor(.red)
+                                        .padding(.vertical, 10)
+                                        .frame(maxWidth: .infinity)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(Color.red.opacity(0.1))
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 12)
+                                                        .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                                                )
+                                        )
+                                    }
+                                    .padding(.horizontal, 20)
                                 }
                             }
                         }

@@ -285,11 +285,12 @@ struct RecentTrainingView: View {
 
     private func convertShots(_ shots: NSSet?) -> [ShotData] {
         guard let shots = shots as? Set<Shot> else { return [] }
-        let decoded = shots.compactMap { shot -> ShotData? in
+        // Sort by timestamp (absolute time_diff in ms) to preserve order
+        let sortedShots = shots.sorted { $0.timestamp < $1.timestamp }
+        return sortedShots.compactMap { shot -> ShotData? in
             guard let data = shot.data, let jsonData = data.data(using: .utf8) else { return nil }
             return try? JSONDecoder().decode(ShotData.self, from: jsonData)
         }
-        return decoded.sorted { $0.content.timeDiff < $1.content.timeDiff }
     }
 }
 

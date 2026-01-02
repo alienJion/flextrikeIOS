@@ -84,6 +84,7 @@
 "first_shot_label" = "First Shot";
 "score_label" = "Score";
 "factor_label" = "Factor";
+"watch_replay_button" = "Watch Replay";
 
 /* SubViews */
 "history_record" = "History Record";
