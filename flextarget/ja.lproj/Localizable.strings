@@ -253,6 +253,40 @@
 /* Tab Navigation */
 "history" = "履歴";
 "admin" = "管理者";
+"competition" = "大会";
+
+/* Competition */
+"competition_login" = "大会ログイン";
+"username" = "ユーザー名";
+"password" = "パスワード";
+"login" = "ログイン";
+"login_hint" = "テスト目的のため、任意のユーザー名とパスワードでログインできます。";
+"search_competition" = "名前または会場で検索";
+"all" = "すべて";
+"this_month" = "今月";
+"last_3_months" = "過去3ヶ月";
+"competitions" = "大会一覧";
+"view_competitions" = "大会を表示";
+"shooters" = "射手";
+"manage_shooters" = "射手を管理";
+"view_leaderboard" = "ランキングを表示";
+"untitled_competition" = "無題の大会";
+"competition_info" = "大会情報";
+"competition_name" = "大会名";
+"venue" = "会場";
+"date" = "日付";
+"change" = "変更";
+"select_drill" = "ドリルを選択";
+"create_competition" = "大会を作成";
+"add_competition" = "大会を追加";
+"cancel" = "キャンセル";
+"competition_details" = "大会詳細";
+"results" = "結果";
+"no_results_yet" = "結果はまだありません";
+"start_competition_drill" = "大会ドリルを開始";
+"unknown_athlete" = "不明な選手";
+"competition_mode" = "大会モード";
+"drill_editing_disabled_hint" = "このドリルには結果があるか、大会に関連付けられているため、編集は無効になっています。";
 
 /* ランキング送信エラー */
 "error_title" = "エラー";

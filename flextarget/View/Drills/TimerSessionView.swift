@@ -14,8 +14,19 @@ struct TimerSessionView: View {
 
     let drillSetup: DrillSetup
     let bleManager: BLEManager
+    let competition: Competition?
+    let athlete: Athlete?
     let onDrillComplete: ([DrillRepeatSummary]) -> Void
     let onDrillFailed: () -> Void
+    
+    init(drillSetup: DrillSetup, bleManager: BLEManager, competition: Competition? = nil, athlete: Athlete? = nil, onDrillComplete: @escaping ([DrillRepeatSummary]) -> Void, onDrillFailed: @escaping () -> Void) {
+        self.drillSetup = drillSetup
+        self.bleManager = bleManager
+        self.competition = competition
+        self.athlete = athlete
+        self.onDrillComplete = onDrillComplete
+        self.onDrillFailed = onDrillFailed
+    }
 
     @State private var timerState: TimerState = .idle
     @State private var delayTarget: Date?
@@ -51,6 +62,26 @@ struct TimerSessionView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 40) {
+                if competition != nil {
+                    VStack(spacing: 4) {
+                        Text(NSLocalizedString("competition_mode", comment: "Competition Mode indicator"))
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
+                            .background(Color.red)
+                            .cornerRadius(4)
+                        
+                        if let athleteName = athlete?.name {
+                            Text(athleteName)
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    .padding(.top, 10)
+                }
+                
                 Spacer()
 
                 VStack(spacing: 12) {

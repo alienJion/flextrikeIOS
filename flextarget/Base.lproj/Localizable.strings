@@ -196,6 +196,40 @@
 /* Tab Navigation */
 "history" = "History";
 "admin" = "Admin";
+"competition" = "Competition";
+
+/* Competition */
+"competition_login" = "Competition Login";
+"username" = "Username";
+"password" = "Password";
+"login" = "Login";
+"login_hint" = "Any username and password will work for testing.";
+"search_competition" = "Search by name or venue";
+"all" = "All";
+"this_month" = "This Month";
+"last_3_months" = "Last 3 Months";
+"competitions" = "Competitions";
+"view_competitions" = "View competitions";
+"shooters" = "Shooters";
+"manage_shooters" = "Manage shooters";
+"view_leaderboard" = "View leaderboard";
+"untitled_competition" = "Untitled Competition";
+"competition_info" = "Competition Information";
+"competition_name" = "Competition Name";
+"venue" = "Venue";
+"date" = "Date";
+"change" = "Change";
+"select_drill" = "Select Drill";
+"create_competition" = "Create Competition";
+"add_competition" = "Add Competition";
+"cancel" = "Cancel";
+"competition_details" = "Competition Details";
+"results" = "Results";
+"no_results_yet" = "No results yet";
+"start_competition_drill" = "Start Competition Drill";
+"unknown_athlete" = "Unknown Athlete";
+"competition_mode" = "COMPETITION MODE";
+"drill_editing_disabled_hint" = "Editing is disabled because this drill has results or is linked to a competition.";
 
 /* History Tab */
 "all_drills" = "All Drills";

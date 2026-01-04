@@ -7,6 +7,7 @@
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="sessionId" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="totalTime" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <relationship name="competition" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Competition" inverseName="results" inverseEntity="Competition"/>
         <relationship name="drillSetup" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DrillSetup" inverseName="results" inverseEntity="DrillSetup"/>
         <relationship name="leaderboardEntries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="LeaderboardEntry" inverseName="drillResult" inverseEntity="LeaderboardEntry"/>
         <relationship name="shots" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Shot" inverseName="drillResult" inverseEntity="Shot"/>
@@ -22,6 +23,7 @@
         <attribute name="pause" optional="YES" attributeType="Integer 32" defaultValueString="5" usesScalarValueType="YES"/>
         <attribute name="repeats" optional="YES" attributeType="Integer 32" defaultValueString="1" usesScalarValueType="YES"/>
         <attribute name="thumbnailURL" optional="YES" attributeType="URI"/>
+        <relationship name="competitions" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Competition" inverseName="drillSetup" inverseEntity="Competition"/>
         <relationship name="results" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DrillResult" inverseName="drillSetup" inverseEntity="DrillResult"/>
         <relationship name="targets" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DrillTargetsConfig"/>
     </entity>
@@ -60,5 +62,13 @@
     <entity name="AppAuth" representedClassName="AppAuth" syncable="YES">
         <attribute name="token" optional="YES" attributeType="String"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="Competition" representedClassName="Competition" syncable="YES">
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="venue" optional="YES" attributeType="String"/>
+        <relationship name="drillSetup" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DrillSetup" inverseName="competitions" inverseEntity="DrillSetup"/>
+        <relationship name="results" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DrillResult" inverseName="competition" inverseEntity="DrillResult"/>
     </entity>
 </model>

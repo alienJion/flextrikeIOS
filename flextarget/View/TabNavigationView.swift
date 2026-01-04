@@ -5,6 +5,7 @@ struct TabNavigationView: View {
     @EnvironmentObject var bleManager: BLEManager
     @Environment(\.managedObjectContext) var managedObjectContext
     @State private var selectedTab: Int = 0
+    @AppStorage("isCompetitionLoggedIn") private var isCompetitionLoggedIn = false
     
     // Sheet states for modals
     @State private var showConnectView = false
@@ -42,6 +43,17 @@ struct TabNavigationView: View {
                 }
                 .tag(1)
                 
+                // Competition Tab
+                NavigationView {
+                    CompetitionTabView()
+                        .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                }
+                .navigationViewStyle(.stack)
+                .tabItem {
+                    Label(NSLocalizedString("competition", comment: "Competition tab"), systemImage: "trophy.fill")
+                }
+                .tag(2)
+                
                 // Admin Tab
                 NavigationView {
                     AdminTabView()
@@ -51,25 +63,9 @@ struct TabNavigationView: View {
                 .tabItem {
                     Label(NSLocalizedString("admin", comment: "Admin tab"), systemImage: "person.badge.key")
                 }
-                .tag(2)
+                .tag(3)
             }
             .tint(.red)
-//            .sheet(isPresented: $showConnectView) {
-//                ConnectSmartTargetView(bleManager: bleManager, navigateToMain: .constant(false), targetPeripheralName: scannedPeripheralName, isAlreadyConnected: bleManager.isConnected, onConnected: { showConnectView = false })
-//                    .id(scannedPeripheralName)
-//            }
-//            .sheet(isPresented: $showInfo) {
-//                InformationPage()
-//            }
-//            .sheet(isPresented: $showQRScanner) {
-//                QRScannerView { scannedText in
-//                    scannedPeripheralName = scannedText
-//                    showQRScanner = false
-//                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-//                        showConnectView = true
-//                    }
-//                }
-//            }
             .onAppear {
                 errorObserver = NotificationCenter.default.addObserver(forName: NSNotification.Name("bleErrorOccurred"), object: nil, queue: .main) { notification in
                     // Handle BLE errors if needed
@@ -89,31 +85,6 @@ struct TabNavigationView: View {
             .alert(isPresented: $bleManager.showErrorAlert) {
                 Alert(title: Text("Error"), message: Text(bleManager.errorMessage ?? "Unknown error occurred"), dismissButton: .default(Text("OK")))
             }
-            
-            // Top toolbar button for BLE and Info
-//            VStack {
-//                HStack {
-//                    Button(action: { showQRScanner = true }) {
-//                        Image(systemName: "qrcode.viewfinder")
-//                            .font(.system(size: 18))
-//                            .foregroundColor(.red)
-//                            .padding(8)
-//                    }
-//                    
-//                    Spacer()
-//                    
-//                    Button(action: { showInfo = true }) {
-//                        Image(systemName: "info.circle")
-//                            .font(.system(size: 18))
-//                            .foregroundColor(.red)
-//                            .padding(8)
-//                    }
-//                }
-//                .padding(.horizontal)
-//                .padding(.top, 8)
-//                
-//                Spacer()
-//            }
         }
         .background(Color.black.ignoresSafeArea())
     }

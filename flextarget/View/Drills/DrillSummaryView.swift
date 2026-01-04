@@ -5,6 +5,7 @@ import Foundation
 struct DrillSummaryView: View {
     let drillSetup: DrillSetup
     @State var summaries: [DrillRepeatSummary]
+    var competition: Competition? = nil
     @State private var originalScores: [UUID: Int] = [:]
     @State private var penaltyCounts: [UUID: Int] = [:]
     @State private var editingSummary: DrillRepeatSummary? = nil
@@ -318,6 +319,16 @@ struct DrillSummaryView: View {
             Text(NSLocalizedString("drill_result_summary_title", comment: "Drill result summary title"))
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundColor(.white)
+            
+            if competition != nil {
+                Text(NSLocalizedString("competition", comment: "Competition badge"))
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.red)
+                    .cornerRadius(4)
+            }
 
             Spacer()
         }
@@ -662,20 +673,6 @@ struct SummaryEditSheet: View {
                 }
                 
                 Spacer()
-
-//                Button(NSLocalizedString("submit_to_leaderboard_button", comment: "Submit to leaderboard button")) {
-//                    showAthletePicker = true
-//                }
-//                .foregroundColor(.white)
-//                .frame(maxWidth: .infinity)
-//                .padding()
-//                .background(Color.gray.opacity(0.2))
-//                .cornerRadius(8)
-//                .overlay(
-//                    RoundedRectangle(cornerRadius: 8)
-//                        .stroke(Color.red.opacity(0.8), lineWidth: 1)
-//                )
-//                .padding(.horizontal)
                 
                 HStack(spacing: 20) {
                     Button(NSLocalizedString("cancel_button", comment: "Cancel button text")) {

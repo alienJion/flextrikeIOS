@@ -251,6 +251,40 @@
 /* Tab Navigation */
 "history" = "Historial";
 "admin" = "Admin";
+"competition" = "Competición";
+
+/* Competition */
+"competition_login" = "Inicio de sesión de competición";
+"username" = "Nombre de usuario";
+"password" = "Contraseña";
+"login" = "Iniciar sesión";
+"login_hint" = "Cualquier nombre de usuario y contraseña funcionará para las pruebas.";
+"search_competition" = "Buscar por nombre o lugar";
+"all" = "Todos";
+"this_month" = "Este mes";
+"last_3_months" = "Últimos 3 meses";
+"competitions" = "Competiciones";
+"view_competitions" = "Ver competiciones";
+"shooters" = "Tiradores";
+"manage_shooters" = "Gestionar tiradores";
+"view_leaderboard" = "Ver tabla de clasificación";
+"untitled_competition" = "Competición sin título";
+"competition_info" = "Información de la competición";
+"competition_name" = "Nombre de la competición";
+"venue" = "Lugar";
+"date" = "Fecha";
+"change" = "Cambiar";
+"select_drill" = "Seleccionar ejercicio";
+"create_competition" = "Crear competición";
+"add_competition" = "Añadir competición";
+"cancel" = "Cancelar";
+"competition_details" = "Detalles de la competición";
+"results" = "Resultados";
+"no_results_yet" = "Aún no hay resultados";
+"start_competition_drill" = "Iniciar ejercicio de competición";
+"unknown_athlete" = "Atleta desconocido";
+"competition_mode" = "MODO COMPETICIÓN";
+"drill_editing_disabled_hint" = "La edición está desactivada porque este ejercicio tiene resultados o está vinculado a una competición.";
 
 /* Errores de envío al ranking */
 "error_title" = "Error";

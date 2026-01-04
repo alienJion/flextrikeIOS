@@ -251,6 +251,40 @@
 /* Tab Navigation */
 "history" = "历史";
 "admin" = "管理";
+"competition" = "竞赛";
+
+/* Competition */
+"competition_login" = "竞赛登录";
+"username" = "用户名";
+"password" = "密码";
+"login" = "登录";
+"login_hint" = "测试期间，任何用户名和密码均可。";
+"search_competition" = "按名称或地点搜索";
+"all" = "全部";
+"this_month" = "本月";
+"last_3_months" = "最近3个月";
+"competitions" = "竞赛列表";
+"view_competitions" = "查看竞赛";
+"shooters" = "射手";
+"manage_shooters" = "管理射手";
+"view_leaderboard" = "查看排行榜";
+"untitled_competition" = "未命名竞赛";
+"competition_info" = "竞赛信息";
+"competition_name" = "竞赛名称";
+"venue" = "地点";
+"date" = "日期";
+"change" = "更改";
+"select_drill" = "选择训练";
+"create_competition" = "创建竞赛";
+"add_competition" = "添加竞赛";
+"cancel" = "取消";
+"competition_details" = "竞赛详情";
+"results" = "结果";
+"no_results_yet" = "暂无结果";
+"start_competition_drill" = "开始竞赛训练";
+"unknown_athlete" = "未知运动员";
+"competition_mode" = "竞赛模式";
+"drill_editing_disabled_hint" = "由于此练习已有结果或已关联竞赛，编辑功能已禁用。";
 
 /* 排行榜提交错误 */
 "error_title" = "错误";

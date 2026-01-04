@@ -24,6 +24,24 @@ extension DrillSetup {
     @NSManaged public var pause: Int32
     @NSManaged public var targets: NSSet?
     @NSManaged public var results: NSSet?
+    @NSManaged public var competitions: NSSet?
+
+}
+
+// MARK: Generated accessors for competitions
+extension DrillSetup {
+
+    @objc(addCompetitionsObject:)
+    @NSManaged public func addToCompetitions(_ value: Competition)
+
+    @objc(removeCompetitionsObject:)
+    @NSManaged public func removeFromCompetitions(_ value: Competition)
+
+    @objc(addCompetitions:)
+    @NSManaged public func addToCompetitions(_ values: NSSet)
+
+    @objc(removeCompetitions:)
+    @NSManaged public func removeFromCompetitions(_ values: NSSet)
 
 }
 

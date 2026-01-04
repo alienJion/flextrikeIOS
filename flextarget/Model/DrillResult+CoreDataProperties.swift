@@ -25,6 +25,7 @@ extension DrillResult {
     @NSManaged public var adjustedHitZones: String?
     @NSManaged public var id: UUID?
     @NSManaged public var drillSetup: DrillSetup?
+    @NSManaged public var competition: Competition?
     @NSManaged public var leaderboardEntries: NSSet?
     @NSManaged public var shots: NSSet?
 

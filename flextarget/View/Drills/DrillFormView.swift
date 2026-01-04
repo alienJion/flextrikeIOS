@@ -71,7 +71,9 @@ struct DrillFormView: View {
     
     private var isEditingDisabled: Bool {
         guard let drillSetup = currentDrillSetup else { return false }
-        return (drillSetup.results?.count ?? 0) > 0
+        let hasResults = (drillSetup.results?.count ?? 0) > 0
+        let hasCompetitions = (drillSetup.competitions?.count ?? 0) > 0
+        return hasResults || hasCompetitions
     }
     
     init(bleManager: BLEManager, mode: DrillFormMode) {
@@ -139,6 +141,17 @@ struct DrillFormView: View {
                         }
                         
                         ScrollView {
+                            if isEditingDisabled {
+                                HStack {
+                                    Image(systemName: "lock.fill")
+                                    Text(NSLocalizedString("drill_editing_disabled_hint", comment: "Hint when drill editing is disabled"))
+                                }
+                                .font(.caption)
+                                .foregroundColor(.orange)
+                                .padding(.horizontal)
+                                .padding(.top, 8)
+                            }
+                            
                             // Grouped Section: Drill Name, Description, Add Video
                             VStack(spacing: 20) {
                                 DrillNameSectionView(drillName: $drillName, disabled: isEditingDisabled)
