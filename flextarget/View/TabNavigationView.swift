@@ -66,6 +66,7 @@ struct TabNavigationView: View {
                 .tag(3)
             }
             .tint(.red)
+            .preferredColorScheme(.dark)
             .onAppear {
                 errorObserver = NotificationCenter.default.addObserver(forName: NSNotification.Name("bleErrorOccurred"), object: nil, queue: .main) { notification in
                     // Handle BLE errors if needed

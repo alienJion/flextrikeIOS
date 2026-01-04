@@ -11,20 +11,23 @@ struct CompetitionTabView: View {
             
             if isCompetitionLoggedIn {
                 competitionMenuView
-                    .navigationTitle(NSLocalizedString("competition", comment: "Competition tab"))
-                    .navigationBarTitleDisplayMode(.inline)
             } else {
                 CompetitionLoginView()
             }
         }
+        .navigationTitle(NSLocalizedString("competition", comment: "Competition tab"))
+        .navigationBarTitleDisplayMode(.inline)
     }
     
     private var competitionMenuView: some View {
-        VStack(spacing: 20) {
-//            Spacer()
-            
+        VStack(spacing: 20) {            
             // Competitions Link
-            NavigationLink(destination: CompetitionListView()) {
+            NavigationLink(destination: 
+                ZStack {
+                    Color.black.ignoresSafeArea()
+                    CompetitionListView()
+                }
+            ) {
                 HStack {
                     Image(systemName: "trophy.fill")
                         .font(.title2)
@@ -49,12 +52,19 @@ struct CompetitionTabView: View {
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
             }
+            .frame(maxWidth: .infinity)
+            .background(Color.black.ignoresSafeArea())
             
             // Shooters/Athletes Link
-            NavigationLink(destination: AthletesManagementView()) {
+            NavigationLink(destination: 
+                ZStack {
+                    Color.black.ignoresSafeArea()
+                    AthletesManagementView()
+                }
+            ) {
                 HStack {
                     Image(systemName: "person.3.fill")
-                        .font(.title3)
+                        .font(.title2)
                         .foregroundColor(.red)
                     
                     VStack(alignment: .leading, spacing: 4) {
@@ -76,9 +86,16 @@ struct CompetitionTabView: View {
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
             }
+            .frame(maxWidth: .infinity)
+            .background(Color.black.ignoresSafeArea())
             
             // Leaderboard Link
-            NavigationLink(destination: LeaderboardView()) {
+            NavigationLink(destination: 
+                ZStack {
+                    Color.black.ignoresSafeArea()
+                    LeaderboardView()
+                }
+            ) {
                 HStack {
                     Image(systemName: "list.number")
                         .font(.title2)
@@ -103,6 +120,8 @@ struct CompetitionTabView: View {
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
             }
+            .frame(maxWidth: .infinity)
+            .background(Color.black.ignoresSafeArea())
             
             Spacer()
         }
