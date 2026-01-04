@@ -390,6 +390,33 @@ struct DrillResultView: View {
         }
     }
     
+    init(drillSetup: DrillSetup, drillResult: DrillResult) {
+        self.drillSetup = drillSetup
+        self.repeatSummary = nil
+        _isLiveDrill = State(initialValue: false)
+        
+        // Convert DrillResult shots to ShotData
+        var convertedShots: [ShotData] = []
+        if let shotSet = drillResult.shots as? Set<Shot> {
+            let decoder = JSONDecoder()
+            for shot in shotSet {
+                guard let data = shot.data else { continue }
+                if let shotData = try? decoder.decode(ShotData.self, from: data.data(using: .utf8) ?? Data()) {
+                    convertedShots.append(shotData)
+                }
+            }
+        }
+        convertedShots.sort { (a: ShotData, b: ShotData) in a.content.timeDiff < b.content.timeDiff }
+        
+        _shots = State(initialValue: convertedShots)
+        _drillStatus = State(initialValue: NSLocalizedString("drill_status_completed", comment: "Drill completed status"))
+        if let firstTarget = drillSetup.sortedTargets.first {
+            _selectedTargetKey = State(initialValue: firstTarget.id?.uuidString ?? UUID().uuidString)
+        } else {
+            _selectedTargetKey = State(initialValue: UUID().uuidString)
+        }
+    }
+    
     var body: some View {
         ZStack {
             GeometryReader { geometry in

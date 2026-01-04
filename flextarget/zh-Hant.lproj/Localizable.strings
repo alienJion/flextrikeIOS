@@ -238,6 +238,16 @@
 "cancel_button" = "取消";
 "save_button" = "儲存";
 
+/* History Tab */
+"all_drills" = "所有訓練";
+"all_time" = "全部時間";
+"past_week" = "過去一週";
+"past_month" = "過去一個月";
+"custom_date" = "自訂日期";
+"no_results" = "無結果";
+"no_results_hint" = "執行訓練以查看歷史記錄";
+"unknown_date" = "未知日期";
+
 /* 排行榜提交錯誤 */
 "error_title" = "錯誤";
 "duplicate_submission_title" = "重複提交";

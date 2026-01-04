@@ -239,6 +239,16 @@
 "cancel_button" = "キャンセル";
 "save_button" = "保存";
 
+/* History Tab */
+"all_drills" = "すべてのドリル";
+"all_time" = "全期間";
+"past_week" = "過去1週間";
+"past_month" = "過去1ヶ月";
+"custom_date" = "カスタム日付";
+"no_results" = "結果なし";
+"no_results_hint" = "ドリルを実行して履歴を表示";
+"unknown_date" = "不明な日付";
+
 /* ランキング送信エラー */
 "error_title" = "エラー";
 "duplicate_submission_title" = "重複送信";

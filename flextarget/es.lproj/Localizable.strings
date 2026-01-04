@@ -237,6 +237,16 @@
 "cancel_button" = "Cancelar";
 "save_button" = "Guardar";
 
+/* History Tab */
+"all_drills" = "Todos los ejercicios";
+"all_time" = "Todo el tiempo";
+"past_week" = "Semana pasada";
+"past_month" = "Mes pasado";
+"custom_date" = "Fecha personalizada";
+"no_results" = "Sin resultados";
+"no_results_hint" = "Realice ejercicios para ver el historial";
+"unknown_date" = "Fecha desconocida";
+
 /* Errores de envío al ranking */
 "error_title" = "Error";
 "duplicate_submission_title" = "Envío duplicado";

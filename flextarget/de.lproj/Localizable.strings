@@ -238,6 +238,16 @@
 "cancel_button" = "Abbrechen";
 "save_button" = "Speichern";
 
+/* History Tab */
+"all_drills" = "Alle Übungen";
+"all_time" = "Gesamte Zeit";
+"past_week" = "Letzte Woche";
+"past_month" = "Letzter Monat";
+"custom_date" = "Benutzerdefiniertes Datum";
+"no_results" = "Keine Ergebnisse";
+"no_results_hint" = "Führen Sie Übungen durch, um den Verlauf zu sehen";
+"unknown_date" = "Unbekanntes Datum";
+
 /* Rangliste - Einreichungsfehler */
 "error_title" = "Fehler";
 "duplicate_submission_title" = "Doppelte Einreichung";

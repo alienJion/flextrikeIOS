@@ -191,3 +191,38 @@
 "duplicate_submission_message" = "This drill is already submitted to the leaderboard for this athlete.";
 "missing_drill_result_id_message" = "Missing drill result id";
 "no_drill_result_found_message" = "No drill result found";
+
+/* Tab Navigation */
+"history" = "History";
+"admin" = "Admin";
+
+/* History Tab */
+"all_drills" = "All Drills";
+"all_time" = "All Time";
+"past_week" = "Past Week";
+"past_month" = "Past Month";
+"custom_date" = "Custom Date";
+"no_results" = "No Results";
+"no_results_hint" = "Perform drills to see history";
+"unknown_date" = "Unknown Date";
+
+/* Admin Tab */
+"admin_access" = "Admin Access";
+"admin_access_hint" = "Enter your authorization token to access admin features";
+"enter_token" = "Enter Token";
+"authorize" = "Authorize";
+"invalid_token" = "Invalid token. Please try again.";
+"save_token_error" = "Error saving token";
+"logout" = "Logout";
+"logout_confirm" = "Are you sure you want to logout?";
+"drill_submission" = "Drill Submission";
+"no_drills_to_submit" = "No Drills to Submit";
+"no_drills_hint" = "Complete and record drills to submit to leaderboard";
+"select_drill_result" = "Select Drill Result";
+"choose_drill" = "Choose a drill result";
+"select_athlete" = "Select Athlete";
+"choose_athlete" = "Choose an athlete";
+"no_athletes" = "No athletes yet. Add one in the Athletes section.";
+"submit_to_leaderboard" = "Submit to Leaderboard";
+"submission_success" = "Successfully submitted to leaderboard!";
+"submission_error" = "Failed to submit. Please try again.";

@@ -42,21 +42,9 @@ struct flextargetApp: App {
                         }
                     }
             } else {
-//                OrientationView() // Replace with your main view
-//                    .environmentObject(bleManager)
-                NavigationView {
-                    DrillMainPageView()
-                        .environmentObject(BLEManager.shared)
-                        .environment(\.managedObjectContext, persistenceController.container.viewContext)
-                }
-                .navigationViewStyle(.stack)
-                .background(Color.black)
-//                NavigationStack {
-//                    DrillListView(bleManager: BLEManager.shared)
-//                        .environment(\.managedObjectContext, persistenceController.container.viewContext)
-//                }
-//                .environmentObject(bleManager)
-                .tint(.red)
+                TabNavigationView()
+                    .environmentObject(BLEManager.shared)
+                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
             }
             }
             .environment(\.managedObjectContext, persistenceController.container.viewContext)
