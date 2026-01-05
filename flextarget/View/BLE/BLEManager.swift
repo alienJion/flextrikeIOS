@@ -69,6 +69,7 @@ protocol BLEManagerProtocol {
     var isConnected: Bool { get }
     func write(data: Data, completion: @escaping (Bool) -> Void)
     func writeJSON(_ jsonString: String)
+    func getAuthData(completion: @escaping (Result<String, Error>) -> Void)
 }
 
 // Backwards-compatibility: some views reference an older protocol name `ConnectSmartTargetBLEProtocol`.
@@ -133,6 +134,7 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
     
     // Add this property to BLEManager to store the completion handler
     private var writeCompletion: ((Bool) -> Void)?
+    private var authDataCompletion: ((Result<String, Error>) -> Void)?
     
     // Buffer to accumulate split messages until "\r\n" is received
     private var messageBuffer = Data()
@@ -522,6 +524,18 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
                         notificationHandled = true
                     }
                     
+                    // Handle auth_data response
+                    if let type = json["type"] as? String, type == "auth_data",
+                       let content = json["content"] as? String {
+                        print("Received auth_data: \(content)")
+                        if let completion = authDataCompletion {
+                            authDataCompletion = nil
+                            completion(.success(content))
+                        }
+                        NotificationCenter.default.post(name: .bleAuthDataReceived, object: nil, userInfo: ["content": content])
+                        notificationHandled = true
+                    }
+                    
                     // Handle incoming netlink device_list response and save globally
                     if let type = json["type"] as? String, type == "netlink",
                        let action = json["action"] as? String, action == "device_list",
@@ -716,6 +730,24 @@ extension BLEManager: BLEManagerProtocol {
         }
         #endif
     }
+    
+    func getAuthData(completion: @escaping (Result<String, Error>) -> Void) {
+        #if targetEnvironment(simulator)
+        // Simulator: Mock auth data
+        print("Simulator: Mock getting auth data")
+        let mockContent = "e1pvpo09DrIQjd5VNJ5vRGuJ0MQT7siRKIn75iVZoQ1fsW6+VBzWP+6xYp92DiH5ju5LHLd8gQQommj8OrADYFZL2LvFprK2YA1mUF90aZA17bmriiLsz+MbtoxcJAP7M9U+YdcpYX4WIipifrIpk9Om23+TJO266W8kTAK+LZb6MdiZdKcQJ166CH/lU7t3oItronL2637R8SGglgkVSIi8DIy4hyCh0JQ4OZb5TLUvQoTfwa0VwoQjQXCNZK1ZkMzr56rIyh5qg89lH0Dsr1KZuPUVgfj3TkG3KbIfBoRMY89SzuLBCSdgoNcSaUANeswLwxTfNk7m++7xh/vWFgAGNcFLxjqrMdwV7BLl0hd6Qo2hIp+XCHcVYC9XCpAbwPEhoCQ1YNwV98cUVBZsWo1EgU1czr41f/wQfVvv0jeygVbwJI0S48LPyIMsaxjZIDKMkl8y3+FxOgLz3liRlhDdWKHaxs1ttlupAbf7+He17JPs+WXbXyth0alq1J3BMv1Cc91P2xG2O2migZdHHbhUbSD0ZM1mdkAAT6XUI5IpdOCry22AQm0c03D/xgyF50EY/nkxf3ARpxsL+Xh4yK7KsThEaB6eI3Z+t+mHJcBTjkDh5fYuZUn1utHKIjtxe5uhO9pp78SbC+L6yP0JwqZoWIhhhVxS4XaeNU8Qvm4"
+        completion(.success(mockContent))
+        #else
+        guard isConnected else {
+            completion(.failure(BLEError.disconnected("Not connected to device")))
+            return
+        }
+        authDataCompletion = completion
+        let timestamp = Int(Date().timeIntervalSince1970)
+        let jsonString = "{\"action\": \"get_auth_data\", \"timestamp\": \(timestamp)}"
+        writeJSON(jsonString)
+        #endif
+    }
 }
 
 // Add a notification name for BLE state updates
@@ -727,4 +759,5 @@ extension Notification.Name {
     static let bleImageChunkReceived = Notification.Name("bleImageChunkReceived")
     static let bleErrorOccurred = Notification.Name("bleErrorOccurred")
     static let drillExecutionCompleted = Notification.Name("drillExecutionCompleted")
+    static let bleAuthDataReceived = Notification.Name("bleAuthDataReceived")
 }

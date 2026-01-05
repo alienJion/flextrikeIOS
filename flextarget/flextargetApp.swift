@@ -48,6 +48,7 @@ struct flextargetApp: App {
 
     @State private var showLaunchScreen = true
     @StateObject var bleManager = BLEManager.shared
+    @StateObject var deviceAuthManager = DeviceAuthManager.shared
 
     var body: some Scene {
         WindowGroup {

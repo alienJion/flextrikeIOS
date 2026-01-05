@@ -308,3 +308,13 @@
 "hit_area_circlearea" = "擊倒";
 "hit_area_standarea" = "擊倒";
 "hit_area_popperzone" = "擊倒";
+
+/* User Management */
+"logout" = "登出";
+"logout_confirm" = "您確定要登出嗎？";
+"user_logout" = "用戶登出";
+"user_login" = "用戶登錄";
+"mobile_number" = "手機號碼";
+"password" = "密碼";
+"login" = "登錄";
+"login_title" = "登錄";

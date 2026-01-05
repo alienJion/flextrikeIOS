@@ -2,17 +2,19 @@ import SwiftUI
 import CoreData
 
 struct CompetitionTabView: View {
-    @AppStorage("isCompetitionLoggedIn") private var isCompetitionLoggedIn = false
     @Environment(\.managedObjectContext) var managedObjectContext
+    @ObservedObject var authManager = AuthManager.shared
     
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
             
-            if isCompetitionLoggedIn {
+            if authManager.isAuthenticated {
                 competitionMenuView
             } else {
-                CompetitionLoginView()
+                LoginView(onDismiss: {
+                    // Handle dismiss if needed
+                })
             }
         }
         .navigationTitle(NSLocalizedString("competition", comment: "Competition tab"))

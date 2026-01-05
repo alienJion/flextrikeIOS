@@ -13,14 +13,15 @@ struct AdminTabView: View {
 struct AdminContentView: View {
     @Environment(\.managedObjectContext) var managedObjectContext
     @State private var selectedAdminTab = 0
-    @State private var showLogoutAlert = false
     @State private var showMainMenu = true
     @State private var showDeviceManagement = false
     @State private var showLoginFlow = false
     @State private var showInformation = false
+    @State private var showUserProfile = false
     @State private var scannedPeripheralName: String? = nil
     @State private var showConnectView = false
     @ObservedObject var bleManager = BLEManager.shared
+    @ObservedObject var authManager = AuthManager.shared
     
     let persistenceController = PersistenceController.shared
     
@@ -37,7 +38,15 @@ struct AdminContentView: View {
             } else if showDeviceManagement {
                 deviceManagementView
             } else if showLoginFlow {
-                loginFlowView
+                LoginView(onDismiss: {
+                    showLoginFlow = false
+                    showMainMenu = true
+                })
+            } else if showUserProfile {
+                UserProfileView(onDismiss: {
+                    showUserProfile = false
+                    showMainMenu = true
+                })
             } else if showInformation {
                 InformationPage()
             }
@@ -74,27 +83,41 @@ struct AdminContentView: View {
                         showDeviceManagement = true
                     }
                     
-                    // Login
-                    adminMenuButton(
-                        icon: "person.circle",
-                        title: NSLocalizedString("login", comment: "Login"),
-                        description: NSLocalizedString("user_login", comment: "User login"),
-                        isActive: false
-                    ) {
-                        showMainMenu = false
-                        showLoginFlow = true
+                    // User Management
+                    if authManager.isAuthenticated {
+                        // User Profile
+                        adminMenuButton(
+                            icon: "person.circle",
+                            title: authManager.currentUser?.username ?? "User Profile",
+                            description: NSLocalizedString("manage_profile", comment: "Manage user profile"),
+                            isActive: false
+                        ) {
+                            showMainMenu = false
+                            showUserProfile = true
+                        }
+                    } else {
+                        // Login
+                        adminMenuButton(
+                            icon: "person.circle",
+                            title: NSLocalizedString("login", comment: "Login"),
+                            description: NSLocalizedString("user_login", comment: "User login"),
+                            isActive: false
+                        ) {
+                            showMainMenu = false
+                            showLoginFlow = true
+                        }
                     }
                     
                     // Information
-                    adminMenuButton(
-                        icon: "info.circle",
-                        title: NSLocalizedString("information", comment: "Information"),
-                        description: NSLocalizedString("app_info", comment: "App information"),
-                        isActive: false
-                    ) {
-                        showMainMenu = false
-                        showInformation = true
-                    }
+                    // adminMenuButton(
+                    //     icon: "info.circle",
+                    //     title: NSLocalizedString("information", comment: "Information"),
+                    //     description: NSLocalizedString("app_info", comment: "App information"),
+                    //     isActive: false
+                    // ) {
+                    //     showMainMenu = false
+                    //     showInformation = true
+                    // }
                 }
                 .padding(12)
             }
@@ -192,46 +215,6 @@ struct AdminContentView: View {
                 }
             }
         }
-    }
-    
-    private var loginFlowView: some View {
-        VStack {
-            HStack {
-                Button(action: { showLoginFlow = false; showMainMenu = true }) {
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(.red)
-                }
-                Spacer()
-                Text(NSLocalizedString("login", comment: "Login"))
-                    .font(.headline)
-                    .foregroundColor(.white)
-                Spacer()
-                Color.clear.frame(width: 44)
-            }
-            .padding(12)
-            .background(Color.gray.opacity(0.1))
-            
-            Spacer()
-            
-            VStack(spacing: 16) {
-                Image(systemName: "person.circle")
-                    .font(.system(size: 64))
-                    .foregroundColor(.red)
-                
-                Text("Mock User Login")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                Text("This is a placeholder for user login functionality")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(24)
-            
-            Spacer()
-        }
-        .background(Color.black.ignoresSafeArea())
     }
     
     private func adminMenuButton(

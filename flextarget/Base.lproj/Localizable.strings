@@ -261,3 +261,12 @@
 "submit_to_leaderboard" = "Submit to Leaderboard";
 "submission_success" = "Successfully submitted to leaderboard!";
 "submission_error" = "Failed to submit. Please try again.";
+"manage_profile" = "Manage user profile";
+"user_logout" = "User logout";
+
+/* User Management */
+"user_login" = "User Login";
+"mobile_number" = "Mobile Number";
+"password" = "Password";
+"login" = "Login";
+"login_title" = "Login";

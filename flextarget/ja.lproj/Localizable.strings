@@ -309,3 +309,13 @@
 "hit_area_circlearea" = "ノックダウン";
 "hit_area_standarea" = "ノックダウン";
 "hit_area_popperzone" = "ノックダウン";
+
+/* User Management */
+"logout" = "ログアウト";
+"logout_confirm" = "ログアウトしてもよろしいですか？";
+"user_logout" = "ユーザーログアウト";
+"user_login" = "ユーザーログイン";
+"mobile_number" = "携帯電話番号";
+"password" = "パスワード";
+"login" = "ログイン";
+"login_title" = "ログイン";
