@@ -286,7 +286,19 @@
 "unknown_athlete" = "未知運動員";
 "competition_mode" = "競賽模式";
 "drill_editing_disabled_hint" = "由於此練習已有結果或已關聯競賽，編輯功能已禁用。";
-
+/* AdminTabView - 管理菜單 */
+"device_management" = "設備管理";
+"device_connected" = "設備已連接";
+"connect_device" = "連接到設備";
+"disconnect" = "斷開連接";
+"login" = "登錄";
+"user_login" = "用戶登錄";
+"information" = "信息";
+"app_info" = "應用信息";
+"connected_device" = "已連接設備";
+"manage_connection" = "管理連接";
+"scan_qr_code" = "掃描二維碼";
+"scan_device_qr" = "掃描設備二維碼";
 /* 排行榜提交錯誤 */
 "error_title" = "錯誤";
 "duplicate_submission_title" = "重複提交";

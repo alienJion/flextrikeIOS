@@ -287,7 +287,19 @@
 "unknown_athlete" = "不明な選手";
 "competition_mode" = "大会モード";
 "drill_editing_disabled_hint" = "このドリルには結果があるか、大会に関連付けられているため、編集は無効になっています。";
-
+/* AdminTabView - 管理メニュー */
+"device_management" = "デバイス管理";
+"device_connected" = "デバイス接続済み";
+"connect_device" = "デバイスに接続";
+"disconnect" = "切断";
+"login" = "ログイン";
+"user_login" = "ユーザーログイン";
+"information" = "情報";
+"app_info" = "アプリ情報";
+"connected_device" = "接続済みデバイス";
+"manage_connection" = "接続を管理";
+"scan_qr_code" = "QRコードをスキャン";
+"scan_device_qr" = "デバイスQRコードをスキャン";
 /* ランキング送信エラー */
 "error_title" = "エラー";
 "duplicate_submission_title" = "重複送信";

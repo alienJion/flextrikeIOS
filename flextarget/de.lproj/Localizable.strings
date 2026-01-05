@@ -287,6 +287,20 @@
 "competition_mode" = "WETTBEWERBSMODUS";
 "drill_editing_disabled_hint" = "Die Bearbeitung ist deaktiviert, da diese Übung Ergebnisse hat oder mit einem Wettbewerb verknüpft ist.";
 
+/* AdminTabView - Admin Menü */
+"device_management" = "Geräteverwaltung";
+"device_connected" = "Gerät verbunden";
+"connect_device" = "Mit einem Gerät verbinden";
+"disconnect" = "Trennen";
+"login" = "Anmelden";
+"user_login" = "Benutzeranmeldung";
+"information" = "Informationen";
+"app_info" = "App-Informationen";
+"connected_device" = "Verbundenes Gerät";
+"manage_connection" = "Verbindung verwalten";
+"scan_qr_code" = "QR-Code scannen";
+"scan_device_qr" = "Geräte-QR-Code scannen";
+
 /* Rangliste - Einreichungsfehler */
 "error_title" = "Fehler";
 "duplicate_submission_title" = "Doppelte Einreichung";

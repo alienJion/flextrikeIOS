@@ -286,6 +286,20 @@
 "competition_mode" = "MODO COMPETICIÓN";
 "drill_editing_disabled_hint" = "La edición está desactivada porque este ejercicio tiene resultados o está vinculado a una competición.";
 
+/* AdminTabView - Menú Admin */
+"device_management" = "Gestión de dispositivos";
+"device_connected" = "Dispositivo conectado";
+"connect_device" = "Conectar a un dispositivo";
+"disconnect" = "Desconectar";
+"login" = "Iniciar sesión";
+"user_login" = "Inicio de sesión de usuario";
+"information" = "Información";
+"app_info" = "Información de la aplicación";
+"connected_device" = "Dispositivo conectado";
+"manage_connection" = "Administrar conexión";
+"scan_qr_code" = "Escanear código QR";
+"scan_device_qr" = "Escanear código QR del dispositivo";
+
 /* Errores de envío al ranking */
 "error_title" = "Error";
 "duplicate_submission_title" = "Envío duplicado";

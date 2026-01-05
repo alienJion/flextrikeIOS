@@ -285,7 +285,19 @@
 "unknown_athlete" = "未知运动员";
 "competition_mode" = "竞赛模式";
 "drill_editing_disabled_hint" = "由于此练习已有结果或已关联竞赛，编辑功能已禁用。";
-
+/* AdminTabView - 管理菜单 */
+"device_management" = "设备管理";
+"device_connected" = "设备已连接";
+"connect_device" = "连接到设备";
+"disconnect" = "断开连接";
+"login" = "登录";
+"user_login" = "用户登录";
+"information" = "信息";
+"app_info" = "应用信息";
+"connected_device" = "已连接设备";
+"manage_connection" = "管理连接";
+"scan_qr_code" = "扫描二维码";
+"scan_device_qr" = "扫描设备二维码";
 /* 排行榜提交错误 */
 "error_title" = "错误";
 "duplicate_submission_title" = "重复提交";
