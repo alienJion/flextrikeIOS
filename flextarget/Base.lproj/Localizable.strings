@@ -297,3 +297,9 @@
 "confirm_password" = "Confirm New Password";
 "profile_updated_success" = "Profile updated successfully";
 "username" = "Username";
+
+/* Competition Results Sync */
+"sync_results" = "Sync Results";
+"sync_error_title" = "Sync Error";
+"submitted" = "Submitted";
+"local_unsubmitted" = "Local/Unsubmitted";

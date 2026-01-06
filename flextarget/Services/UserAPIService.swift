@@ -46,16 +46,19 @@ class UserAPIService {
     }
     
     struct DeviceRelateData: Codable {
+        let device_uuid: String
         let device_token: String
         let expiration: Date?
         
         enum CodingKeys: String, CodingKey {
+            case device_uuid
             case device_token
             case expiration
         }
         
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
+            device_uuid = try container.decode(String.self, forKey: .device_uuid)
             device_token = try container.decode(String.self, forKey: .device_token)
             
             // Try to decode expiration as either Int (timestamp) or Date

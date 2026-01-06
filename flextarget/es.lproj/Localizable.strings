@@ -348,3 +348,9 @@
 "confirm_password" = "Confirmar Nueva Contraseña";
 "profile_updated_success" = "Perfil actualizado correctamente";
 "username" = "Nombre de Usuario";
+
+/* Competition Results Sync */
+"sync_results" = "Sincronizar Resultados";
+"sync_error_title" = "Error de Sincronización";
+"submitted" = "Enviado";
+"local_unsubmitted" = "Local/No Enviado";

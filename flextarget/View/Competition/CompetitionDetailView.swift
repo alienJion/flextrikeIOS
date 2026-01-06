@@ -13,6 +13,9 @@ struct CompetitionDetailView: View {
     @State private var navigateToDrillSummary = false
     @State private var showAckTimeoutAlert = false
     @State private var selectedResult: DrillResult?
+    @State private var isLoadingSyncResults = false
+    @State private var lastSyncError: String?
+    @State private var showSyncError = false
     
     var body: some View {
         ZStack {
@@ -49,6 +52,33 @@ struct CompetitionDetailView: View {
                 }
                 .padding()
                 .background(Color.white.opacity(0.1))
+                
+                // Sync Button
+                HStack(spacing: 12) {
+                    if isLoadingSyncResults {
+                        ProgressView()
+                            .tint(.red)
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    
+                    Button(action: {
+                        Task {
+                            await syncCompetitionResults()
+                        }
+                    }) {
+                        Text(NSLocalizedString("sync_results", comment: "Sync results from server"))
+                            .font(.caption)
+                            .foregroundColor(.white)
+                    }
+                    .disabled(isLoadingSyncResults)
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .background(Color.red.opacity(0.2))
+                .cornerRadius(6)
+                .padding(.horizontal)
+                .padding(.top, 8)
                 
                 // Results List
                 List {
@@ -140,6 +170,86 @@ struct CompetitionDetailView: View {
         }
         .alert(isPresented: $showAckTimeoutAlert) {
             Alert(title: Text(NSLocalizedString("error_title", comment: "")), message: Text(NSLocalizedString("ack_timeout_message", comment: "")), dismissButton: .default(Text(NSLocalizedString("ok", comment: ""))))
+        }
+        .alert(isPresented: $showSyncError) {
+            Alert(title: Text(NSLocalizedString("sync_error_title", comment: "Sync Error")), message: Text(lastSyncError ?? ""), dismissButton: .default(Text(NSLocalizedString("ok_button", comment: "OK"))))
+        }
+        .onAppear {
+            // Load competition results from server on view appear
+            Task {
+                await syncCompetitionResults()
+            }
+        }
+    }
+    
+    private func syncCompetitionResults() async {
+        isLoadingSyncResults = true
+        
+        do {
+            // Get required parameters
+            guard let gameType = competition.id?.uuidString else {
+                throw NSError(domain: "CompetitionDetailView", code: -1, userInfo: [NSLocalizedDescriptionKey: "Competition ID missing"])
+            }
+            
+            guard let drillSetup = competition.drillSetup else {
+                throw NSError(domain: "CompetitionDetailView", code: -1, userInfo: [NSLocalizedDescriptionKey: "Drill setup not found"])
+            }
+            
+            let gameVer = drillSetup.mode ?? "default"
+            
+            // Fetch results from server using device UUID from DeviceAuthManager
+            let listResponse = try await CompetitionResultAPIService.shared.getGamePlayList(
+                gameType: gameType,
+                gameVer: gameVer
+            )
+            
+            // Sync remote results with local results
+            await DispatchQueue.main.async {
+                self.syncRemoteResultsWithLocal(remoteResults: listResponse.rows)
+            }
+        } catch {
+            lastSyncError = error.localizedDescription
+            showSyncError = true
+        }
+        
+        isLoadingSyncResults = false
+    }
+    
+    private func syncRemoteResultsWithLocal(remoteResults: [CompetitionResultAPIService.GamePlayRow]) {
+        // Get all local results for this competition
+        let localResults = (competition.results?.allObjects as? [DrillResult]) ?? []
+        
+        // Mark local results that are submitted
+        let localSubmittedSet = Set(localResults.compactMap { $0.serverPlayId })
+        
+        // Process remote results - find matches with local results
+        for remoteResult in remoteResults {
+            // Check if this remote result matches an existing local result
+            if let matchingLocalResult = localResults.first(where: { $0.serverPlayId == remoteResult.play_uuid }) {
+                // Already linked, update submission status if needed
+                if matchingLocalResult.submittedAt == nil {
+                    matchingLocalResult.submittedAt = Date()
+                }
+            } else {
+                // New remote result that doesn't have a local match
+                // Could optionally create a local result for remote-only submissions
+                // For now, we just track them as remote
+            }
+        }
+        
+        // Mark local results that haven't been submitted
+        for localResult in localResults {
+            if localResult.serverPlayId == nil {
+                // This is a local-only result (not submitted yet)
+                // The UI can show this as "local/unsubmitted" status
+            }
+        }
+        
+        // Save changes
+        do {
+            try viewContext.save()
+        } catch {
+            print("Failed to save sync changes: \(error)")
         }
     }
     
@@ -246,9 +356,30 @@ struct CompetitionResultRow: View {
                         .foregroundColor(.gray)
                 }
                 
-                Text(result.date ?? Date(), style: .time)
-                    .font(.caption)
-                    .foregroundColor(.gray)
+                HStack(spacing: 8) {
+                    Text(result.date ?? Date(), style: .time)
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    
+                    // Show sync status badge
+                    if result.serverPlayId != nil {
+                        HStack(spacing: 2) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption2)
+                            Text(NSLocalizedString("submitted", comment: "Submitted"))
+                                .font(.caption2)
+                        }
+                        .foregroundColor(.green)
+                    } else {
+                        HStack(spacing: 2) {
+                            Image(systemName: "circle.dotted")
+                                .font(.caption2)
+                            Text(NSLocalizedString("local_unsubmitted", comment: "Local/Unsubmitted"))
+                                .font(.caption2)
+                        }
+                        .foregroundColor(.orange)
+                    }
+                }
             }
             
             Spacer()

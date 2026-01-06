@@ -347,3 +347,9 @@
 "confirm_password" = "確認新密碼";
 "profile_updated_success" = "資料更新成功";
 "username" = "用戶名稱";
+
+/* Competition Results Sync */
+"sync_results" = "同步結果";
+"sync_error_title" = "同步錯誤";
+"submitted" = "已提交";
+"local_unsubmitted" = "本機/未提交";

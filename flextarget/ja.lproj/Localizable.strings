@@ -348,3 +348,9 @@
 "confirm_password" = "新しいパスワードを確認";
 "profile_updated_success" = "プロフィールが正常に更新されました";
 "username" = "ユーザー名";
+
+/* Competition Results Sync */
+"sync_results" = "結果を同期";
+"sync_error_title" = "同期エラー";
+"submitted" = "送信済み";
+"local_unsubmitted" = "ローカル/未送信";

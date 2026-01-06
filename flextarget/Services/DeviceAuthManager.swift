@@ -4,11 +4,13 @@ import Combine
 class DeviceAuthManager: ObservableObject {
     static let shared = DeviceAuthManager()
     
+    @Published var deviceUUID: String?
     @Published var deviceToken: String?
     @Published var deviceTokenExpiration: Date?
     @Published var isObtainingToken: Bool = false
     
     private let userDefaults = UserDefaults.standard
+    private let deviceUUIDKey = "deviceUUID"
     private let deviceTokenKey = "deviceToken"
     private let deviceTokenExpirationKey = "deviceTokenExpiration"
     private var cancellables = Set<AnyCancellable>()
@@ -16,7 +18,7 @@ class DeviceAuthManager: ObservableObject {
     private weak var bleManager: BLEManager?
     
     private init() {
-        loadCachedDeviceToken()
+        loadCachedDeviceAuth()
         setupBLEConnectionListener()
     }
     
@@ -108,12 +110,14 @@ class DeviceAuthManager: ObservableObject {
             print("  - device_token: \(response.device_token.prefix(20))...")
             print("  - expiration: \(response.expiration?.description ?? "nil")")
             
-            // Step 3: Cache the device token
+            // Step 3: Cache the device UUID and token
             DispatchQueue.main.async {
+                self.deviceUUID = response.device_uuid
                 self.deviceToken = response.device_token
                 self.deviceTokenExpiration = response.expiration
-                self.cacheDeviceToken(token: response.device_token, expiration: response.expiration)
-                print("DeviceAuthManager: Device token obtained and cached successfully")
+                self.cacheDeviceAuth(uuid: response.device_uuid, token: response.device_token, expiration: response.expiration)
+                print("DeviceAuthManager: Device UUID and token obtained and cached successfully")
+                print("  - Device UUID: \(response.device_uuid)")
             }
         } catch {
             print("DeviceAuthManager: Failed to obtain device token")
@@ -141,16 +145,24 @@ class DeviceAuthManager: ObservableObject {
         }
     }
     
-    // MARK: - Token Caching
+    // MARK: - Device Auth Caching
     
-    private func cacheDeviceToken(token: String, expiration: Date?) {
+    private func cacheDeviceAuth(uuid: String, token: String, expiration: Date?) {
+        userDefaults.set(uuid, forKey: deviceUUIDKey)
         userDefaults.set(token, forKey: deviceTokenKey)
         if let expiration = expiration {
             userDefaults.set(expiration, forKey: deviceTokenExpirationKey)
         }
     }
     
-    private func loadCachedDeviceToken() {
+    private func loadCachedDeviceAuth() {
+        // Load device UUID
+        if let uuid = userDefaults.string(forKey: deviceUUIDKey) {
+            deviceUUID = uuid
+            print("DeviceAuthManager: Loaded cached device UUID: \(uuid)")
+        }
+        
+        // Load device token
         guard let token = userDefaults.string(forKey: deviceTokenKey) else {
             return
         }
@@ -163,14 +175,16 @@ class DeviceAuthManager: ObservableObject {
             print("DeviceAuthManager: Loaded cached device token")
         } else {
             // Token expired, remove it
-            clearCachedDeviceToken()
+            clearCachedDeviceAuth()
         }
     }
     
-    private func clearCachedDeviceToken() {
+    private func clearCachedDeviceAuth() {
+        userDefaults.removeObject(forKey: deviceUUIDKey)
         userDefaults.removeObject(forKey: deviceTokenKey)
         userDefaults.removeObject(forKey: deviceTokenExpirationKey)
         DispatchQueue.main.async {
+            self.deviceUUID = nil
             self.deviceToken = nil
             self.deviceTokenExpiration = nil
         }
@@ -200,7 +214,8 @@ class DeviceAuthManager: ObservableObject {
     // MARK: - Reset on Logout
     
     func clearDeviceAuth() {
-        clearCachedDeviceToken()
+        clearCachedDeviceAuth()
+        deviceUUID = nil
         deviceToken = nil
         deviceTokenExpiration = nil
     }
