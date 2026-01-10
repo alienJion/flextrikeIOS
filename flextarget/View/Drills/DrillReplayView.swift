@@ -483,18 +483,33 @@ struct DrillReplayView: View {
     private func updateSelectionForTime(_ time: Double) {
         // Find the most recent shot before or at this time
         let pastShots = shotTimelineData.filter { $0.time <= time }
-        if let lastShot = pastShots.last {
-            if selectedShotIndex != lastShot.index {
-                selectedShotIndex = lastShot.index
-                pulsingShotIndex = lastShot.index
+        if let lastShotTuple = pastShots.last, shots.indices.contains(lastShotTuple.index) {
+            let lastShot = shots[lastShotTuple.index]
+            if selectedShotIndex != lastShotTuple.index {
+                selectedShotIndex = lastShotTuple.index
+                pulsingShotIndex = lastShotTuple.index
                 triggerPulse()
                 
                 if isPlaying {
                     playShotSound()
                 }
                 
-                // Update target key based on active target at this time
-                if let activeId = activeTargetId(forTime: time) {
+                // Enhancement: Match shot targetType to variant targetType
+                // This auto-switches the variant tab when a different type of shot is fired
+                let shotTargetType = lastShot.content.targetType.isEmpty ? "hostage" : lastShot.content.targetType
+                if let matchingDisplay = targetDisplays.first(where: { display in
+                    // If variant exists, match its targetType
+                    if let variant = display.variant {
+                        return variant.targetType == shotTargetType
+                    }
+                    // Fallback: match by icon for non-variant targets
+                    return display.icon == shotTargetType
+                }) {
+                    if selectedTargetKey != matchingDisplay.id {
+                        selectedTargetKey = matchingDisplay.id
+                    }
+                } else if let activeId = activeTargetId(forTime: time) {
+                    // Fallback to time-based selection if no type match
                     if selectedTargetKey != activeId {
                         selectedTargetKey = activeId
                     }
@@ -503,6 +518,14 @@ struct DrillReplayView: View {
         } else {
             selectedShotIndex = nil
             pulsingShotIndex = nil
+            
+            // Enhancement: Switch on endTime via activeTargetId
+            // When no shots are being fired, automatically switch variants when endTime is reached
+            if let activeId = activeTargetId(forTime: time) {
+                if selectedTargetKey != activeId {
+                    selectedTargetKey = activeId
+                }
+            }
         }
     }
     
