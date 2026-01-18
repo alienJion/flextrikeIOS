@@ -79,14 +79,16 @@ class CompetitionRepository @Inject constructor(
         name: String,
         venue: String? = null,
         date: Date = Date(),
-        description: String? = null
+        description: String? = null,
+        drillSetupId: UUID? = null
     ): Result<UUID> = withContext(Dispatchers.IO) {
         try {
             val competition = CompetitionEntity(
                 name = name,
                 venue = venue,
                 date = date,
-                description = description
+                description = description,
+                drillSetupId = drillSetupId
             )
             competitionDao.insertCompetition(competition)
             Log.d(TAG, "Competition created: ${competition.id}")

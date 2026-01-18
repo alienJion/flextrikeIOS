@@ -1,9 +1,9 @@
-package com.flextarget.android.presentation.viewmodel
+package com.flextarget.android.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.flextarget.android.data.repository.OTAHistoryEntry
-import com.flextarget.android.data.repository.OTAProgress
 import com.flextarget.android.data.repository.OTARepository
 import com.flextarget.android.data.repository.OTAState
 import kotlinx.coroutines.flow.SharingStarted
@@ -42,6 +42,10 @@ class OTAViewModel(
     private val otaRepository: OTARepository
 ) : ViewModel() {
     
+    init {
+        Log.d("OTAViewModel", "OTAViewModel initialized")
+    }
+    
     /**
      * Current OTA UI state
      */
@@ -69,13 +73,17 @@ class OTAViewModel(
      * Check for available updates
      */
     fun checkForUpdates(deviceToken: String) {
+        Log.d("OTAViewModel", "checkForUpdates called with deviceToken: ${deviceToken.take(20)}...")
         viewModelScope.launch {
+            Log.d("OTAViewModel", "Launching checkForUpdates coroutine")
             val result = otaRepository.checkForUpdates(deviceToken)
             result.onSuccess { versionInfo ->
+                Log.d("OTAViewModel", "checkForUpdates success: versionInfo = $versionInfo")
                 if (versionInfo != null) {
                     // Update available, show to user
                 }
-            }.onFailure {
+            }.onFailure { error ->
+                Log.e("OTAViewModel", "checkForUpdates failed: ${error.message}", error)
                 // Handle error
             }
         }

@@ -267,7 +267,7 @@ class CompetitionResultAPIService {
     func getGameRanking(
         gameType: String,
         namespace: String = "default",
-        gameVer: String = "1.0",
+        gameVer: String = "1.0.0",
         page: Int = 1,
         limit: Int = 30,
         viewContext: NSManagedObjectContext? = nil

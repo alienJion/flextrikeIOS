@@ -18,6 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.flextarget.android.data.local.entity.CompetitionEntity
+import com.flextarget.android.ui.viewmodel.CompetitionViewModel
 
 // Placeholder data class for Ranking
 data class RankingRow(
@@ -27,13 +31,16 @@ data class RankingRow(
     val shotCount: Int
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LeaderboardView(onBack: () -> Unit) {
-    val competitions = remember { mutableStateOf(emptyList<CompetitionItem>()) }
-    val selectedCompetition = remember { mutableStateOf<CompetitionItem?>(null) }
+fun LeaderboardView(
+    onBack: () -> Unit,
+    viewModel: CompetitionViewModel
+) {
+    val uiState by viewModel.competitionUiState.collectAsState()
     val rankingRows = remember { mutableStateOf(emptyList<RankingRow>()) }
-    val isLoading = remember { mutableStateOf(false) }
-    val errorMessage = remember { mutableStateOf<String?>(null) }
+    val isLoading = uiState.isLoading
+    val errorMessage = uiState.error
 
     Column(
         modifier = Modifier
@@ -56,14 +63,13 @@ fun LeaderboardView(onBack: () -> Unit) {
         )
 
         // Competition Selector
-        if (competitions.value.isNotEmpty()) {
+        if (uiState.competitions.isNotEmpty()) {
             CompetitionDropdown(
-                competitions = competitions.value,
-                selectedCompetition = selectedCompetition.value,
+                competitions = uiState.competitions,
+                selectedCompetition = uiState.selectedCompetition,
                 onSelectionChanged = {
-                    selectedCompetition.value = it
-                    isLoading.value = true
-                    // Fetch ranking logic would go here
+                    viewModel.selectCompetition(it)
+                    viewModel.loadRankings(it.id)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -86,7 +92,7 @@ fun LeaderboardView(onBack: () -> Unit) {
 
         // Content Area
         when {
-            isLoading.value -> {
+            isLoading -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize(),
@@ -108,7 +114,7 @@ fun LeaderboardView(onBack: () -> Unit) {
                     }
                 }
             }
-            errorMessage.value != null -> {
+            errorMessage != null -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize(),
@@ -132,7 +138,7 @@ fun LeaderboardView(onBack: () -> Unit) {
                             textAlign = TextAlign.Center
                         )
                         Text(
-                            text = errorMessage.value ?: "",
+                            text = errorMessage ?: "",
                             color = Color.Gray,
                             style = MaterialTheme.typography.labelSmall,
                             textAlign = TextAlign.Center
@@ -140,7 +146,7 @@ fun LeaderboardView(onBack: () -> Unit) {
                     }
                 }
             }
-            rankingRows.value.isEmpty() -> {
+            uiState.rankings.isEmpty() -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize(),
@@ -161,8 +167,15 @@ fun LeaderboardView(onBack: () -> Unit) {
                     contentPadding = PaddingValues(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(rankingRows.value) { ranking ->
-                        RankingListItem(ranking)
+                    items(uiState.rankings) { ranking ->
+                        RankingListItem(
+                            RankingRow(
+                                rank = ranking.rank,
+                                athleteName = ranking.playerNickname ?: "Unknown",
+                                score = ranking.score.toString(),
+                                shotCount = 0 // Info not directly available in ranking data for now
+                            )
+                        )
                     }
                 }
             }
@@ -172,9 +185,9 @@ fun LeaderboardView(onBack: () -> Unit) {
 
 @Composable
 private fun CompetitionDropdown(
-    competitions: List<CompetitionItem>,
-    selectedCompetition: CompetitionItem?,
-    onSelectionChanged: (CompetitionItem) -> Unit,
+    competitions: List<CompetitionEntity>,
+    selectedCompetition: CompetitionEntity?,
+    onSelectionChanged: (CompetitionEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expanded = remember { mutableStateOf(false) }
@@ -216,16 +229,15 @@ private fun CompetitionDropdown(
             onDismissRequest = { expanded.value = false },
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.Gray.copy(alpha = 0.9f))
+                .background(Color.DarkGray)
         ) {
             competitions.forEach { competition ->
                 DropdownMenuItem(
-                    text = { Text(competition.name) },
+                    text = { Text(competition.name, color = Color.White) },
                     onClick = {
                         onSelectionChanged(competition)
                         expanded.value = false
-                    },
-                    modifier = Modifier.background(Color.Gray.copy(alpha = 0.9f))
+                    }
                 )
             }
         }

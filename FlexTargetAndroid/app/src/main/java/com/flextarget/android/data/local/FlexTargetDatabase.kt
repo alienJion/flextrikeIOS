@@ -38,7 +38,7 @@ import java.util.UUID
         AthleteEntity::class,
         AppAuthEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -52,6 +52,8 @@ abstract class FlexTargetDatabase : RoomDatabase() {
     abstract fun competitionDao(): CompetitionDao
     abstract fun gamePlayDao(): GamePlayDao
     abstract fun drillHistoryDao(): DrillHistoryDao
+    abstract fun athleteDao(): AthleteDao
+    abstract fun appAuthDao(): AppAuthDao
     
     companion object {
         @Volatile

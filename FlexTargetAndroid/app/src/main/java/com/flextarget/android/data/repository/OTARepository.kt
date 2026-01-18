@@ -130,7 +130,7 @@ class OTARepository @Inject constructor(
     /**
      * Check for new OTA version using device token
      */
-    suspend fun checkForUpdates(deviceToken: String): Result<OTAVersionInfo?> = withContext(Dispatchers.IO) {
+        suspend fun checkForUpdates(deviceToken: String): Result<OTAVersionInfo?> = withContext(Dispatchers.IO) {
         try {
             _currentState.emit(OTAState.CHECKING)
             _otaProgress.emit(OTAProgress(state = OTAState.CHECKING, lastCheck = Date()))

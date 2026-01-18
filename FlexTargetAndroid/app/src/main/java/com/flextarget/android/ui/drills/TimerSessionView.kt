@@ -53,6 +53,8 @@ fun TimerSessionView(
     targets: List<DrillTargetsConfigEntity>,
     bleManager: AndroidBLEManager,
     drillResultRepository: DrillResultRepository,
+    competitionId: UUID? = null,
+    athleteId: UUID? = null,
     onDrillComplete: (List<DrillRepeatSummary>) -> Unit,
     onDrillFailed: () -> Unit,
     onBack: () -> Unit
@@ -317,7 +319,9 @@ fun TimerSessionView(
                                 drillId = drillSetup.id,
                                 sessionId = sessionId,
                                 totalTime = summary.totalTime,
-                                drillSetupId = drillSetup.id
+                                drillSetupId = drillSetup.id,
+                                competitionId = competitionId,
+                                athleteId = athleteId
                             )
 
                             val shots = summary.shots.map { shotData ->

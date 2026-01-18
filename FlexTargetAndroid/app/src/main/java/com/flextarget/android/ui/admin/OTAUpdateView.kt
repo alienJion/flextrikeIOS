@@ -5,43 +5,37 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.collectAsState
+import com.flextarget.android.ui.viewmodel.OTAViewModel
+import com.flextarget.android.ui.viewmodel.BLEViewModel
 import com.flextarget.android.data.ble.BLEManager
 import com.flextarget.android.data.repository.OTAState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import android.util.Log
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun OTAUpdateView(
-    onBack: () -> Unit,
-    onNavigateToLogin: () -> Unit = {},
-    onNavigateToDeviceManagement: () -> Unit = {}
+    otaViewModel: OTAViewModel,
+    bleViewModel: BLEViewModel
 ) {
-    // State variables
-    val otaState = remember { mutableStateOf<OTAState>(OTAState.IDLE) }
-    val errorMessage = remember { mutableStateOf<String?>(null) }
-    val availableVersion = remember { mutableStateOf<String?>(null) }
-    val lastCheckTime = remember { mutableStateOf<Date?>(null) }
-    val stepMessage = remember { mutableStateOf("") }
-    val currentVersion = remember { mutableStateOf("1.0.0") }
+    // State from ViewModels
+    val otaUiState = otaViewModel.otaUiState.collectAsState().value
+    val coroutineScope = rememberCoroutineScope()
+    
+    Log.d("OTAUpdateView", "OTAUpdateView composable rendered, OTA state: ${otaUiState.state}")
     
     // BLE and device auth managers
     val bleManager = BLEManager.shared
@@ -51,18 +45,7 @@ fun OTAUpdateView(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        TopAppBar(
-            title = { Text("System Updates", color = Color.White) },
-            navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Red)
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Black,
-                titleContentColor = Color.White
-            )
-        )
+
 
         LazyColumn(
             modifier = Modifier
@@ -73,7 +56,7 @@ fun OTAUpdateView(
             // Check if device is connected
             if (!bleManager.isConnected) {
                 item {
-                    DeviceNotConnectedCard(onNavigateToDeviceManagement = onNavigateToDeviceManagement)
+                    DeviceNotConnectedCard(onNavigateToDeviceManagement = { /* TODO: Navigate to device management */ })
                 }
             }
             // Device is connected
@@ -82,65 +65,80 @@ fun OTAUpdateView(
                 item {
                     StatusCard(
                         title = "Current Version",
-                        version = currentVersion.value,
+                        version = otaUiState.currentVersion ?: "1.0.0",
                         status = "System Ready"
                     )
                 }
 
                 // Check for Updates Button
                 item {
+                    val isEnabled = otaUiState.state == OTAState.IDLE
+                    Log.d("OTAUpdateView", "Button enabled: $isEnabled, current state: ${otaUiState.state}")
                     CheckUpdatesButton(
-                        isChecking = otaState.value == OTAState.CHECKING,
-                        stepMessage = stepMessage.value,
+                        isChecking = otaUiState.state == OTAState.CHECKING,
+                        stepMessage = otaUiState.description,
                         onCheckClick = {
-                            CoroutineScope(Dispatchers.Main).launch {
-                                performOTACheck(
-                                    bleManager = bleManager,
-                                    otaState = otaState,
-                                    errorMessage = errorMessage,
-                                    availableVersion = availableVersion,
-                                    lastCheckTime = lastCheckTime,
-                                    stepMessage = stepMessage,
-                                    onNavigateToLogin = onNavigateToLogin
-                                )
+                            Log.d("OTAUpdateView", "Check for updates button tapped")
+                            val bleState = bleViewModel.bleUiState.value
+                            Log.d("OTAUpdateView", "BLE state: isConnected=${bleState.isConnected}, deviceState=${bleState.deviceState}")
+                            
+                            if (!bleState.isConnected) {
+                                Log.e("OTAUpdateView", "Cannot check for updates: BLE device not connected")
+                                return@CheckUpdatesButton
+                            }
+                            
+                            coroutineScope.launch {
+                                Log.d("OTAUpdateView", "Starting auth data retrieval")
+                                // Get auth data from BLE device first
+                                val authDataResult = bleViewModel.getDeviceAuthData()
+                                authDataResult.onSuccess { authData: String ->
+                                    Log.d("OTAUpdateView", "Auth data retrieved successfully, calling checkForUpdates")
+                                    otaViewModel.checkForUpdates(authData)
+                                }.onFailure { error: Throwable ->
+                                    Log.e("OTAUpdateView", "Failed to get auth data: ${error.message}", error)
+                                    // Handle error - could show a snackbar or toast
+                                    // For now, just log the error
+                                }
                             }
                         }
                     )
                 }
 
                 // OTA State Messages
-                when (otaState.value) {
+                when (otaUiState.state) {
                     OTAState.CHECKING -> {
                         item {
-                            CheckingCard(stepMessage = stepMessage.value)
+                            CheckingCard(stepMessage = otaUiState.description.ifEmpty { "Checking for updates..." })
                         }
                     }
                     OTAState.ERROR -> {
                         item {
                             ErrorCard(
-                                errorMessage = errorMessage.value ?: "Unknown error occurred",
+                                errorMessage = otaUiState.error ?: "Unknown error occurred",
                                 onRetry = {
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        performOTACheck(
-                                            bleManager = bleManager,
-                                            otaState = otaState,
-                                            errorMessage = errorMessage,
-                                            availableVersion = availableVersion,
-                                            lastCheckTime = lastCheckTime,
-                                            stepMessage = stepMessage,
-                                            onNavigateToLogin = onNavigateToLogin
-                                        )
+                                    val bleState = bleViewModel.bleUiState.value
+                                    if (!bleState.isConnected) {
+                                        Log.e("OTAUpdateView", "Cannot retry: BLE device not connected")
+                                        return@ErrorCard
+                                    }
+                                    
+                                    coroutineScope.launch {
+                                        val authDataResult = bleViewModel.getDeviceAuthData()
+                                        authDataResult.onSuccess { authData: String ->
+                                            otaViewModel.checkForUpdates(authData)
+                                        }.onFailure { error: Throwable ->
+                                            Log.e("OTAUpdateView", "Failed to get auth data on retry: ${error.message}", error)
+                                        }
                                     }
                                 }
                             )
                         }
                     }
                     OTAState.UPDATE_AVAILABLE -> {
-                        if (availableVersion.value != null) {
+                        if (otaUiState.availableVersion != null) {
                             item {
                                 UpdateAvailableCard(
-                                    currentVersion = currentVersion.value,
-                                    availableVersion = availableVersion.value!!
+                                    availableVersion = otaUiState.availableVersion
                                 )
                             }
                         }
@@ -148,7 +146,7 @@ fun OTAUpdateView(
                     OTAState.IDLE -> {
                         item {
                             UpToDateCard(
-                                lastCheckTime = lastCheckTime.value
+                                lastCheckTime = otaUiState.lastCheck
                             )
                         }
                     }
@@ -164,39 +162,6 @@ fun OTAUpdateView(
                 }
             }
         }
-    }
-}
-
-/**
- * Main OTA check logic with authentication and device token verification
- */
-private suspend fun performOTACheck(
-    bleManager: BLEManager,
-    otaState: androidx.compose.runtime.MutableState<OTAState>,
-    errorMessage: androidx.compose.runtime.MutableState<String?>,
-    availableVersion: androidx.compose.runtime.MutableState<String?>,
-    lastCheckTime: androidx.compose.runtime.MutableState<Date?>,
-    stepMessage: androidx.compose.runtime.MutableState<String>,
-    onNavigateToLogin: () -> Unit
-) {
-    try {
-        otaState.value = OTAState.CHECKING
-        errorMessage.value = null
-        availableVersion.value = null
-        stepMessage.value = "Checking for updates..."
-
-        // Simulated OTA check - in production would use device token
-        kotlinx.coroutines.delay(2000)
-        
-        // For now, show update available
-        availableVersion.value = "1.1.0"
-        otaState.value = OTAState.UPDATE_AVAILABLE
-        lastCheckTime.value = Date()
-        stepMessage.value = ""
-    } catch (e: Exception) {
-        otaState.value = OTAState.ERROR
-        errorMessage.value = e.message ?: "Unknown error occurred"
-        stepMessage.value = ""
     }
 }
 
@@ -416,7 +381,6 @@ private fun ErrorCard(errorMessage: String, onRetry: () -> Unit) {
 
 @Composable
 private fun UpdateAvailableCard(
-    currentVersion: String,
     availableVersion: String
 ) {
     Card(
@@ -479,7 +443,7 @@ private fun UpdateAvailableCard(
 }
 
 @Composable
-private fun UpToDateCard(lastCheckTime: Date?) {
+private fun UpToDateCard(lastCheckTime: String?) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -509,7 +473,7 @@ private fun UpToDateCard(lastCheckTime: Date?) {
             )
             if (lastCheckTime != null) {
                 Text(
-                    "Last checked: ${SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()).format(lastCheckTime)}",
+                    "Last checked: $lastCheckTime",
                     color = Color.Gray,
                     style = MaterialTheme.typography.labelSmall,
                     textAlign = TextAlign.Center

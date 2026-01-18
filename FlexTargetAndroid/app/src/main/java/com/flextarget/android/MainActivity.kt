@@ -38,6 +38,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        android.util.Log.d("MainActivity", "MainActivity onCreate called")
 
         // Request permissions if not granted
         requestPermissionsIfNeeded()

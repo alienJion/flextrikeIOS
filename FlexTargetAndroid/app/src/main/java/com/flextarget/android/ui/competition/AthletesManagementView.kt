@@ -11,9 +11,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,18 +19,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-
-// Placeholder data class for Athlete
-data class AthleteItem(
-    val id: String,
-    val name: String,
-    val club: String,
-    val avatarUrl: String? = null
-)
+import com.flextarget.android.data.local.entity.AthleteEntity
+import com.flextarget.android.ui.viewmodel.CompetitionViewModel
 
 @Composable
-fun AthletesManagementView(onBack: () -> Unit) {
-    val athletes = remember { mutableStateOf(emptyList<AthleteItem>()) }
+fun AthletesManagementView(
+    onBack: () -> Unit,
+    viewModel: CompetitionViewModel
+) {
+    val uiState by viewModel.competitionUiState.collectAsState()
     val newAthleteNameInput = remember { mutableStateOf("") }
     val newAthleteClubInput = remember { mutableStateOf("") }
 
@@ -58,7 +53,8 @@ fun AthletesManagementView(onBack: () -> Unit) {
 
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
+                .fillMaxWidth()
                 .background(Color.Black),
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -69,7 +65,7 @@ fun AthletesManagementView(onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.Gray.copy(alpha = 0.2f)
+                        containerColor = Color.White.copy(alpha = 0.1f)
                     )
                 ) {
                     Column(
@@ -97,101 +93,74 @@ fun AthletesManagementView(onBack: () -> Unit) {
                                     .background(Color.Gray.copy(alpha = 0.3f)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "📷",
-                                    fontSize = MaterialTheme.typography.headlineMedium.fontSize
-                                )
+                                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
                             }
 
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                OutlinedTextField(
+                            Column(modifier = Modifier.weight(1f)) {
+                                TextField(
                                     value = newAthleteNameInput.value,
                                     onValueChange = { newAthleteNameInput.value = it },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(40.dp),
-                                    placeholder = { Text("Athlete name", fontSize = MaterialTheme.typography.labelSmall.fontSize) },
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedTextColor = Color.White,
+                                    placeholder = { Text("Name", color = Color.Gray) },
+                                    colors = TextFieldDefaults.colors(
+                                        unfocusedContainerColor = Color.Transparent,
+                                        focusedContainerColor = Color.Transparent,
                                         unfocusedTextColor = Color.White,
-                                        focusedBorderColor = Color.Red,
-                                        unfocusedBorderColor = Color.Gray
+                                        focusedTextColor = Color.White
                                     ),
-                                    textStyle = MaterialTheme.typography.labelSmall,
-                                    singleLine = true
+                                    modifier = Modifier.fillMaxWidth()
                                 )
-
-                                OutlinedTextField(
+                                TextField(
                                     value = newAthleteClubInput.value,
                                     onValueChange = { newAthleteClubInput.value = it },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(40.dp),
-                                    placeholder = { Text("Club", fontSize = MaterialTheme.typography.labelSmall.fontSize) },
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedTextColor = Color.White,
+                                    placeholder = { Text("Club (Optional)", color = Color.Gray) },
+                                    colors = TextFieldDefaults.colors(
+                                        unfocusedContainerColor = Color.Transparent,
+                                        focusedContainerColor = Color.Transparent,
                                         unfocusedTextColor = Color.White,
-                                        focusedBorderColor = Color.Red,
-                                        unfocusedBorderColor = Color.Gray
+                                        focusedTextColor = Color.White
                                     ),
-                                    textStyle = MaterialTheme.typography.labelSmall,
-                                    singleLine = true
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }
 
                         Button(
-                            onClick = { /* Add athlete logic */ },
-                            modifier = Modifier
-                                .align(Alignment.End)
-                                .height(32.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Red
-                            ),
-                            shape = RoundedCornerShape(4.dp),
-                            contentPadding = PaddingValues(8.dp)
+                            onClick = {
+                                if (newAthleteNameInput.value.isNotEmpty()) {
+                                    viewModel.addAthlete(
+                                        newAthleteNameInput.value,
+                                        newAthleteClubInput.value
+                                    )
+                                    newAthleteNameInput.value = ""
+                                    newAthleteClubInput.value = ""
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                            enabled = newAthleteNameInput.value.isNotEmpty()
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Add",
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Text("Add Athlete")
                         }
                     }
                 }
             }
 
             // Athletes List
-            if (athletes.value.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No athletes yet",
-                            color = Color.Gray,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-                }
-            } else {
-                items(athletes.value) { athlete ->
-                    AthleteListItem(athlete)
-                }
+            items(uiState.athletes) { athlete ->
+                AthleteRow(
+                    athlete = athlete,
+                    onDelete = { viewModel.deleteAthlete(athlete) }
+                )
             }
         }
     }
 }
 
 @Composable
-private fun AthleteListItem(athlete: AthleteItem) {
+fun AthleteRow(
+    athlete: AthleteEntity,
+    onDelete: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -201,54 +170,45 @@ private fun AthleteListItem(athlete: AthleteItem) {
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(12.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(Color.Gray.copy(alpha = 0.3f)),
+                    .background(Color.Red.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = athlete.name.firstOrNull()?.toString() ?: "A",
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleSmall
+                    text = athlete.name?.take(1)?.uppercase() ?: "?",
+                    color = Color.Red,
+                    style = MaterialTheme.typography.titleMedium
                 )
             }
 
-            // Athlete Info
             Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .weight(1f)
             ) {
                 Text(
-                    text = athlete.name,
+                    text = athlete.name ?: "Unknown",
                     color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyLarge
                 )
-                Text(
-                    text = athlete.club,
-                    color = Color.Gray,
-                    style = MaterialTheme.typography.labelSmall
-                )
+                if (!athlete.club.isNullOrEmpty()) {
+                    Text(
+                        text = athlete.club ?: "",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
 
-            // Delete Button
-            IconButton(
-                onClick = { /* Delete athlete logic */ },
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = Color.Red,
-                    modifier = Modifier.size(18.dp)
-                )
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Gray)
             }
         }
     }

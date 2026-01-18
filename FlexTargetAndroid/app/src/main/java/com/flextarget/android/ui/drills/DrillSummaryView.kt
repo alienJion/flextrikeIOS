@@ -36,7 +36,9 @@ fun DrillSummaryView(
     summaries: List<DrillRepeatSummary>,
     onBack: () -> Unit,
     onViewResult: (DrillRepeatSummary) -> Unit,
-    onReplay: (DrillRepeatSummary) -> Unit = {}
+    onReplay: (DrillRepeatSummary) -> Unit = {},
+    isCompetitionDrill: Boolean = false,
+    onCompetitionSubmit: () -> Unit = {}
 ) {
     println("[DrillSummaryView] Rendering with ${summaries.size} summaries")
     summaries.forEach { summary ->
@@ -114,6 +116,38 @@ fun DrillSummaryView(
                             onRestoreScore = { restoreScore(summaries, index, originalScores) },
                             onCardClick = { onViewResult(summary) },
                             onReplay = { onReplay(summary) }
+                        )
+                    }
+                }
+            }
+
+            // Competition Submit Button Overlay
+            if (isCompetitionDrill && summaries.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp, start = 32.dp, end = 32.dp)
+                ) {
+                    Button(
+                        onClick = onCompetitionSubmit,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .shadow(16.dp, RoundedCornerShape(28.dp), ambientColor = Color.Red.copy(alpha = 0.5f)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Red,
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(28.dp)
+                    ) {
+                        Icon(Icons.Default.Upload, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "SUBMIT COMPETITION RESULT",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            letterSpacing = 1.sp
                         )
                     }
                 }

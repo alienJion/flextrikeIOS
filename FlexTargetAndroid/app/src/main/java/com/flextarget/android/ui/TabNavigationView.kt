@@ -122,7 +122,9 @@ fun TabNavigationView(
         NavHost(
             navController = navController,
             startDestination = "drills",
-            modifier = Modifier.background(Color.Black)
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(paddingValues)
         ) {
             composable("drills") {
                 DrillsTabContent(
@@ -136,13 +138,21 @@ fun TabNavigationView(
             }
 
             composable("competition") {
-                CompetitionTabView(navController = navController)
+                CompetitionTabView(
+                    navController = navController,
+                    authViewModel = AppContainer.authViewModel,
+                    competitionViewModel = AppContainer.competitionViewModel,
+                    drillViewModel = AppContainer.drillViewModel,
+                    bleManager = bleManager
+                )
             }
 
             composable("admin") {
                 AdminTabView(
                     bleManager = bleManager,
-                    authViewModel = AppContainer.authViewModel
+                    authViewModel = AppContainer.authViewModel,
+                    otaViewModel = AppContainer.otaViewModel,
+                    bleViewModel = AppContainer.bleViewModel
                 )
             }
 

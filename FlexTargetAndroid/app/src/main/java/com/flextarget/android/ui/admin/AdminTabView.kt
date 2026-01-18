@@ -20,13 +20,16 @@ import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Info
 import com.flextarget.android.data.ble.BLEManager
-import com.flextarget.android.presentation.viewmodel.AuthViewModel
-import com.flextarget.android.presentation.ui.screens.LoginScreen
+import com.flextarget.android.ui.viewmodel.AuthViewModel
+import com.flextarget.android.ui.viewmodel.OTAViewModel
+import com.flextarget.android.ui.viewmodel.BLEViewModel
 
 @Composable
 fun AdminTabView(
     bleManager: BLEManager = BLEManager.shared,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    otaViewModel: OTAViewModel,
+    bleViewModel: BLEViewModel
 ) {
     val showMainMenu = remember { mutableStateOf(true) }
     val showDeviceManagement = remember { mutableStateOf(false) }
@@ -47,21 +50,8 @@ fun AdminTabView(
         when {
             showOTAUpdate.value -> {
                 OTAUpdateView(
-                    onBack = {
-                        showOTAUpdate.value = false
-                        showDeviceManagement.value = true
-                    },
-                    onNavigateToLogin = {
-                        showOTAUpdate.value = false
-                        showMainMenu.value = true
-                        showUserProfile.value = false
-                        // In a real app, you would navigate to login screen
-                        // For now, we just show main menu
-                    },
-                    onNavigateToDeviceManagement = {
-                        showOTAUpdate.value = false
-                        showDeviceManagement.value = true
-                    }
+                    otaViewModel = otaViewModel,
+                    bleViewModel = bleViewModel
                 )
             }
             showConnectedDeviceDetails.value -> {

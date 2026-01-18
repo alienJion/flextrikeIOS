@@ -11,35 +11,40 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.window.Dialog
+import com.flextarget.android.data.local.entity.CompetitionEntity
+import com.flextarget.android.data.local.entity.DrillSetupEntity
+import com.flextarget.android.ui.viewmodel.CompetitionViewModel
+import com.flextarget.android.ui.viewmodel.DrillViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
-// Placeholder data class for Competition
-data class CompetitionItem(
-    val id: String,
-    val name: String,
-    val venue: String,
-    val date: Date,
-    val drillName: String? = null
-)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CompetitionListView(onBack: () -> Unit) {
-    val competitions = remember { mutableStateOf(emptyList<CompetitionItem>()) }
+fun CompetitionListView(
+    onBack: () -> Unit,
+    viewModel: CompetitionViewModel,
+    drillViewModel: DrillViewModel,
+    bleManager: com.flextarget.android.data.ble.BLEManager
+) {
+    val uiState by viewModel.competitionUiState.collectAsState()
+    val drillUiState by drillViewModel.drillUiState.collectAsState()
     val searchQuery = remember { mutableStateOf("") }
+    val showAddDialog = remember { mutableStateOf(false) }
 
-    val filteredCompetitions = competitions.value.filter { competition ->
+    val filteredCompetitions = uiState.competitions.filter { competition ->
         competition.name.contains(searchQuery.value, ignoreCase = true) ||
-                competition.venue.contains(searchQuery.value, ignoreCase = true)
+                (competition.venue?.contains(searchQuery.value, ignoreCase = true) ?: false)
     }
 
     Column(
@@ -56,7 +61,7 @@ fun CompetitionListView(onBack: () -> Unit) {
                 }
             },
             actions = {
-                IconButton(onClick = { /* Add competition */ }) {
+                IconButton(onClick = { showAddDialog.value = true }) {
                     Icon(Icons.Default.Add, contentDescription = "Add Competition")
                 }
             },
@@ -81,7 +86,8 @@ fun CompetitionListView(onBack: () -> Unit) {
         if (filteredCompetitions.isEmpty()) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize(),
+                    .weight(1f)
+                    .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -93,14 +99,110 @@ fun CompetitionListView(onBack: () -> Unit) {
         } else {
             LazyColumn(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .weight(1f)
+                    .fillMaxWidth()
                     .background(Color.Black),
                 contentPadding = PaddingValues(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(filteredCompetitions) { competition ->
-                    CompetitionListItem(competition)
+                    CompetitionCard(
+                        competition = competition,
+                        onClick = { viewModel.selectCompetition(competition) },
+                        onDelete = { viewModel.deleteCompetition(competition.id) }
+                    )
                 }
+            }
+        }
+    }
+
+    if (showAddDialog.value) {
+        AddCompetitionDialog(
+            drills = drillUiState.drills,
+            onDismiss = { showAddDialog.value = false },
+            onConfirm = { name, venue, date, drillId ->
+                viewModel.createCompetition(name, venue, date, drillSetupId = drillId)
+                showAddDialog.value = false
+            }
+        )
+    }
+}
+
+@Composable
+fun CompetitionCard(
+    competition: CompetitionEntity,
+    onClick: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.1f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = competition.name,
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                
+                if (!competition.venue.isNullOrEmpty()) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = competition.venue ?: "",
+                            color = Color.Gray,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 4.dp)
+                ) {
+                    Icon(
+                        Icons.Default.DateRange,
+                        contentDescription = null,
+                        tint = Color.Red,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = dateFormat.format(competition.date),
+                        color = Color.Red,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                }
+            }
+
+            IconButton(onClick = onDelete) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = Color.Gray.copy(alpha = 0.5f)
+                )
             }
         }
     }
@@ -124,81 +226,148 @@ private fun SearchBar(
             focusedBorderColor = Color.Red,
             unfocusedBorderColor = Color.Gray
         ),
-        singleLine = true
+        singleLine = true,
+        shape = RoundedCornerShape(10.dp)
     )
 }
 
 @Composable
-private fun CompetitionListItem(competition: CompetitionItem) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                color = Color.White.copy(alpha = 0.1f)
-            ),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.05f)
+fun AddCompetitionDialog(
+    drills: List<DrillSetupEntity>,
+    onDismiss: () -> Unit,
+    onConfirm: (String, String, Date, UUID?) -> Unit
+) {
+    val name = remember { mutableStateOf("") }
+    val venue = remember { mutableStateOf("") }
+    val date = remember { mutableStateOf(Date()) }
+    val selectedDrill = remember { mutableStateOf<DrillSetupEntity?>(null) }
+    var showDrillPicker by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("New Competition", color = Color.White) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextField(
+                    value = name.value,
+                    onValueChange = { name.value = it },
+                    label = { Text("Competition Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                TextField(
+                    value = venue.value,
+                    onValueChange = { venue.value = it },
+                    label = { Text("Venue (Optional)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                // Drill Selector
+                OutlinedCard(
+                    onClick = { showDrillPicker = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.outlinedCardColors(
+                        containerColor = Color.White.copy(alpha = 0.05f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = selectedDrill.value?.name ?: "Select Drill-Setup",
+                            color = if (selectedDrill.value != null) Color.White else Color.Gray
+                        )
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.Red)
+                    }
+                }
+
+                Text(
+                    text = "Date: ${SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(date.value)}",
+                    color = Color.Gray,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(name.value, venue.value, date.value, selectedDrill.value?.id) },
+                enabled = name.value.isNotEmpty() && selectedDrill.value != null,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Text("Create")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color.Red)
+            }
+        },
+        containerColor = Color.DarkGray
+    )
+
+    if (showDrillPicker) {
+        DrillPickerDialog(
+            drills = drills,
+            onDismiss = { showDrillPicker = false },
+            onSelect = {
+                selectedDrill.value = it
+                showDrillPicker = false
+            }
         )
-    ) {
-        Column(
+    }
+}
+
+@Composable
+fun DrillPickerDialog(
+    drills: List<DrillSetupEntity>,
+    onDismiss: () -> Unit,
+    onSelect: (DrillSetupEntity) -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                .fillMaxHeight(0.7f),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.DarkGray)
         ) {
-            Text(
-                text = competition.name,
-                color = Color.White,
-                style = MaterialTheme.typography.headlineSmall
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = null,
-                    tint = Color.Gray,
-                    modifier = Modifier.size(14.dp)
-                )
+            Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = competition.venue,
-                    color = Color.Gray,
-                    style = MaterialTheme.typography.labelSmall
+                    text = "Select Drill Setup",
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
-            }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.DateRange,
-                    contentDescription = null,
-                    tint = Color.Gray,
-                    modifier = Modifier.size(14.dp)
-                )
-                Text(
-                    text = SimpleDateFormat("MMM dd, yyyy", Locale.US).format(competition.date),
-                    color = Color.Gray,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
-
-            competition.drillName?.let {
-                Text(
-                    text = it,
-                    color = Color.Red,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier
-                        .background(
-                            color = Color.Red.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(4.dp)
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(drills) { drill ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelect(drill) }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = drill.name ?: "Untitled",
+                                color = Color.White,
+                                modifier = Modifier.padding(start = 12.dp)
+                            )
+                        }
+                        Divider(
+                            color = Color.Gray.copy(alpha = 0.2f),
+                            thickness = 1.dp
                         )
-                        .padding(4.dp)
-                )
+                    }
+                }
+
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Cancel", color = Color.Red)
+                }
             }
         }
     }

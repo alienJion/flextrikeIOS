@@ -1,4 +1,4 @@
-package com.flextarget.android.presentation.ui.screens
+package com.flextarget.android.ui.admin
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -18,7 +18,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.flextarget.android.presentation.viewmodel.AuthViewModel
+import com.flextarget.android.ui.viewmodel.AuthViewModel
 
 /**
  * Login Screen

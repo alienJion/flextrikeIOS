@@ -15,39 +15,84 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.compose.runtime.getValue
+import com.flextarget.android.ui.admin.LoginScreen
+import com.flextarget.android.ui.viewmodel.AuthViewModel
+import com.flextarget.android.ui.viewmodel.CompetitionViewModel
+import com.flextarget.android.ui.viewmodel.DrillViewModel
 
 @Composable
-fun CompetitionTabView(navController: NavHostController) {
+fun CompetitionTabView(
+    navController: NavHostController,
+    authViewModel: AuthViewModel,
+    competitionViewModel: CompetitionViewModel,
+    drillViewModel: DrillViewModel,
+    bleManager: com.flextarget.android.data.ble.BLEManager
+) {
+    val authState by authViewModel.authUiState.collectAsState()
+    val uiState by competitionViewModel.competitionUiState.collectAsState()
+    val drillUiState by drillViewModel.drillUiState.collectAsState()
     val selectedScreen = remember { mutableStateOf<CompetitionScreen?>(null) }
 
-    when (selectedScreen.value) {
-        CompetitionScreen.COMPETITIONS -> {
-            CompetitionListView(
-                onBack = { selectedScreen.value = null }
+    if (!authState.isAuthenticated) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            LoginScreen(
+                authViewModel = authViewModel,
+                onLoginSuccess = { /* State will update via Flow */ }
             )
         }
-        CompetitionScreen.ATHLETES -> {
-            AthletesManagementView(
-                onBack = { selectedScreen.value = null }
+    } else {
+        // If a competition is selected, show detail view
+        uiState.selectedCompetition?.let { competition ->
+            CompetitionDetailView(
+                competition = competition,
+                onBack = { competitionViewModel.selectCompetition(null) },
+                viewModel = competitionViewModel,
+                drillViewModel = drillViewModel,
+                bleManager = bleManager
             )
-        }
-        CompetitionScreen.LEADERBOARD -> {
-            LeaderboardView(
-                onBack = { selectedScreen.value = null }
-            )
-        }
-        null -> {
-            CompetitionMenuView(
-                onCompetitionsClick = { selectedScreen.value = CompetitionScreen.COMPETITIONS },
-                onAthletesClick = { selectedScreen.value = CompetitionScreen.ATHLETES },
-                onLeaderboardClick = { selectedScreen.value = CompetitionScreen.LEADERBOARD }
-            )
+        } ?: run {
+            // Otherwise show the appropriate screen based on menu selection
+            when (selectedScreen.value) {
+                CompetitionScreen.COMPETITIONS -> {
+                    CompetitionListView(
+                        onBack = { selectedScreen.value = null },
+                        viewModel = competitionViewModel,
+                        drillViewModel = drillViewModel,
+                        bleManager = bleManager
+                    )
+                }
+                CompetitionScreen.ATHLETES -> {
+                    AthletesManagementView(
+                        onBack = { selectedScreen.value = null },
+                        viewModel = competitionViewModel
+                    )
+                }
+                CompetitionScreen.LEADERBOARD -> {
+                    LeaderboardView(
+                        onBack = { selectedScreen.value = null },
+                        viewModel = competitionViewModel
+                    )
+                }
+                null -> {
+                    CompetitionMenuView(
+                        onCompetitionsClick = { selectedScreen.value = CompetitionScreen.COMPETITIONS },
+                        onAthletesClick = { selectedScreen.value = CompetitionScreen.ATHLETES },
+                        onLeaderboardClick = { selectedScreen.value = CompetitionScreen.LEADERBOARD }
+                    )
+                }
+            }
         }
     }
 }

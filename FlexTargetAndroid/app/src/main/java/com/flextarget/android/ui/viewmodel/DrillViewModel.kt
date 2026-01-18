@@ -1,4 +1,4 @@
-package com.flextarget.android.presentation.viewmodel
+package com.flextarget.android.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

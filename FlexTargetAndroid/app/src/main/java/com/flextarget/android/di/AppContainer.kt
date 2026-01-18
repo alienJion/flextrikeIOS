@@ -7,12 +7,14 @@ import com.flextarget.android.data.auth.AuthManager
 import com.flextarget.android.data.auth.DeviceAuthManager
 import com.flextarget.android.data.auth.TokenRefreshQueue
 import com.flextarget.android.data.local.FlexTargetDatabase
-import com.flextarget.android.data.local.dao.*
 import com.flextarget.android.data.local.preferences.AppPreferences
 import com.flextarget.android.data.remote.api.FlexTargetAPI
-import com.flextarget.android.data.remote.interceptor.AuthInterceptor
 import com.flextarget.android.data.repository.*
-import com.flextarget.android.presentation.viewmodel.*
+import com.flextarget.android.ui.viewmodel.AuthViewModel
+import com.flextarget.android.ui.viewmodel.BLEViewModel
+import com.flextarget.android.ui.viewmodel.CompetitionViewModel
+import com.flextarget.android.ui.viewmodel.DrillViewModel
+import com.flextarget.android.ui.viewmodel.OTAViewModel
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -71,6 +73,7 @@ object AppContainer {
     private val competitionDao by lazy { database.competitionDao() }
     private val gamePlayDao by lazy { database.gamePlayDao() }
     private val shotDao by lazy { database.shotDao() }
+    private val athleteDao by lazy { database.athleteDao() }
 
     // Preferences
     private val appPreferences by lazy { AppPreferences(applicationContext) }
@@ -122,6 +125,7 @@ object AppContainer {
             workManager = workManager
         )
     }
+    private val athleteRepository by lazy { AthleteRepository(athleteDao) }
 
     // ViewModels
     val authViewModel by lazy {
@@ -138,7 +142,7 @@ object AppContainer {
     }
 
     val competitionViewModel by lazy {
-        CompetitionViewModel(competitionRepository)
+        CompetitionViewModel(competitionRepository, athleteRepository)
     }
 
     val otaViewModel by lazy {

@@ -1,5 +1,6 @@
-package com.flextarget.android.presentation.viewmodel
+package com.flextarget.android.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.flextarget.android.data.repository.BLERepository
@@ -36,6 +37,10 @@ data class BLEUiState(
 class BLEViewModel(
     private val bleRepository: BLERepository
 ) : ViewModel() {
+    
+    init {
+        Log.d("BLEViewModel", "BLEViewModel initialized")
+    }
     
     /**
      * Current BLE UI state
@@ -87,15 +92,8 @@ class BLEViewModel(
     /**
      * Get device authentication data for device binding
      */
-    fun getDeviceAuthData() {
-        viewModelScope.launch {
-            val result = bleRepository.getDeviceAuthData()
-            result.onSuccess { authData ->
-                // Use auth data for device binding
-            }.onFailure {
-                // Handle error
-            }
-        }
+    suspend fun getDeviceAuthData(): Result<String> {
+        return bleRepository.getDeviceAuthData()
     }
     
     /**
