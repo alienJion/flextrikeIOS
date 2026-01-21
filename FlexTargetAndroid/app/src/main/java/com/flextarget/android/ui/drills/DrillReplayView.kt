@@ -20,20 +20,30 @@ import kotlin.math.min
 @Composable
 fun DrillReplayView(
     drillSetup: DrillSetupEntity,
-    shots: List<ShotData>,
-    onBack: () -> Unit
+    shots: List<ShotData> = emptyList(),
+    onBack: () -> Unit = {}
 ) {
-    var currentShotIndex by remember { mutableStateOf(0) }
+    // State management - local Composable state for simplicity
+    var currentProgress by remember { mutableStateOf(0.0) }
     var isPlaying by remember { mutableStateOf(false) }
 
-    // Auto-advance shots when playing
+    // Calculate timing information
+    val totalDuration = remember(shots) { TimingCalculator.calculateTotalDuration(shots) }
+    val currentShotIndex = remember(currentProgress, shots) {
+        TimingCalculator.findShotAtTime(shots, currentProgress)
+    }
+
+    // Timer for playback - 50ms updates for smooth animation
     LaunchedEffect(isPlaying) {
-        while (isPlaying && currentShotIndex < shots.size) {
-            kotlinx.coroutines.delay(1000) // 1 second per shot
-            currentShotIndex = min(currentShotIndex + 1, shots.size)
-        }
-        if (currentShotIndex >= shots.size) {
-            isPlaying = false
+        if (isPlaying) {
+            while (isPlaying && currentProgress < totalDuration) {
+                kotlinx.coroutines.delay(50) // 50ms per frame
+                currentProgress += 0.05
+            }
+            if (currentProgress >= totalDuration) {
+                isPlaying = false
+                currentProgress = totalDuration
+            }
         }
     }
 
@@ -57,68 +67,125 @@ fun DrillReplayView(
         },
         containerColor = Color.Black
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-        ) {
-            // Progress control
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+        if (shots.isEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "${currentShotIndex} / ${shots.size} shots",
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-
-                Slider(
-                    value = currentShotIndex.toFloat(),
-                    onValueChange = { currentShotIndex = it.toInt() },
-                    valueRange = 0f..shots.size.toFloat(),
-                    modifier = Modifier.weight(1f),
-                    steps = if (shots.size > 1) shots.size - 1 else 0
-                )
-
-                Button(
-                    onClick = { isPlaying = !isPlaying },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isPlaying) Color.Red else Color.Green
-                    )
-                ) {
-                    Text(if (isPlaying) "Pause" else "Play")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Shot display
-            if (shots.isNotEmpty()) {
-                val visibleShots = shots.take(currentShotIndex + 1)
-
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(visibleShots.size) { index ->
-                        val shot = visibleShots[index]
-                        val isCurrent = index == currentShotIndex
-
-                        ShotReplayItem(
-                            shot = shot,
-                            shotNumber = index + 1,
-                            isCurrent = isCurrent
-                        )
-                    }
-                }
-            } else {
                 Text(
                     text = "No shots to replay",
                     color = Color.Gray,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                // Top: Target preview area
+                TargetPreviewView(
+                    shots = shots,
+                    currentShotIndex = currentShotIndex,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Bottom: Timeline and controls
+                ShotTimelineView(
+                    shots = shots,
+                    currentProgress = currentProgress,
+                    totalDuration = totalDuration,
+                    onProgressChanged = { newProgress ->
+                        currentProgress = newProgress
+                        // Stop playback when user manually scrubs
+                        isPlaying = false
+                    }
+                )
+
+                // Playback controls
+                PlaybackControlsView(
+                    isPlaying = isPlaying,
+                    onPlayPauseClick = { isPlaying = !isPlaying },
+                    onNextClick = {
+                        // Jump to next shot
+                        if (currentShotIndex < shots.size - 1) {
+                            currentProgress = TimingCalculator.getTimeAtShotIndex(shots, currentShotIndex + 1)
+                        } else {
+                            currentProgress = totalDuration
+                        }
+                        isPlaying = false
+                    },
+                    onPrevClick = {
+                        // Jump to previous shot
+                        if (currentShotIndex > 0) {
+                            currentProgress = TimingCalculator.getTimeAtShotIndex(shots, currentShotIndex - 1)
+                        } else {
+                            currentProgress = 0.0
+                        }
+                        isPlaying = false
+                    },
+                    canGoNext = currentShotIndex < shots.size - 1,
+                    canGoPrev = currentShotIndex > 0
+                )
+
+                // Shot details list
+                Spacer(modifier = Modifier.height(8.dp))
+
+                ShotDetailsPanel(
+                    shots = shots,
+                    currentShotIndex = currentShotIndex,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Panel showing details of shots in a horizontal scrollable list
+ */
+@Composable
+private fun ShotDetailsPanel(
+    shots: List<ShotData>,
+    currentShotIndex: Int,
+    modifier: Modifier = Modifier
+) {
+    if (shots.isEmpty()) return
+
+    Column(modifier = modifier) {
+        Text(
+            text = "Shot ${currentShotIndex + 1} of ${shots.size}",
+            color = Color.White,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+        )
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            items(shots.take(currentShotIndex + 1).size) { index ->
+                val shot = shots[index]
+                val isCurrent = index == currentShotIndex
+
+                ShotDetailItem(
+                    shot = shot,
+                    shotNumber = index + 1,
+                    isCurrent = isCurrent
                 )
             }
         }
@@ -126,7 +193,7 @@ fun DrillReplayView(
 }
 
 @Composable
-private fun ShotReplayItem(
+private fun ShotDetailItem(
     shot: ShotData,
     shotNumber: Int,
     isCurrent: Boolean
@@ -143,40 +210,30 @@ private fun ShotReplayItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
                 text = "#$shotNumber",
                 color = Color.White,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.width(50.dp)
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.width(40.dp)
             )
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Target: ${shot.device ?: "Unknown"}",
+                    text = "${shot.content.actualTargetType} - ${shot.content.actualHitArea}",
                     color = Color.White,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    text = "Type: ${shot.content.actualTargetType}",
-                    color = Color.Gray,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    text = "Hit: ${shot.content.actualHitArea}",
-                    color = Color.Gray,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
 
             Text(
-                text = "${shot.content.actualTimeDiff}s",
+                text = String.format("%.2fs", shot.content.actualTimeDiff),
                 color = if (shot.content.actualTimeDiff > 0) Color.Green else Color.Red,
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.width(60.dp)
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.width(50.dp)
             )
         }
     }

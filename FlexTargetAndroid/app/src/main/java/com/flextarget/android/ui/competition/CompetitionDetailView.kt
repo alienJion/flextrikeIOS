@@ -104,7 +104,8 @@ fun CompetitionDetailView(
                 showDrillSummary = false
                 onBack()
             },
-            onViewResult = { /* Navigate to result if needed */ }
+            onViewResult = { /* Navigate to result if needed */ },
+            onReplay = { }
         )
     } else {
         Column(

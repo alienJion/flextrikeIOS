@@ -80,7 +80,8 @@ fun DrillRecordView(
                 selectedResultSummary = summary
                 showDrillResult = true
                 showDrillSummary = false  // Hide the summary view when showing result view
-            }
+            },
+            onReplay = {summary -> selectedResultSummary = summary}
         )
     } else if (showDrillResult && selectedResultSummary != null) {
         DrillResultView(

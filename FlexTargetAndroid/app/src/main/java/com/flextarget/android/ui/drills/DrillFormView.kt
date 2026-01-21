@@ -45,6 +45,14 @@ enum class DrillFormScreen {
     TARGET_CONFIG
 }
 
+enum class DrillSessionScreen {
+    NONE,
+    TIMER,
+    SUMMARY,
+    RESULT,
+    REPLAY
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DrillFormView(
@@ -150,6 +158,55 @@ fun DrillFormView(
     var showTimerSession by remember { mutableStateOf(false) }
     var showDrillSummary by remember { mutableStateOf(false) }
 
+    // Drill session management state
+    var timerSessionDrill by remember { mutableStateOf<DrillSetupEntity?>(null) }
+    var timerSessionTargets by remember { mutableStateOf<List<DrillTargetsConfigEntity>>(emptyList()) }
+    var drillSummaries by remember { mutableStateOf<List<DrillRepeatSummary>>(emptyList()) }
+    var selectedResultSummary by remember { mutableStateOf<DrillRepeatSummary?>(null) }
+    var selectedReplaySummary by remember { mutableStateOf<DrillRepeatSummary?>(null) }
+    
+    // Navigation state machine - only one screen can be active at a time
+    var drillSessionScreen by remember { mutableStateOf(DrillSessionScreen.NONE) }
+
+    // Callbacks without remember - recreated on each composition with fresh state references
+    val onReplayCallback: (DrillRepeatSummary) -> Unit = { summary: DrillRepeatSummary ->
+        println("[DrillFormView.onReplayCallback] ===START=== Callback invoked with summary ${summary.repeatIndex}, shots=${summary.shots.size}")
+        try {
+            println("[DrillFormView.onReplayCallback] Setting selectedReplaySummary...")
+            selectedReplaySummary = summary
+            println("[DrillFormView.onReplayCallback] selectedReplaySummary set to ${selectedReplaySummary?.repeatIndex}, drillSessionScreen=$drillSessionScreen")
+            println("[DrillFormView.onReplayCallback] About to set drillSessionScreen to REPLAY...")
+            drillSessionScreen = DrillSessionScreen.REPLAY
+            println("[DrillFormView.onReplayCallback] drillSessionScreen set to $drillSessionScreen ===END===")
+        } catch (e: Exception) {
+            println("[DrillFormView.onReplayCallback] EXCEPTION: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    val onViewResultCallback: (DrillRepeatSummary) -> Unit = { summary: DrillRepeatSummary ->
+        println("[DrillFormView.onViewResultCallback] onViewResult called with summary ${summary.repeatIndex}")
+        selectedResultSummary = summary
+        drillSessionScreen = DrillSessionScreen.RESULT
+    }
+
+    val onBackFromSummaryCallback: () -> Unit = {
+        println("[DrillFormView.onBackFromSummaryCallback] DrillSummaryView back")
+        drillSessionScreen = DrillSessionScreen.NONE
+    }
+
+    val onBackFromResultCallback: () -> Unit = {
+        println("[DrillFormView.onBackFromResultCallback] DrillResultView back")
+        drillSessionScreen = DrillSessionScreen.SUMMARY
+        selectedResultSummary = null
+    }
+
+    val onBackFromReplayCallback: () -> Unit = {
+        println("[DrillFormView.onBackFromReplayCallback] DrillReplayView back pressed")
+        drillSessionScreen = DrillSessionScreen.SUMMARY
+        selectedReplaySummary = null
+    }
+
     val showTopBar by remember(showTimerSession, showDrillSummary) {
         derivedStateOf { !showTimerSession && !showDrillSummary }
     }
@@ -217,79 +274,152 @@ fun DrillFormView(
             }
         }
     ) { paddingValues ->
-        when (currentScreen) {
-            DrillFormScreen.FORM -> {
-                FormScreen(
-                    drillName = drillName,
-                    onDrillNameChange = { drillName = it },
-                    description = description,
-                    onDescriptionChange = { description = it },
-                    drillMode = drillMode,
-                    onDrillModeChange = { drillMode = it },
-                    repeats = repeats,
-                    onRepeatsChange = { repeats = it },
-                    pause = pause,
-                    onPauseChange = { pause = it },
-                    targets = targets,
-                    isTargetListReceived = isTargetListReceived,
-                    bleManager = bleManager,
-                    onNavigateToTargetConfig = { if (!isEditingDisabled) currentScreen = DrillFormScreen.TARGET_CONFIG else showEditDisabledAlert = true },
-                    isSaving = isSaving,
-                    isFormValid = isFormValid,
-                    mode = mode,
-                    existingDrill = existingDrill,
-                    onDrillSaved = onDrillSaved,
-                    onBack = onBack,
-                    viewModel = viewModel,
-                    coroutineScope = coroutineScope,
-                    paddingValues = paddingValues,
-                    androidBleManager = androidBleManager,
-                    isEditingDisabled = isEditingDisabled,
-                    showTimerSession = showTimerSession,
-                    onShowTimerSessionChange = { showTimerSession = it },
-                    showDrillSummary = showDrillSummary,
-                    onShowDrillSummaryChange = { showDrillSummary = it }
-                )
+        println("[DrillFormView] Composable body rendering - drillSessionScreen=$drillSessionScreen, timerSessionDrill=${timerSessionDrill != null}, selectedReplaySummary=${selectedReplaySummary != null}")
+        // Check if we're in a drill session (override normal screen selection)
+        if (drillSessionScreen != DrillSessionScreen.NONE) {
+            when (drillSessionScreen) {
+                DrillSessionScreen.NONE -> {} // handled above
+                
+                DrillSessionScreen.TIMER -> {
+                    if (timerSessionDrill != null && androidBleManager != null) {
+                        TimerSessionView(
+                            drillSetup = timerSessionDrill!!,
+                            targets = timerSessionTargets,
+                            bleManager = androidBleManager,
+                            drillResultRepository = DrillResultRepository.getInstance(LocalContext.current),
+                            onDrillComplete = { summaries ->
+                                println("[DrillFormView] onDrillComplete called with ${summaries.size} summaries")
+                                summaries.forEach { summary ->
+                                    println("[DrillFormView] Summary ${summary.repeatIndex}: ${summary.numShots} shots, score: ${summary.score}, time: ${summary.totalTime}")
+                                }
+                                drillSummaries = summaries
+                                drillSessionScreen = DrillSessionScreen.SUMMARY
+                            },
+                            onDrillFailed = {
+                                drillSessionScreen = DrillSessionScreen.NONE
+                            },
+                            onBack = {
+                                drillSessionScreen = DrillSessionScreen.NONE
+                            }
+                        )
+                    }
+                }
+                
+                DrillSessionScreen.SUMMARY -> {
+                    if (timerSessionDrill != null) {
+                        DrillSummaryView(
+                            drillSetup = timerSessionDrill!!,
+                            summaries = drillSummaries,
+                            onBack = onBackFromSummaryCallback,
+                            onViewResult = onViewResultCallback,
+                            onReplay = onReplayCallback
+                        )
+                    }
+                }
+                
+                DrillSessionScreen.RESULT -> {
+                    if (timerSessionDrill != null && selectedResultSummary != null) {
+                        DrillResultView(
+                            drillSetup = timerSessionDrill!!,
+                            targets = timerSessionTargets.map { DrillTargetsConfigData.fromEntity(it) },
+                            repeatSummary = selectedResultSummary,
+                            onBack = onBackFromResultCallback
+                        )
+                    }
+                }
+                
+                DrillSessionScreen.REPLAY -> {
+                    println("[DrillFormView] REPLAY state reached - timerSessionDrill=${timerSessionDrill != null}, selectedReplaySummary=${selectedReplaySummary != null}")
+                    if (timerSessionDrill != null && selectedReplaySummary != null) {
+                        println("[DrillFormView] Showing DrillReplayView with ${selectedReplaySummary!!.shots.size} shots")
+                        DrillReplayView(
+                            drillSetup = timerSessionDrill!!,
+                            shots = selectedReplaySummary!!.shots,
+                            onBack = onBackFromReplayCallback
+                        )
+                    } else {
+                        println("[DrillFormView] REPLAY screen but drill=${timerSessionDrill} or replay summary=${selectedReplaySummary}")
+                    }
+                }
             }
-            DrillFormScreen.TARGET_CONFIG -> {
-                TargetConfigScreen(
-                    bleManager = bleManager,
-                    targetConfigs = targets,
-                    drillMode = drillMode,
-                    onAddTarget = {
-                        val availableDevices = bleManager.networkDevices.filter { device ->
-                            targets.none { it.targetName == device.name }
+        } else {
+            // Normal form view
+            when (currentScreen) {
+                DrillFormScreen.FORM -> {
+                    FormScreen(
+                        drillName = drillName,
+                        onDrillNameChange = { drillName = it },
+                        description = description,
+                        onDescriptionChange = { description = it },
+                        drillMode = drillMode,
+                        onDrillModeChange = { drillMode = it },
+                        repeats = repeats,
+                        onRepeatsChange = { repeats = it },
+                        pause = pause,
+                        onPauseChange = { pause = it },
+                        targets = targets,
+                        isTargetListReceived = isTargetListReceived,
+                        bleManager = bleManager,
+                        onNavigateToTargetConfig = { if (!isEditingDisabled) currentScreen = DrillFormScreen.TARGET_CONFIG else showEditDisabledAlert = true },
+                        isSaving = isSaving,
+                        isFormValid = isFormValid,
+                        mode = mode,
+                        existingDrill = existingDrill,
+                        onDrillSaved = onDrillSaved,
+                        onBack = onBack,
+                        viewModel = viewModel,
+                        coroutineScope = coroutineScope,
+                        paddingValues = paddingValues,
+                        androidBleManager = androidBleManager,
+                        isEditingDisabled = isEditingDisabled,
+                        onStartDrill = { sessionDrill, sessionTargets ->
+                            timerSessionDrill = sessionDrill
+                            timerSessionTargets = sessionTargets
+                            drillSessionScreen = DrillSessionScreen.TIMER
+                            showTimerSession = true
                         }
-                        if (availableDevices.isNotEmpty()) {
-                            val nextSeqNo = targets.size + 1
-                            val newTarget = DrillTargetsConfigData(
-                                seqNo = nextSeqNo,
-                                targetName = availableDevices.first().name,
-                                targetType = DrillTargetsConfigData.getDefaultTargetTypeForDrillMode(drillMode),
-                                timeout = 30.0,
-                                countedShots = 5
-                            )
-                            targets = targets + newTarget
-                        }
-                    },
-                    onDeleteTarget = { index ->
-                        targets = targets.filterIndexed { i, _ -> i != index }
-                            .mapIndexed { i, config -> config.copy(seqNo = i + 1) }
-                    },
-                    onUpdateTargetDevice = { index, deviceName ->
-                        targets = targets.mapIndexed { i, config ->
-                            if (i == index) config.copy(targetName = deviceName) else config
-                        }
-                    },
-                    onUpdateTargetType = { index, type ->
-                        targets = targets.mapIndexed { i, config ->
-                            if (i == index) config.copy(targetType = type) else config
-                        }
-                    },
-                    onDone = { currentScreen = DrillFormScreen.FORM },
-                    onBack = { currentScreen = DrillFormScreen.FORM },
-                    paddingValues = paddingValues
-                )
+                    )
+                }
+                DrillFormScreen.TARGET_CONFIG -> {
+                    TargetConfigScreen(
+                        bleManager = bleManager,
+                        targetConfigs = targets,
+                        drillMode = drillMode,
+                        onAddTarget = {
+                            val availableDevices = bleManager.networkDevices.filter { device ->
+                                targets.none { it.targetName == device.name }
+                            }
+                            if (availableDevices.isNotEmpty()) {
+                                val nextSeqNo = targets.size + 1
+                                val newTarget = DrillTargetsConfigData(
+                                    seqNo = nextSeqNo,
+                                    targetName = availableDevices.first().name,
+                                    targetType = DrillTargetsConfigData.getDefaultTargetTypeForDrillMode(drillMode),
+                                    timeout = 30.0,
+                                    countedShots = 5
+                                )
+                                targets = targets + newTarget
+                            }
+                        },
+                        onDeleteTarget = { index ->
+                            targets = targets.filterIndexed { i, _ -> i != index }
+                                .mapIndexed { i, config -> config.copy(seqNo = i + 1) }
+                        },
+                        onUpdateTargetDevice = { index, deviceName ->
+                            targets = targets.mapIndexed { i, config ->
+                                if (i == index) config.copy(targetName = deviceName) else config
+                            }
+                        },
+                        onUpdateTargetType = { index, type ->
+                            targets = targets.mapIndexed { i, config ->
+                                if (i == index) config.copy(targetType = type) else config
+                            }
+                        },
+                        onDone = { currentScreen = DrillFormScreen.FORM },
+                        onBack = { currentScreen = DrillFormScreen.FORM },
+                        paddingValues = paddingValues
+                    )
+                }
             }
         }
     }
@@ -322,25 +452,15 @@ private fun FormScreen(
     paddingValues: PaddingValues,
     androidBleManager: AndroidBLEManager?,
     isEditingDisabled: Boolean = false,
-    showTimerSession: Boolean = false,
-    onShowTimerSessionChange: (Boolean) -> Unit = {},
-    showDrillSummary: Boolean = false,
-    onShowDrillSummaryChange: (Boolean) -> Unit = {}
+    onStartDrill: (DrillSetupEntity, List<DrillTargetsConfigEntity>) -> Unit = { _, _ -> }
 ) {
-    var timerSessionDrill by remember { mutableStateOf<DrillSetupEntity?>(null) }
-    var timerSessionTargets by remember { mutableStateOf<List<DrillTargetsConfigEntity>>(emptyList()) }
-    var drillSummaries by remember { mutableStateOf<List<DrillRepeatSummary>>(emptyList()) }
-    var showDrillResult by remember { mutableStateOf(false) }
-    var selectedResultSummary by remember { mutableStateOf<DrillRepeatSummary?>(null) }
-    var showDrillReplay by remember { mutableStateOf(false) }
-    var selectedReplaySummary by remember { mutableStateOf<DrillRepeatSummary?>(null) }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
             .padding(paddingValues)
     ) {
+        // Show form content
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -475,9 +595,8 @@ private fun FormScreen(
                             )
                         }
 
-                        timerSessionDrill = sessionDrill
-                        timerSessionTargets = sessionTargets
-                        onShowTimerSessionChange(true)
+                        println("[FormScreen] Starting drill - calling onStartDrill callback")
+                        onStartDrill(sessionDrill, sessionTargets)
                     },
                     enabled = bleManager.isConnected && androidBleManager != null,
                     modifier = Modifier.weight(1f),
@@ -494,70 +613,6 @@ private fun FormScreen(
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
                 color = Color.Red
-            )
-        }
-        if (showTimerSession && timerSessionDrill != null && androidBleManager != null) {
-            TimerSessionView(
-                drillSetup = timerSessionDrill!!,
-                targets = timerSessionTargets,
-                bleManager = androidBleManager,
-                drillResultRepository = DrillResultRepository.getInstance(LocalContext.current),
-                onDrillComplete = { summaries ->
-                    println("[DrillFormView] onDrillComplete called with ${summaries.size} summaries")
-                    summaries.forEach { summary ->
-                        println("[DrillFormView] Summary ${summary.repeatIndex}: ${summary.numShots} shots, score: ${summary.score}, time: ${summary.totalTime}")
-                    }
-                    drillSummaries = summaries
-                    onShowTimerSessionChange(false)
-                    onShowDrillSummaryChange(true)
-                },
-                onDrillFailed = {
-                    onShowTimerSessionChange(false)
-                },
-                onBack = {
-                    onShowTimerSessionChange(false)
-                }
-            )
-        }
-
-        if (showDrillSummary && timerSessionDrill != null) {
-            DrillSummaryView(
-                drillSetup = timerSessionDrill!!,
-                summaries = drillSummaries,
-                onBack = {
-                    onShowDrillSummaryChange(false)
-                },
-                onViewResult = { summary ->
-                    selectedResultSummary = summary
-                    showDrillResult = true
-                },
-                onReplay = { summary ->
-                    selectedReplaySummary = summary
-                    showDrillReplay = true
-                }
-            )
-        }
-
-        if (showDrillResult && timerSessionDrill != null && selectedResultSummary != null) {
-            DrillResultView(
-                drillSetup = timerSessionDrill!!,
-                targets = timerSessionTargets.map { DrillTargetsConfigData.fromEntity(it) },
-                repeatSummary = selectedResultSummary,
-                onBack = {
-                    showDrillResult = false
-                    selectedResultSummary = null
-                }
-            )
-        }
-
-        if (showDrillReplay && selectedReplaySummary != null) {
-            DrillReplayView(
-                drillSetup = timerSessionDrill!!,
-                shots = selectedReplaySummary!!.shots,
-                onBack = {
-                    showDrillReplay = false
-                    selectedReplaySummary = null
-                }
             )
         }
     }

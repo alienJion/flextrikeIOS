@@ -39,11 +39,12 @@ fun DrillSummaryView(
     summaries: List<DrillRepeatSummary>,
     onBack: () -> Unit,
     onViewResult: (DrillRepeatSummary) -> Unit,
-    onReplay: (DrillRepeatSummary) -> Unit = {},
+    onReplay: (DrillRepeatSummary) -> Unit,
     isCompetitionDrill: Boolean = false,
     onCompetitionSubmit: () -> Unit = {}
 ) {
-    println("[DrillSummaryView] Rendering with ${summaries.size} summaries")
+    println("[DrillSummaryView] Rendering with ${summaries.size} summaries, onReplay callback is null: ${onReplay == null}, onReplay is empty: ${onReplay == {}}")
+    println("[DrillSummaryView] onReplay callback: $onReplay")
     summaries.forEach { summary ->
         println("[DrillSummaryView] Summary ${summary.repeatIndex}: totalTime=${summary.totalTime}, firstShot=${summary.firstShot}, fastest=${summary.fastest}, numShots=${summary.numShots}, score: ${summary.score}")
     }
@@ -110,23 +111,41 @@ fun DrillSummaryView(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(vertical = 24.dp, horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     itemsIndexed(summaries) { index, summary ->
-                        SummaryCard(
-                            title = "Repeat ${summary.repeatIndex}",
-                            subtitle = "Factor: ${String.format("%.2f", calculateFactor(summary.score, summary.totalTime))}",
-                            metrics = getMetricsForSummary(summary, drillSetup),
-                            summaryIndex = index,
-                            onDeductScore = { deductScore(summaries, index, originalScores) },
-                            onRestoreScore = { restoreScore(summaries, index, originalScores) },
-                            onCardClick = { onViewResult(summary) },
-                            onReplay = { onReplay(summary) },
-                            onEditHitZones = {
-                                editingSummary = summary
-                                showEditDialog = true
-                            }
-                        )
+                        Column {
+                            SummaryCard(
+                                title = "Repeat ${summary.repeatIndex}",
+                                subtitle = "Factor: ${String.format("%.2f", calculateFactor(summary.score, summary.totalTime))}",
+                                metrics = getMetricsForSummary(summary, drillSetup),
+                                summaryIndex = index,
+                                onDeductScore = { deductScore(summaries, index, originalScores) },
+                                onRestoreScore = { restoreScore(summaries, index, originalScores) },
+                                onCardClick = { onViewResult(summary) },
+                                onEditHitZones = {
+                                    editingSummary = summary
+                                    showEditDialog = true
+                                }
+                            )
+                            
+                            // Play button below the card
+                            PlayReplayButton(
+                                onReplay = { 
+                                    println("[DrillSummaryView] Play button callback lambda executing - summary ${summary.repeatIndex} has ${summary.shots.size} shots")
+                                    println("[DrillSummaryView] About to call onReplay with summary... onReplay=$onReplay")
+                                    println("[DrillSummaryView] onReplay.toString() = ${onReplay.toString()}")
+                                    try {
+                                        onReplay(summary)
+                                        println("[DrillSummaryView] onReplay call completed successfully")
+                                    } catch (e: Exception) {
+                                        println("[DrillSummaryView] Exception calling onReplay: ${e.message}")
+                                        e.printStackTrace()
+                                    }
+                                    println("[DrillSummaryView] onReplay returned")
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -372,7 +391,6 @@ private fun SummaryCard(
     onDeductScore: () -> Unit,
     onRestoreScore: () -> Unit,
     onCardClick: () -> Unit,
-    onReplay: () -> Unit,
     onEditHitZones: () -> Unit
 ) {
     Card(
@@ -444,7 +462,6 @@ private fun SummaryCard(
                 ) {
                     PenaltyButton(onClick = onDeductScore)
                     RestoreButton(onClick = onRestoreScore)
-                    ReplayButton(onClick = onReplay)
                 }
             }
 
@@ -727,35 +744,52 @@ private fun RestoreButton(onClick: () -> Unit) {
 }
 
 @Composable
-private fun ReplayButton(onClick: () -> Unit) {
+private fun PlayReplayButton(
+    onReplay: () -> Unit
+) {
+    println("[PlayReplayButton] Initialized with onReplay callback: $onReplay")
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.92f else 1.0f,
+        targetValue = if (isPressed) 0.95f else 1.0f,
         animationSpec = tween(durationMillis = 150),
-        label = "replay_button_scale"
+        label = "play_button_scale"
+    )
+    val backgroundColor by animateFloatAsState(
+        targetValue = if (isPressed) 1.0f else 0.95f,
+        animationSpec = tween(durationMillis = 150),
+        label = "play_button_bg"
     )
 
-    IconButton(
-        onClick = onClick,
+    Button(
+        onClick = {
+            println("[PlayReplayButton] Button physically clicked on screen!")
+            isPressed = false
+            println("[PlayReplayButton] About to invoke onReplay lambda...")
+            onReplay()
+            println("[PlayReplayButton] onReplay lambda completed")
+        },
         modifier = Modifier
-            .size(40.dp)
+            .fillMaxWidth()
+            .height(48.dp)
             .scale(scale)
+            .shadow(8.dp, RoundedCornerShape(12.dp), ambientColor = Color.Red.copy(alpha = 0.5f)),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Red.copy(alpha = backgroundColor),
+            contentColor = Color.White
+        ),
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black, CircleShape)
-                .shadow(6.dp, CircleShape, ambientColor = Color.Red.copy(alpha = 0.3f))
-        ) {
-            Icon(
-                imageVector = Icons.Default.PlayArrow,
-                contentDescription = "Replay",
-                tint = Color.Red,
-                modifier = Modifier
-                    .size(16.dp)
-                    .align(Alignment.Center)
-            )
-        }
+        Icon(
+            imageVector = Icons.Default.PlayArrow,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            "观看回放",
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp
+        )
     }
 }
 

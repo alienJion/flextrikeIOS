@@ -211,5 +211,95 @@ Adapt SwiftUI features to Compose, ensuring UI consistency.
 Verify scoring logic alignment between DrillExecutionManager.kt and iOS.
 Add localization and robust error handling for polish.
 
+2.3. Drill History View
 
-2.3 Drill Replay View
+2.3 Drill Result View
+ipsc - ipsc.live.target.png
+hostage - hostage.live.target.png
+popper - popper.live.target.png
+paddle - paddle.live.target.png
+ipsc-black-1 ipsc.special.1.live.target.png
+ipsc-black-2 ipsc.special.2.live.target.png
+rotation drills_back.jpg
+
+2.4 Drill Replay View
+- UI Design: screenshot of iOS
+Top part is preview of the shots with the background image of the [targettype].live.target.png
+Bottom part is a play contorl(time is total time), each shot has mark in the timeline
+Play, pause, next, prev and drag the slider, and the shots are render in the top preview area.
+
+NONE (Form)
+  ↓ [Start Drill]
+TIMER (Session Recording)
+  ↓ [Drill Complete]
+SUMMARY (Results Overview)
+  ↙ [View Result]    ↘ [Play Replay]
+RESULT              REPLAY
+  ↓                   ↓
+SUMMARY ←───────────SUMMARY
+
+HistoryTabView
+  ↓ [Drill Complete]
+SUMMARY (Results Overview)
+  ↙ [View Result]    ↘ [Play Replay]
+RESULT              REPLAY
+  ↓                   ↓
+SUMMARY ←───────────SUMMARY
+
+Based on the TabNavigationView.kt file, which appears to be the main navigation component for the FlexTarget Android app, here's an outline of the navigation flow. This is a Jetpack Compose-based app using a bottom navigation bar with four primary tabs, plus nested screens for drill-related actions. The flow is managed via a NavHostController with composable routes.
+
+Main Navigation Structure
+The app uses a Scaffold with a bottom NavigationBar containing four tabs. Each tab navigates to a top-level route, and some include sub-navigation or overlays.
+
+Bottom Navigation Tabs (always accessible via the bottom bar):
+
+Drills (route: "drills")
+
+Default starting destination.
+Displays DrillListView (a list of available drills).
+Includes overlays for:
+BLE connection view (ConnectSmartTargetView) – triggered by onShowConnectView.
+QR scanner view (QRScannerView) – triggered by onShowQRScanner; scans a target and auto-sets it for BLE connection.
+No explicit sub-navigation routes from here in the code, but the view handles drill selection internally.
+History (route: "history")
+
+Displays HistoryTabView (likely a list of past drill sessions).
+Sub-navigation managed via state variables (not routes):
+From HistoryTabView, select a drill setup → shows DrillSummaryView (summary of repeats for that setup).
+From DrillSummaryView:
+View result → shows DrillResultView (detailed results for a specific repeat).
+Replay → shows DrillReplayView (replay of shots for a specific repeat).
+All sub-views have back actions to return to the previous state (e.g., onBack callbacks).
+Competition (route: "competition")
+
+Displays CompetitionTabView (competition-related features, integrated with view models for auth, competition, and drills).
+No sub-navigation routes defined in this file; likely handles internal navigation or actions.
+Admin (route: "admin")
+
+Displays AdminTabView (admin features, integrated with BLE, auth, and OTA view models).
+No sub-navigation routes defined in this file; likely handles internal navigation or actions.
+Additional Routes (not tied to tabs, accessed via programmatic navigation):
+
+Drill List (route: "drill_list")
+
+Displays DrillListView (similar to the Drills tab, but with a back button to pop the stack).
+Seems redundant with the Drills tab; may be used for deep-linking or specific flows.
+Drill Summary (route: "drill_summary/{drillSetupId}")
+
+Placeholder screen (DrillSummaryScreen) – marked as TODO, shows basic text with the setup ID.
+Likely intended for summarizing a drill setup before running it.
+Drill Result (route: "drill_result/{drillSetupId}/{repeatIndex}")
+
+Placeholder screen (DrillResultScreen) – marked as TODO, shows basic text with setup ID and repeat index.
+Likely intended for viewing results of a specific drill repeat.
+Key Navigation Behaviors
+Tab Switching: Uses navController.navigate() with popUpTo(navController.graph.startDestinationId) and launchSingleTop = true to reset to the tab's root and avoid stacking duplicates.
+Back Navigation: Relies on navController.popBackStack() for route-based screens. For state-managed sub-views (e.g., in History), uses callback lambdas like onBack to reset state.
+State Management: The History tab uses Compose state (remember) to toggle between views (e.g., showDrillResult, selectedDrillSetup) instead of routes, creating a modal-like flow within the tab.
+Overlays in Drills Tab: BLE connect and QR scanner are shown as conditional Composables overlaid on the main view, not separate routes.
+Dependencies: Integrates with various view models (e.g., AppContainer.authViewModel), repositories (e.g., DrillSetupRepository), and BLE manager for functionality.
+Notes
+The app starts at the "drills" route by default.
+Some screens (e.g., DrillSummaryScreen, DrillResultScreen) are placeholders and not fully implemented.
+No cross-tab deep-linking or complex flows are evident; navigation is mostly tab-based with simple sub-screens.
+If you need details on specific views (e.g., what DrillListView or CompetitionTabView does internally), I can examine those files. Let me know if you'd like me to expand on any part or check for additional navigation logic elsewhere in the codebase.

@@ -23,6 +23,7 @@ import com.flextarget.android.di.AppContainer
 import com.flextarget.android.ui.competition.CompetitionTabView
 import com.flextarget.android.ui.drills.DrillListView
 import com.flextarget.android.ui.drills.DrillSummaryView
+import com.flextarget.android.ui.drills.DrillReplayView
 import com.flextarget.android.ui.drills.DrillResultView
 import com.flextarget.android.ui.drills.HistoryTabView
 import com.flextarget.android.ui.admin.AdminTabView
@@ -237,8 +238,10 @@ private fun HistoryTabContent(navController: NavHostController) {
     var selectedDrillSetup by remember { mutableStateOf<DrillSetupEntity?>(null) }
     var selectedSummaries by remember { mutableStateOf<List<DrillRepeatSummary>?>(null) }
     var selectedResultSummary by remember { mutableStateOf<DrillRepeatSummary?>(null) }
+    var selectedReplaySummary by remember { mutableStateOf<DrillRepeatSummary?>(null) }
     var drillTargets by remember { mutableStateOf(emptyList<com.flextarget.android.data.model.DrillTargetsConfigData>()) }
     var showDrillResult by remember { mutableStateOf(false) }
+    var showDrillReplay by remember { mutableStateOf(false) }
 
     // Fetch targets when drill setup changes
     LaunchedEffect(selectedDrillSetup) {
@@ -257,7 +260,16 @@ private fun HistoryTabContent(navController: NavHostController) {
         }
     }
 
-    if (showDrillResult && selectedDrillSetup != null && selectedResultSummary != null) {
+    if (showDrillReplay && selectedDrillSetup != null && selectedReplaySummary != null) {
+        DrillReplayView(
+            drillSetup = selectedDrillSetup!!,
+            shots = selectedReplaySummary!!.shots,
+            onBack = {
+                showDrillReplay = false
+                selectedReplaySummary = null
+            }
+        )
+    } else if (showDrillResult && selectedDrillSetup != null && selectedResultSummary != null) {
         DrillResultView(
             drillSetup = selectedDrillSetup!!,
             targets = drillTargets,
@@ -278,6 +290,10 @@ private fun HistoryTabContent(navController: NavHostController) {
             onViewResult = { summary ->
                 selectedResultSummary = summary
                 showDrillResult = true
+            },
+            onReplay = { summary ->
+                selectedReplaySummary = summary
+                showDrillReplay = true
             }
         )
     } else {
