@@ -2,17 +2,19 @@ package com.flextarget.android.ui.drills
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FastForward
-import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 
 /**
- * Playback controls for drill replay (Play, Pause, Next, Previous)
+ * Playback controls for drill replay - matches iOS design
+ * Includes backward, play/pause, and forward buttons
  */
 @Composable
 fun PlaybackControlsView(
@@ -31,53 +33,50 @@ fun PlaybackControlsView(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Previous button
+        // Backward button
         IconButton(
             onClick = onPrevClick,
             enabled = canGoPrev,
             modifier = Modifier.size(48.dp)
         ) {
             Icon(
-                imageVector = Icons.Filled.FastRewind,
+                imageVector = Icons.Default.PlayArrow,
                 contentDescription = "Previous",
                 tint = if (canGoPrev) Color.White else Color.Gray,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier
+                    .size(24.dp)
+                    .graphicsLayer(rotationZ = 180f)
             )
         }
 
-        Spacer(modifier = Modifier.width(24.dp))
+        Spacer(modifier = Modifier.width(40.dp))
 
-        // Play/Pause button
-        Button(
+        // Play/Pause button (large centered)
+        IconButton(
             onClick = onPlayPauseClick,
-            modifier = Modifier
-                .size(64.dp),
-            shape = androidx.compose.foundation.shape.CircleShape,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (isPlaying) Color.Red else Color.Green
-            ),
-            contentPadding = PaddingValues(0.dp)
+            modifier = Modifier.size(80.dp)
         ) {
-            Text(
-                text = if (isPlaying) "⏸" else "▶",
-                color = Color.White,
-                style = MaterialTheme.typography.headlineSmall
+            Icon(
+                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                contentDescription = if (isPlaying) "Pause" else "Play",
+                tint = Color.White,
+                modifier = Modifier.size(44.dp)
             )
         }
 
-        Spacer(modifier = Modifier.width(24.dp))
+        Spacer(modifier = Modifier.width(40.dp))
 
-        // Next button
+        // Forward button
         IconButton(
             onClick = onNextClick,
             enabled = canGoNext,
             modifier = Modifier.size(48.dp)
         ) {
             Icon(
-                imageVector = Icons.Filled.FastForward,
+                imageVector = Icons.Default.PlayArrow,
                 contentDescription = "Next",
                 tint = if (canGoNext) Color.White else Color.Gray,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
     }

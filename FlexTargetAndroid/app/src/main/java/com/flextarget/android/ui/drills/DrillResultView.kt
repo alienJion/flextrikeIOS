@@ -92,22 +92,29 @@ fun DrillResultView(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .weight(1f)
+                .weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
         // Target display area
-        TargetDisplayView(
-            targets = targets,
-            shots = displayShots,
-            selectedTargetIndex = selectedTargetIndex,
-            selectedShotIndex = selectedShotIndex,
-            onTargetSelected = { selectedTargetIndex = it },
-            onShotSelected = { selectedShotIndex = it },
-            frameWidth = frameWidth,
-            frameHeight = frameHeight,
+        Box(
             modifier = Modifier
                 .weight(1f)
-                .padding(16.dp)
-        )
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            TargetDisplayView(
+                targets = targets,
+                shots = displayShots,
+                selectedTargetIndex = selectedTargetIndex,
+                selectedShotIndex = selectedShotIndex,
+                onTargetSelected = { selectedTargetIndex = it },
+                onShotSelected = { selectedShotIndex = it },
+                frameWidth = frameWidth,
+                frameHeight = frameHeight,
+                modifier = Modifier
+                    .padding(16.dp)
+            )
+        }
 
         // Shot list
         Divider(color = Color.White.copy(alpha = 0.3f))
@@ -123,24 +130,24 @@ fun DrillResultView(
         )
 
         // Status bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Drill Completed",
-                style = MaterialTheme.typography.headlineSmall,
-                color = Color.White
-            )
-            Text(
-                text = "${displayShots.size} shots",
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color.White.copy(alpha = 0.85f)
-            )
-        }
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(horizontal = 20.dp, vertical = 20.dp),
+//            horizontalArrangement = Arrangement.SpaceBetween,
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Text(
+//                text = "Drill Completed",
+//                style = MaterialTheme.typography.headlineSmall,
+//                color = Color.White
+//            )
+//            Text(
+//                text = "${displayShots.size} shots",
+//                style = MaterialTheme.typography.bodyLarge,
+//                color = Color.White.copy(alpha = 0.85f)
+//            )
+//        }
         }
     }
 }
@@ -187,9 +194,9 @@ private fun TargetDisplayView(
         Box(
             modifier = Modifier
                 .size(frameWidth, frameHeight)
-                .clip(RoundedCornerShape(8.dp))
+        //        .clip(RoundedCornerShape(8.dp))
                 .background(Color.Black)
-                .border(2.dp, Color.White, RoundedCornerShape(8.dp))
+        //      .border(2.dp, Color.White, RoundedCornerShape(8.dp))
         ) {
             // Load and display target image from assets
             AsyncImage(
@@ -212,7 +219,7 @@ private fun TargetDisplayView(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(6.dp)
-                        .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
+//                        .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 )
             }

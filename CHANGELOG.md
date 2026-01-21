@@ -303,3 +303,20 @@ The app starts at the "drills" route by default.
 Some screens (e.g., DrillSummaryScreen, DrillResultScreen) are placeholders and not fully implemented.
 No cross-tab deep-linking or complex flows are evident; navigation is mostly tab-based with simple sub-screens.
 If you need details on specific views (e.g., what DrillListView or CompetitionTabView does internally), I can examine those files. Let me know if you'd like me to expand on any part or check for additional navigation logic elsewhere in the codebase.
+
+HistoryTabView(HistoryTabContent)
+- Font Size
+
+DrillSummaryView
+- UI Improvement
+- Remove the PE/Reset button
+- Replace Android metric icons from generic Info icons to Material Design equivalents matching iOS SF Symbols functionality.
+
+Create design specification document with color codes, typography, spacing, icons, and animation guidelines for both platforms.
+Fix Android replay button text from hardcoded Chinese to use proper string resource localization.
+Implement CQBDrillSummaryView in Android matching iOS CQB-specific features (pass/fail indicators, threat status badges).
+
+Implement competition submission flow in Android, matching iOS submission button behavior and data handling.
+Align animation patterns: add value transition animations to iOS views matching Android's 500ms animated transitions.
+Standardize hit zone editor styling and interactions between Sheet (iOS) and Dialog (Android) modals.
+Verify penalty calculation logic and hit zone count computations are identical across both platforms.

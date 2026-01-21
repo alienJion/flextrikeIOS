@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -117,7 +118,7 @@ fun DrillSummaryView(
                         Column {
                             SummaryCard(
                                 title = "Repeat ${summary.repeatIndex}",
-                                subtitle = "Factor: ${String.format("%.2f", calculateFactor(summary.score, summary.totalTime))}",
+                                subtitle = "Factor: ${String.format("%.1f", calculateFactor(summary.score, summary.totalTime))}",
                                 metrics = getMetricsForSummary(summary, drillSetup),
                                 summaryIndex = index,
                                 onDeductScore = { deductScore(summaries, index, originalScores) },
@@ -454,15 +455,6 @@ private fun SummaryCard(
                         )
                     }
                 }
-
-                // Right side: Action buttons
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    PenaltyButton(onClick = onDeductScore)
-                    RestoreButton(onClick = onRestoreScore)
-                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -475,20 +467,49 @@ private fun SummaryCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Metrics grid (6 columns - excluding Hit Zones)
-            Row(
+            // Metrics grid (2x3 layout - excluding Hit Zones)
+            // 2 rows x 3 columns for better readability
+            val metricsToDisplay = metrics.filter { !it.label.contains("Hit") }
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                metrics.filter { !it.label.contains("Hit") }.forEachIndexed { index, metric ->
-                    MetricView(
-                        metric = metric,
-                        modifier = Modifier.weight(1f),
-                        onClick = if (metric.isClickable) {
-                            // First metric (Total Time) navigates to DrillResultView
-                            if (index == 0) onCardClick else onEditHitZones
-                        } else null
-                    )
+                // First row: 3 metrics
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    metricsToDisplay.slice(0..2).forEachIndexed { index, metric ->
+                        MetricView(
+                            metric = metric,
+                            modifier = Modifier.weight(1f),
+                            onClick = if (metric.isClickable) {
+                                // First metric (Total Time) navigates to DrillResultView
+                                if (index == 0) onCardClick else onEditHitZones
+                            } else null
+                        )
+                    }
+                }
+                
+                // Second row: 3 metrics
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    metricsToDisplay.slice(3..5).forEachIndexed { index, metric ->
+                        MetricView(
+                            metric = metric,
+                            modifier = Modifier.weight(1f),
+                            onClick = if (metric.isClickable) {
+                                // Index in filtered list is index+3, adjust for callback logic
+                                if (index + 3 == 0) onCardClick else onEditHitZones
+                            } else null
+                        )
+                    }
                 }
             }
 
@@ -526,6 +547,7 @@ private fun MetricView(
 
     Column(
         modifier = modifier
+            .fillMaxHeight()
             .clip(RoundedCornerShape(18.dp))
             .background(
                 brush = Brush.linearGradient(
@@ -536,9 +558,9 @@ private fun MetricView(
                 )
             )
             .then(if (metric.isClickable) Modifier.clickable(onClick = onClick ?: {}) else Modifier)
-            .padding(vertical = 14.dp, horizontal = 16.dp),
+            .padding(vertical = 14.dp, horizontal = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.Center
     ) {
         // Icon and label
         Row(
@@ -564,10 +586,10 @@ private fun MetricView(
         Text(
             text = if (metric.value.contains(" s")) {
                 // For time values, animate the number but keep the "s" unit
-                String.format("%.2f s", animatedValue)
+                String.format("%.1f s", animatedValue)
             } else if (metric.value.contains(".")) {
                 // For other decimal values, animate them
-                String.format("%.2f", animatedValue)
+                String.format("%.1f", animatedValue)
             } else {
                 // For integer values, display as-is
                 metric.value
@@ -786,7 +808,7 @@ private fun PlayReplayButton(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            "观看回放",
+            "REPLAY DRILL",
             fontWeight = FontWeight.SemiBold,
             fontSize = 14.sp
         )
@@ -805,35 +827,35 @@ private fun getMetricsForSummary(summary: DrillRepeatSummary, drillSetup: DrillS
 
     return listOf(
         SummaryMetric(
-            icon = Icons.Default.Info,
+            icon = Icons.Outlined.Schedule,
             label = "Total Time",
             value = formatTime(summary.totalTime),
             isClickable = true
         ),
         SummaryMetric(
-            icon = Icons.Default.Info,
+            icon = Icons.Outlined.Info,
             label = "Shots",
             value = "${summary.numShots}"
         ),
         SummaryMetric(
-            icon = Icons.Default.Info,
+            icon = Icons.Filled.ElectricBolt,
             label = "Fastest",
             value = formatTime(summary.fastest)
         ),
         SummaryMetric(
-            icon = Icons.Default.Info,
+            icon = Icons.Outlined.Schedule,
             label = "First Shot",
             value = formatTime(summary.firstShot)
         ),
         SummaryMetric(
-            icon = Icons.Default.Info,
+            icon = Icons.Filled.LocalFireDepartment,
             label = "Score",
             value = "${summary.score}"
         ),
         SummaryMetric(
-            icon = Icons.Default.Info,
+            icon = Icons.Outlined.Percent,
             label = "Factor",
-            value = String.format("%.3f", calculateFactor(summary.score, summary.totalTime))
+            value = String.format("%.1f", calculateFactor(summary.score, summary.totalTime))
         ),
         SummaryMetric(
             icon = Icons.Default.Info,
@@ -846,7 +868,7 @@ private fun getMetricsForSummary(summary: DrillRepeatSummary, drillSetup: DrillS
 
 private fun formatTime(time: Double): String {
     return if (time.isFinite() && time > 0) {
-        String.format("%.2f s", time)
+        String.format("%.1f s", time)
     } else {
         "--"
     }

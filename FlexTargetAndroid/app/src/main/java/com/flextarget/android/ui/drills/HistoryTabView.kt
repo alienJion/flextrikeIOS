@@ -186,12 +186,12 @@ fun HistoryTabView(
                         Text(
                             "No results found",
                             color = Color.White,
-                            style = MaterialTheme.typography.headlineSmall
+                            style = MaterialTheme.typography.bodySmall
                         )
                         Text(
                             "Complete some drills to see your history",
                             color = Color.Gray,
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
                 }
@@ -237,7 +237,7 @@ fun HistoryTabView(
                                         Text(
                                             session.setup.name ?: "Untitled",
                                             color = Color.White,
-                                            style = MaterialTheme.typography.headlineSmall
+                                            style = MaterialTheme.typography.bodyLarge
                                         )
                                         Text(
                                             "${session.repeatCount} repeats",
@@ -369,7 +369,7 @@ private fun DrillSummaryCard(
                 Text(
                     drillSetup.name ?: "Untitled",
                     color = Color.White,
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
                     drillSetup.mode?.uppercase() ?: "N/A",
