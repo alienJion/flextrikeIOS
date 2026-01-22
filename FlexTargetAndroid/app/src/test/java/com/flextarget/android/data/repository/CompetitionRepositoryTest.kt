@@ -9,7 +9,6 @@ import com.flextarget.android.data.local.entity.GamePlayEntity
 import com.flextarget.android.data.remote.api.FlexTargetAPI
 import com.flextarget.android.data.remote.api.AddGamePlayRequest
 import com.flextarget.android.data.remote.api.ApiResponse
-import com.flextarget.android.data.remote.api.GamePlayRankingResponse
 import com.flextarget.android.data.remote.api.GamePlayResponse
 import com.flextarget.android.data.remote.api.RankingRow
 import com.google.common.truth.Truth.assertThat
@@ -350,8 +349,8 @@ class CompetitionRepositoryTest {
         every { mockRow.score } returns 100
         every { mockRow.play_time } returns "2024-01-15 10:30:00"
 
-        val mockResponse = mockk<ApiResponse<GamePlayRankingResponse>>()
-        every { mockResponse.data?.rows } returns listOf(mockRow)
+        val mockResponse = mockk<ApiResponse<List<RankingRow>>>()
+        every { mockResponse.data } returns listOf(mockRow)
         coEvery { mockApi.getGamePlayRanking(any(), any(), any(), any(), any(), any()) } returns mockResponse
 
         // When

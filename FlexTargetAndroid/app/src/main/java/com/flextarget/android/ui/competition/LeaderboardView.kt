@@ -38,9 +38,9 @@ fun LeaderboardView(
     viewModel: CompetitionViewModel
 ) {
     val uiState by viewModel.competitionUiState.collectAsState()
-    val rankingRows = remember { mutableStateOf(emptyList<RankingRow>()) }
     val isLoading = uiState.isLoading
     val errorMessage = uiState.error
+    val selectedLeaderboardCompetition = remember { mutableStateOf<CompetitionEntity?>(null) }
 
     Column(
         modifier = Modifier
@@ -66,9 +66,9 @@ fun LeaderboardView(
         if (uiState.competitions.isNotEmpty()) {
             CompetitionDropdown(
                 competitions = uiState.competitions,
-                selectedCompetition = uiState.selectedCompetition,
+                selectedCompetition = selectedLeaderboardCompetition.value,
                 onSelectionChanged = {
-                    viewModel.selectCompetition(it)
+                    selectedLeaderboardCompetition.value = it
                     viewModel.loadRankings(it.id)
                 },
                 modifier = Modifier
@@ -92,6 +92,19 @@ fun LeaderboardView(
 
         // Content Area
         when {
+            selectedLeaderboardCompetition.value == null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Select a competition to view rankings",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
             isLoading -> {
                 Box(
                     modifier = Modifier

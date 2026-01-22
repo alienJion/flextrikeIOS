@@ -163,7 +163,7 @@ data class GamePlayRankingRequest(
     @SerializedName("game_type")
     val game_type: String,
     @SerializedName("game_ver")
-    val game_ver: String = "1.0",
+    val game_ver: String = "1.0.0",
     @SerializedName("namespace")
     val namespace: String = "default",
     @SerializedName("page")

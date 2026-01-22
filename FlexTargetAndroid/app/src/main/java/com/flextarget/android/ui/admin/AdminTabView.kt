@@ -251,7 +251,7 @@ private fun AdminMenuButton(
                 Text(
                     text = title,
                     color = Color.White,
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
@@ -397,7 +397,7 @@ private fun DeviceMenuOption(
                 Text(
                     text = title,
                     color = Color.White,
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Text(

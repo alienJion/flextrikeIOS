@@ -44,6 +44,7 @@ class CompetitionViewModel(
     private val _selectedAthlete = MutableStateFlow<AthleteEntity?>(null)
     private val _isLoading = MutableStateFlow(false)
     private val _error = MutableStateFlow<String?>(null)
+    private val _rankings = MutableStateFlow<List<RankingData>>(emptyList())
 
     /**
      * Current competitions UI state
@@ -54,7 +55,8 @@ class CompetitionViewModel(
         _selectedCompetition,
         _selectedAthlete,
         _isLoading,
-        _error
+        _error,
+        _rankings
     ) { flows ->
         val competitions = flows[0] as List<CompetitionEntity>
         val athletes = flows[1] as List<AthleteEntity>
@@ -62,6 +64,7 @@ class CompetitionViewModel(
         val selectedAth = flows[3] as AthleteEntity?
         val isLoading = flows[4] as Boolean
         val error = flows[5] as String?
+        val rankings = flows[6] as List<RankingData>
 
         CompetitionUiState(
             competitions = competitions,
@@ -69,7 +72,8 @@ class CompetitionViewModel(
             selectedCompetition = selectedComp,
             selectedAthlete = selectedAth,
             isLoading = isLoading,
-            error = error
+            error = error,
+            rankings = rankings
         )
     }
         .stateIn(
@@ -170,8 +174,17 @@ class CompetitionViewModel(
     fun loadRankings(competitionId: UUID) {
         viewModelScope.launch {
             _isLoading.value = true
-            // ... (implement ranking fetch if not already in repo)
-            _isLoading.value = false
+            _error.value = null
+            competitionRepository.getCompetitionRanking(competitionId)
+                .onSuccess { rankings ->
+                    _rankings.value = rankings
+                    _isLoading.value = false
+                }
+                .onFailure { error ->
+                    _error.value = "Failed to load rankings: ${error.message}"
+                    _rankings.value = emptyList()
+                    _isLoading.value = false
+                }
         }
     }
 

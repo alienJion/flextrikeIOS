@@ -209,7 +209,7 @@ fun DrillListView(
                                     text = drillWithTargetsItem.drillSetup.name ?: "Untitled",
                                     color = Color.White,
                                     fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Bold
                                 )
 
                                 // Inline drill info

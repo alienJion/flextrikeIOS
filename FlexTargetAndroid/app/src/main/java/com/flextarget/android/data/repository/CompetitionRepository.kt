@@ -163,7 +163,7 @@ class CompetitionRepository @Inject constructor(
             val response = api.addGamePlay(
                 AddGamePlayRequest(
                     game_type = competitionId.toString(),
-                    game_ver = "1.0",
+                    game_ver = "1.0.0",
                     player_mobile = null,
                     player_nickname = playerNickname,
                     score = score,
@@ -247,7 +247,7 @@ class CompetitionRepository @Inject constructor(
             val response = api.getGamePlayRanking(
                 GamePlayRankingRequest(
                     game_type = competitionId.toString(),
-                    game_ver = "1.0",
+                    game_ver = "1.0.0",
                     namespace = "default",
                     page = page,
                     limit = limit
@@ -255,7 +255,7 @@ class CompetitionRepository @Inject constructor(
                 authHeader = "Bearer $userToken"
             )
             
-            val rankings = response.data?.rows?.map { row ->
+            val rankings = response.data?.map { row ->
                 RankingData(
                     rank = row.rank,
                     playerNickname = row.playerNickname,

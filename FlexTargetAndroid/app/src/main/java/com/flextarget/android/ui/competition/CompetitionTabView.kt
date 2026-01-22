@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.text.font.FontWeight
 import com.flextarget.android.ui.admin.LoginScreen
 import com.flextarget.android.ui.viewmodel.AuthViewModel
 import com.flextarget.android.ui.viewmodel.CompetitionViewModel
@@ -176,7 +177,8 @@ private fun CompetitionMenuItem(
             Text(
                 text = title,
                 color = Color.White,
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold
             )
             Text(
                 text = description,

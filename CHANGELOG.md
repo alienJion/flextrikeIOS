@@ -320,3 +320,7 @@ Implement competition submission flow in Android, matching iOS submission button
 Align animation patterns: add value transition animations to iOS views matching Android's 500ms animated transitions.
 Standardize hit zone editor styling and interactions between Sheet (iOS) and Dialog (Android) modals.
 Verify penalty calculation logic and hit zone count computations are identical across both platforms.
+
+
+DrillReplayView
+- 

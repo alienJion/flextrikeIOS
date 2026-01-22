@@ -120,7 +120,7 @@ interface FlexTargetAPI {
     suspend fun getGamePlayRanking(
         @Body request: GamePlayRankingRequest,
         @Header("Authorization") authHeader: String
-    ): ApiResponse<GamePlayRankingResponse>
+    ): ApiResponse<List<RankingRow>>
     
     // ============ OTA UPDATE ============
     
