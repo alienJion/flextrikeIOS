@@ -33,8 +33,6 @@ struct DrillFormView: View {
     @State private var demoVideoThumbnail: UIImage? = nil
     @State private var thumbnailFileURL: URL? = nil
     @State private var showVideoPlayer: Bool = false
-    // delayType removed; only random mode is supported now
-    // Default to be 2-5s non configurable
     @State private var repeatsValue: Int = 1
     @State private var pauseValue: Int = 5
     @State private var drillDuration: Double = 5
@@ -89,7 +87,6 @@ struct DrillFormView: View {
             _description = State(initialValue: drillSetup.desc ?? "")
             _demoVideoURL = State(initialValue: drillSetup.demoVideoURL)
             _thumbnailFileURL = State(initialValue: drillSetup.thumbnailURL)
-//            _delayValue = State(initialValue: drillSetup.delay)
             _repeatsValue = State(initialValue: Int(drillSetup.repeats))
             _pauseValue = State(initialValue: Int(drillSetup.pause))
             _drillDuration = State(initialValue: drillSetup.drillDuration)
@@ -109,20 +106,16 @@ struct DrillFormView: View {
         VStack(spacing: 0) {
             ZStack {
                 Color.black.ignoresSafeArea()
-                    .onTapGesture {
-                        hideKeyboard()
-                    }
                 
                 VStack(spacing: 0) {
-                        // Drill Name 先加载到页面上（立即渲染，最高优先级）
-                        DrillNameSectionView(drillName: $drillName, disabled: cachedIsEditingDisabled)
-                            .padding(.horizontal)
-                            .layoutPriority(1) // 优先布局
-                        
-                        // 列表内容
-                        ScrollView {
-                            // Grouped Section: Description, Add Video
-                            VStack(spacing: 20) {
+                        // 列表内容（使用单个 Section 消除间距）
+                        List {
+                            Section {
+                                // Drill Name（训练标题编辑框）
+                                DrillNameSectionView(drillName: $drillName, disabled: cachedIsEditingDisabled)
+                                    .listRowSeparator(.hidden)
+                                
+                                // Description and Video
                                 DescriptionVideoSectionView(
                                     description: $description,
                                     demoVideoURL: $demoVideoURL,
@@ -136,49 +129,53 @@ struct DrillFormView: View {
                                         VideoPlayerView(url: url, isPresented: $showVideoPlayer)
                                     }
                                 }
-                            }
-                            .padding()
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(20)
-                            .padding(.horizontal)
+                                .listRowSeparator(.hidden)
 
-                            DrillModeSelectionView(
-                                drillMode: $drillMode,
-                                disabled: cachedIsEditingDisabled
-                            )
-                            .padding(.horizontal)
-                            
-                            // Delay of Set Starting
-                            RepeatsConfigView(
-                                repeatsValue: $repeatsValue,
-                                disabled: false
-                            )
-                            .padding(.horizontal)
-                            
-                            // Pause Time Between Repeats
-                            DrillRepeatsPauseConfView(
-                                drillDuration: Binding(
-                                    get: { Double(pauseValue) },
-                                    set: { pauseValue = Int($0) }
-                                ),
-                                disabled: false
-                            )
-                            .padding(.horizontal)
-                            
-                            // Drill Setup Field
-                            TargetsSectionView(
-                                isTargetListReceived: $isTargetListReceived,
-                                bleManager: bleManager,
-                                targetConfigs: $targetConfigs,
-                                onTargetConfigDone: { targets = targetConfigs },
-                                disabled: cachedIsEditingDisabled,
-                                onDisabledTap: { showTargetConfigAlert = true },
-                                drillMode: drillMode
-                            )
-                            .padding(.horizontal)
-                            
-                            Spacer()
+                                // Drill Mode Selection
+                                DrillModeSelectionView(
+                                    drillMode: $drillMode,
+                                    disabled: cachedIsEditingDisabled
+                                )
+                                .listRowSeparator(.hidden)
+                                .padding(.top, -10)
+                                
+                                // Repeats Configuration
+                                RepeatsConfigView(
+                                    repeatsValue: $repeatsValue,
+                                    disabled: false
+                                )
+                                .listRowSeparator(.hidden)
+                                .padding(.top, -10)
+                                
+                                // Pause Time Between Repeats
+                                DrillRepeatsPauseConfView(
+                                    drillDuration: Binding(
+                                        get: { Double(pauseValue) },
+                                        set: { pauseValue = Int($0) }
+                                    ),
+                                    disabled: false
+                                )
+                                .listRowSeparator(.hidden)
+                                .padding(.top, -10)
+                                
+                                // Targets Configuration
+                                TargetsSectionView(
+                                    isTargetListReceived: $isTargetListReceived,
+                                    bleManager: bleManager,
+                                    targetConfigs: $targetConfigs,
+                                    onTargetConfigDone: { targets = targetConfigs },
+                                    disabled: cachedIsEditingDisabled,
+                                    onDisabledTap: { showTargetConfigAlert = true },
+                                    drillMode: drillMode
+                                )
+                                .listRowSeparator(.hidden)
+                                .padding(.top, -10)
+                            }
                         }
+                        .listStyle(.insetGrouped)
+                        .scrollContentBackground(.hidden)
+                        .background(Color.black)
+                        .contentMargins(.top, 0, for: .scrollContent)
                         .onAppear {
                             // 快速计算，避免布局时重复访问 Core Data
                             cachedIsEditingDisabled = computeIsEditingDisabled()
@@ -204,10 +201,7 @@ struct DrillFormView: View {
                         }
                         .ignoresSafeArea(.keyboard, edges: .bottom)
                         .frame(maxHeight: .infinity) // 占满剩余空间，按钮固定底部
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            hideKeyboard()
-                        }
+                        .scrollDismissesKeyboard(.interactively) // 滚动时自动隐藏键盘，不影响边缘滑动返回手势
                         
                         // 两个按钮放在父视图上（底部固定）
                         actionButtons

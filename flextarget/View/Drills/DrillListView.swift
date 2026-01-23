@@ -63,18 +63,11 @@ struct DrillListView: View {
                 .id("drillList")
                 .listStyle(.plain)
                 .animation(nil, value: filteredDrills.count)
-                .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: NSLocalizedString("search_drills", comment: "Search prompt for drills"))
             }
         }
         .tint(.red)
         .navigationTitle(NSLocalizedString("drill_setup", comment: "Navigation title for drill list"))
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            // 禁用返回时的动画，避免搜索框闪烁
-            withTransaction(Transaction(animation: nil)) {
-                hasAppeared = true
-            }
-        }
         .alert(NSLocalizedString("delete_drill_title", comment: "Alert title for deleting drill"), isPresented: $showDeleteAlert, presenting: drillToDelete) { drill in
             Button(NSLocalizedString("delete", comment: "Delete button"), role: .destructive) {
                 deleteDrill(drill)
