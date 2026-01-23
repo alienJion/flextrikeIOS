@@ -13,37 +13,51 @@ struct DrillNameSectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 8) {
-                ZStack(alignment: .leading) {
-                    TextField("Drill Name", text: Binding(
-                        get: { String(drillName.prefix(30)) },
-                        set: { newValue in
-                            drillName = String(newValue.prefix(30))
+                Group {
+                    if isEditingName {
+                        TextField("Drill Name", text: Binding(
+                            get: { String(drillName.prefix(30)) },
+                            set: { newValue in
+                                drillName = String(newValue.prefix(30))
+                            }
+                        ), onEditingChanged: { editing in
+                            if !editing {
+                                isEditingName = false
+                            }
+                        })
+                        .focused($isDrillNameFocused)
+                        .font(.title3)
+                        .padding(.vertical, 4)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            isEditingName = false
+                            isDrillNameFocused = false
                         }
-                    ), onEditingChanged: { editing in
-                        isEditingName = editing
-                    })
-                    .focused($isDrillNameFocused)
-                    .foregroundColor(.white)
-                    .opacity(isEditingName ? 1 : 0.01) // Hide when not editing, but keep tappable
-                    .font(.title3)
-                    .padding(.vertical, 4)
-                    .background(Color.clear)
-                    .submitLabel(.done)
-                    .disabled(disabled)
-                    .disableAutocorrection(true)
-                    .textInputAutocapitalization(.words)
-                    
-                    if !isEditingName {
+                        .disabled(disabled)
+                        .disableAutocorrection(true)
+                        .textInputAutocapitalization(.words)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
                         Text(drillName.isEmpty ? "Drill Name" : drillName)
                             .foregroundColor(disabled ? .gray : .white)
                             .font(.title3)
                             .padding(.vertical, 4)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
                             .onTapGesture {
                                 if !disabled {
                                     isEditingName = true
                                     isDrillNameFocused = true
                                 }
                             }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if !disabled && !isEditingName {
+                        isEditingName = true
+                        isDrillNameFocused = true
                     }
                 }
                 

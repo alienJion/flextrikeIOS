@@ -87,6 +87,7 @@
 "factor_label" = "Factor";
 "submit_result" = "Submit Result";
 "watch_replay_button" = "Watch Replay";
+"play_again_button" = "Play Again";
 
 /* SubViews */
 "history_record" = "History Record";

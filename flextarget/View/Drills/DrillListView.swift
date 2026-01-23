@@ -37,6 +37,7 @@ struct DrillListView: View {
     ) private var drills: FetchedResults<DrillSetup>
     @State private var showDeleteAlert = false
     @State private var drillToDelete: DrillSetup?
+    @State private var hasAppeared = false
 
     private var filteredDrills: [DrillSetup] {
         let all = Array(drills).sorted { (drill1, drill2) -> Bool in
@@ -59,13 +60,21 @@ struct DrillListView: View {
                         drillRow(for: drill)
                     }
                 }
+                .id("drillList")
                 .listStyle(.plain)
-                .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: NSLocalizedString("search_drills", comment: "Search prompt for drills"))
+                .animation(nil, value: filteredDrills.count)
+                .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: NSLocalizedString("search_drills", comment: "Search prompt for drills"))
             }
         }
         .tint(.red)
         .navigationTitle(NSLocalizedString("drill_setup", comment: "Navigation title for drill list"))
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            // 禁用返回时的动画，避免搜索框闪烁
+            withTransaction(Transaction(animation: nil)) {
+                hasAppeared = true
+            }
+        }
         .alert(NSLocalizedString("delete_drill_title", comment: "Alert title for deleting drill"), isPresented: $showDeleteAlert, presenting: drillToDelete) { drill in
             Button(NSLocalizedString("delete", comment: "Delete button"), role: .destructive) {
                 deleteDrill(drill)
@@ -91,17 +100,20 @@ struct DrillListView: View {
             .onTapGesture {
                 onDrillSelected?(drill)
             }
-            .contextMenu {
-                Button(action: { copyDrill(drill) }) {
-                    Label(NSLocalizedString("copy", comment: "Copy drill action"), systemImage: "doc.on.doc")
-                }
-                
-                Button(role: .destructive, action: {
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                Button(role: .destructive) {
                     drillToDelete = drill
                     showDeleteAlert = true
-                }) {
+                } label: {
                     Label(NSLocalizedString("delete", comment: "Delete drill action"), systemImage: "trash")
                 }
+                
+                Button {
+                    copyDrill(drill)
+                } label: {
+                    Label(NSLocalizedString("copy", comment: "Copy drill action"), systemImage: "doc.on.doc")
+                }
+                .tint(.blue)
             }
     }
     
@@ -125,6 +137,7 @@ struct DrillListView: View {
             Image(systemName: "chevron.right")
                 .foregroundColor(.red)
         }
+        .contentShape(Rectangle())
         .padding(.vertical, 8)
     }
     

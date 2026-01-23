@@ -50,6 +50,7 @@ struct DrillFormView: View {
     @State private var navigateToTimerSession: Bool = false
     @State private var drillSetupForTimer: DrillSetup? = nil
     @State private var showTargetConfigAlert: Bool = false
+    @State private var cachedIsEditingDisabled: Bool = false
     
     @Environment(\.presentationMode) var presentationMode
     @Environment(\.managedObjectContext) private var environmentContext
@@ -69,8 +70,10 @@ struct DrillFormView: View {
         return nil
     }
     
-    private var isEditingDisabled: Bool {
+    private func computeIsEditingDisabled() -> Bool {
         guard let drillSetup = currentDrillSetup else { return false }
+        // 使用 count 检查，Core Data 会优化这个操作，不会加载所有对象
+        // 如果关系是 fault，count 会触发 fault，但这是必要的检查
         let hasResults = (drillSetup.results?.count ?? 0) > 0
         let hasCompetitions = (drillSetup.competitions?.count ?? 0) > 0
         return hasResults || hasCompetitions
@@ -110,30 +113,23 @@ struct DrillFormView: View {
                         hideKeyboard()
                     }
                 
-                VStack(spacing: 20) {
+                VStack(spacing: 0) {
+                        // Drill Name 先加载到页面上（立即渲染，最高优先级）
+                        DrillNameSectionView(drillName: $drillName, disabled: cachedIsEditingDisabled)
+                            .padding(.horizontal)
+                            .layoutPriority(1) // 优先布局
+                        
+                        // 列表内容
                         ScrollView {
-                            if isEditingDisabled {
-                                HStack {
-                                    Image(systemName: "lock.fill")
-                                    Text(NSLocalizedString("drill_editing_disabled_hint", comment: "Hint when drill editing is disabled"))
-                                }
-                                .font(.caption)
-                                .foregroundColor(.orange)
-                                .padding(.horizontal)
-                                .padding(.top, 8)
-                            }
-                            
-                            // Grouped Section: Drill Name, Description, Add Video
+                            // Grouped Section: Description, Add Video
                             VStack(spacing: 20) {
-                                DrillNameSectionView(drillName: $drillName, disabled: isEditingDisabled)
-                                
                                 DescriptionVideoSectionView(
                                     description: $description,
                                     demoVideoURL: $demoVideoURL,
                                     demoVideoThumbnail: $demoVideoThumbnail,
                                     thumbnailFileURL: $thumbnailFileURL,
                                     showVideoPlayer: $showVideoPlayer,
-                                    disabled: isEditingDisabled
+                                    disabled: cachedIsEditingDisabled
                                 )
                                 .sheet(isPresented: $showVideoPlayer) {
                                     if let url = demoVideoURL {
@@ -148,7 +144,7 @@ struct DrillFormView: View {
 
                             DrillModeSelectionView(
                                 drillMode: $drillMode,
-                                disabled: isEditingDisabled
+                                disabled: cachedIsEditingDisabled
                             )
                             .padding(.horizontal)
                             
@@ -175,18 +171,17 @@ struct DrillFormView: View {
                                 bleManager: bleManager,
                                 targetConfigs: $targetConfigs,
                                 onTargetConfigDone: { targets = targetConfigs },
-                                disabled: isEditingDisabled,
+                                disabled: cachedIsEditingDisabled,
                                 onDisabledTap: { showTargetConfigAlert = true },
                                 drillMode: drillMode
                             )
                             .padding(.horizontal)
                             
                             Spacer()
-                            
-                            // Bottom Buttons
-                            actionButtons
                         }
                         .onAppear {
+                            // 快速计算，避免布局时重复访问 Core Data
+                            cachedIsEditingDisabled = computeIsEditingDisabled()
                             // Clean up any leftover inserted objects from previous attempts
                             if viewContext.hasChanges {
                                 print("⚠️ ViewContext has unsaved changes on appear, rolling back...")
@@ -195,19 +190,40 @@ struct DrillFormView: View {
                                 print("  Deleted: \(viewContext.deletedObjects.count)")
                                 viewContext.rollback()
                             }
-                            
-                            queryDeviceList()
-                            loadThumbnailIfNeeded()
+                        }
+                        .task {
+                            // 先让输入框等首屏渲染完成，再查询设备列表，避免阻塞导致加载变慢
+                            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
+                            await MainActor.run {
+                                queryDeviceList()
+                                loadThumbnailIfNeeded()
+                            }
                         }
                         .onReceive(NotificationCenter.default.publisher(for: .bleDeviceListUpdated)) { notification in
                             handleDeviceListUpdate(notification)
                         }
                         .ignoresSafeArea(.keyboard, edges: .bottom)
-                        .simultaneousGesture(
-                            TapGesture().onEnded {
-                                hideKeyboard()
+                        .frame(maxHeight: .infinity) // 占满剩余空间，按钮固定底部
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            hideKeyboard()
+                        }
+                        
+                        // 两个按钮放在父视图上（底部固定）
+                        actionButtons
+                        
+                        // 编辑禁用提示放在按钮下边
+                        if cachedIsEditingDisabled {
+                            HStack {
+                                Image(systemName: "lock.fill")
+                                Text(NSLocalizedString("drill_editing_disabled_hint", comment: "Hint when drill editing is disabled"))
                             }
-                        )
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                            .padding(.horizontal)
+                            .padding(.top, 8)
+                            .padding(.bottom, 8)
+                        }
                     }
                 }
             .environment(\.managedObjectContext, viewContext)
@@ -298,10 +314,10 @@ struct DrillFormView: View {
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background((bleManager.isConnected && !isEditingDisabled) ? Color.red : Color.gray)
+                    .background((bleManager.isConnected && !cachedIsEditingDisabled) ? Color.red : Color.gray)
                     .cornerRadius(8)
             }
-            .disabled(!bleManager.isConnected || isEditingDisabled)
+            .disabled(!bleManager.isConnected || cachedIsEditingDisabled)
             
             Button(action: saveAndStartDrill) {
                 Text(NSLocalizedString("start_drill", comment: "Start drill button"))

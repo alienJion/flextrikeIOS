@@ -45,6 +45,10 @@ struct DrillSummaryView: View {
     @State private var submitAlertTitle = ""
     @State private var submitAlertMessage = ""
     @State private var submitError: Error? = nil
+    
+    // Navigation state for replay drill
+    @State private var navigateToTimerSession = false
+    @State private var newDrillSummaries: [DrillRepeatSummary] = []
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var environmentContext
@@ -427,25 +431,53 @@ struct DrillSummaryView: View {
                                         )
                                     }
                                     
-                                    NavigationLink(destination: DrillReplayView(drillSetup: drillSetup, shots: summaries[index].shots)) {
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "play.circle.fill")
-                                                .font(.system(size: 16, weight: .bold))
-                                            Text(NSLocalizedString("watch_replay_button", comment: "Watch replay button text"))
-                                                .font(.system(size: 14, weight: .bold))
-                                                .kerning(0.5)
+                                    // 观看回放和再来一局按钮并排显示
+                                    HStack(spacing: 12) {
+                                        NavigationLink(destination: DrillReplayView(drillSetup: drillSetup, shots: summaries[index].shots)) {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "play.circle.fill")
+                                                    .font(.system(size: 16, weight: .bold))
+                                                Text(NSLocalizedString("watch_replay_button", comment: "Watch replay button text"))
+                                                    .font(.system(size: 14, weight: .bold))
+                                                    .kerning(0.5)
+                                            }
+                                            .foregroundColor(.red)
+                                            .padding(.vertical, 10)
+                                            .frame(maxWidth: .infinity)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .fill(Color.red.opacity(0.1))
+                                                    .overlay(
+                                                        RoundedRectangle(cornerRadius: 12)
+                                                            .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                                                    )
+                                            )
                                         }
-                                        .foregroundColor(.red)
-                                        .padding(.vertical, 10)
-                                        .frame(maxWidth: .infinity)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(Color.red.opacity(0.1))
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 12)
-                                                        .stroke(Color.red.opacity(0.3), lineWidth: 1)
-                                                )
-                                        )
+                                        
+                                        Button(action: {
+                                            navigateToTimerSession = true
+                                        }) {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "arrow.clockwise.circle.fill")
+                                                    .font(.system(size: 16, weight: .bold))
+                                                Text(NSLocalizedString("play_again_button", comment: "Play again button text"))
+                                                    .font(.system(size: 14, weight: .bold))
+                                                    .kerning(0.5)
+                                            }
+                                            .foregroundColor(.green)
+                                            .padding(.vertical, 10)
+                                            .frame(maxWidth: .infinity)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .fill(Color.green.opacity(0.1))
+                                                    .overlay(
+                                                        RoundedRectangle(cornerRadius: 12)
+                                                            .stroke(Color.green.opacity(0.3), lineWidth: 1)
+                                                    )
+                                            )
+                                        }
+                                        .disabled(!bleManager.isConnected)
+                                        .opacity(bleManager.isConnected ? 1.0 : 0.5)
                                     }
                                     .padding(.horizontal, 20)
                                     
@@ -507,6 +539,34 @@ struct DrillSummaryView: View {
             .onAppear {
                 initializeOriginalScores()
             }
+            .background(
+                NavigationLink(
+                    isActive: $navigateToTimerSession,
+                    destination: {
+                        TimerSessionView(
+                            drillSetup: drillSetup,
+                            bleManager: bleManager,
+                            competition: competition,
+                            athlete: nil,
+                            onDrillComplete: { summaries in
+                                DispatchQueue.main.async {
+                                    newDrillSummaries = summaries
+                                    navigateToTimerSession = false
+                                    // 更新当前页面的 summaries，显示新的训练结果
+                                    self.summaries = summaries
+                                }
+                            },
+                            onDrillFailed: {
+                                DispatchQueue.main.async {
+                                    navigateToTimerSession = false
+                                }
+                            }
+                        )
+                        .environment(\.managedObjectContext, viewContext)
+                    },
+                    label: { EmptyView() }
+                )
+            )
             .sheet(item: $editingSummary) { summary in
                 SummaryEditSheet(
                     summary: summary,
