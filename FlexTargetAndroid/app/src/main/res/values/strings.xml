@@ -283,6 +283,12 @@
     <string name="description">Description</string>
     <string name="drill_mode">Drill Mode</string>
     <string name="ipsc">IPSC</string>
+    <string name="hostage">Hostage</string>
+    <string name="special_1">Special 1</string>
+    <string name="special_2">Special 2</string>
+    <string name="paddle">Paddle</string>
+    <string name="popper">Popper</string>
+    <string name="rotation">Rotation</string>
     <string name="idpa">IDPA</string>
     <string name="cqb">CQB</string>
     <!-- CQB Target Types -->

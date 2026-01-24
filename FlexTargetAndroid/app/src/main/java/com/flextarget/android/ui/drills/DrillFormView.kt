@@ -69,11 +69,11 @@ fun DrillFormView(
     val androidBleManager = bleManager.androidManager
 
     // Form state
-    var drillName by remember { mutableStateOf(existingDrill?.name ?: "") }
-    var description by remember { mutableStateOf(existingDrill?.desc ?: "") }
-    var drillMode by remember { mutableStateOf(existingDrill?.mode ?: "ipsc") }
-    var repeats by remember { mutableStateOf(existingDrill?.repeats ?: 1) }
-    var pause by remember { mutableStateOf(existingDrill?.pause ?: 5) }
+    var drillName by remember(existingDrill) { mutableStateOf(existingDrill?.name ?: "") }
+    var description by remember(existingDrill) { mutableStateOf(existingDrill?.desc ?: "") }
+    var drillMode by remember(existingDrill) { mutableStateOf(existingDrill?.mode ?: "ipsc") }
+    var repeats by remember(existingDrill) { mutableStateOf(existingDrill?.repeats ?: 1) }
+    var pause by remember(existingDrill) { mutableStateOf(existingDrill?.pause ?: 5) }
     var targets by remember { mutableStateOf<List<DrillTargetsConfigData>>(emptyList()) }
     val isTargetListReceivedDerived by derivedStateOf { bleManager.networkDevices.isNotEmpty() }
     var currentScreen by remember { mutableStateOf(DrillFormScreen.FORM) }
@@ -190,6 +190,7 @@ fun DrillFormView(
     val onBackFromSummaryCallback: () -> Unit = {
         println("[DrillFormView.onBackFromSummaryCallback] DrillSummaryView back")
         drillSessionScreen = DrillSessionScreen.NONE
+        showDrillSummary = false
     }
 
     val onBackFromResultCallback: () -> Unit = {
@@ -291,12 +292,16 @@ fun DrillFormView(
                                 }
                                 drillSummaries = summaries
                                 drillSessionScreen = DrillSessionScreen.SUMMARY
+                                showTimerSession = false
+                                showDrillSummary = true
                             },
                             onDrillFailed = {
                                 drillSessionScreen = DrillSessionScreen.NONE
+                                showTimerSession = false
                             },
                             onBack = {
                                 drillSessionScreen = DrillSessionScreen.NONE
+                                showTimerSession = false
                             }
                         )
                     }
@@ -542,7 +547,8 @@ private fun FormScreen(
                                     existingDrill?.let { viewModel.updateDrillWithTargets(it.copy(
                                         name = drillName,
                                         desc = description,
-                                        drillDuration = 5.0,
+                                        drillDuration = 5.0,                                        
+                                        mode = drillMode,
                                         repeats = repeats,
                                         pause = pause
                                     ), targets) } ?: drill

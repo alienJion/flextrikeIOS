@@ -283,6 +283,12 @@
     <string name="description">Beschreibung</string>
     <string name="drill_mode">Bohrungsmodus</string>
     <string name="ipsc">IPSC</string>
+    <string name="hostage">Geisel</string>
+    <string name="special_1">Spezial 1</string>
+    <string name="special_2">Spezial 2</string>
+    <string name="paddle">Paddle</string>
+    <string name="popper">Popper</string>
+    <string name="rotation">Rotation</string>
     <string name="idpa">IDPA</string>
     <string name="cqb">CQB</string>
     <!-- CQB Target Types -->

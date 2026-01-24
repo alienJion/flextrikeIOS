@@ -283,6 +283,12 @@
     <string name="description">説明</string>
     <string name="drill_mode">ドリルモード</string>
     <string name="ipsc">IPSC</string>
+    <string name="hostage">人質</string>
+    <string name="special_1">スペシャル1</string>
+    <string name="special_2">スペシャル2</string>
+    <string name="paddle">パドル</string>
+    <string name="popper">ポッパー</string>
+    <string name="rotation">ローテーション</string>
     <string name="idpa">IDPA</string>
     <string name="cqb">CQB</string>
     <!-- CQB Target Types -->

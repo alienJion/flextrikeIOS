@@ -283,6 +283,12 @@
     <string name="description">描述</string>
     <string name="drill_mode">演練模式</string>
     <string name="ipsc">IPSC</string>
+    <string name="hostage">人質</string>
+    <string name="special_1">特殊1</string>
+    <string name="special_2">特殊2</string>
+    <string name="paddle">槳</string>
+    <string name="popper">爆破器</string>
+    <string name="rotation">旋轉</string>
     <string name="idpa">IDPA</string>
     <string name="cqb">CQB</string>
     <!-- CQB Target Types -->

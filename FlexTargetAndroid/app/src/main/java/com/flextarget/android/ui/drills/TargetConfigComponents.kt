@@ -40,6 +40,26 @@ private fun getIconForTargetType(type: String): String {
 }
 
 @Composable
+fun getDisplayNameForTargetType(type: String): String {
+    return stringResource(
+        id = when (type) {
+            "hostage" -> R.string.hostage
+            "ipsc" -> R.string.ipsc
+            "special_1" -> R.string.special_1
+            "special_2" -> R.string.special_2
+            "paddle" -> R.string.paddle
+            "popper" -> R.string.popper
+            "rotation" -> R.string.rotation
+            "cqb_front" -> R.string.cqb_front
+            "cqb_hostage" -> R.string.cqb_hostage
+            "cqb_swing" -> R.string.cqb_swing
+            "disguised_enemy" -> R.string.disguised_enemy
+            else -> R.string.ipsc // default
+        }
+    )
+}
+
+@Composable
 fun TargetConfigRow(
     config: DrillTargetsConfigData,
     availableDevices: List<NetworkDevice>,
@@ -228,7 +248,7 @@ fun TargetTypePickerDialog(
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = type,
+                            text = getDisplayNameForTargetType(type),
                             color = Color.White,
                             modifier = Modifier.weight(1f)
                         )

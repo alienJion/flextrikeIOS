@@ -370,7 +370,8 @@ fun DrillListView(
             existingDrill = selectedDrill,
             onBack = { showDrillForm = false },
             onDrillSaved = { savedDrill ->
-                // Refresh the list or handle the saved drill
+                // Update the selected drill with the saved one and refresh
+                selectedDrill = savedDrill
                 showDrillForm = false
             },
             viewModel = viewModel(
