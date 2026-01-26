@@ -39,7 +39,6 @@ fun ConnectSmartTargetView(
     var selectedPeripheral by remember { mutableStateOf<DiscoveredPeripheral?>(null) }
     var activeTargetName by remember { mutableStateOf<String?>(null) }
     var showImageCrop by remember { mutableStateOf(false) }
-    var showBLETestTool by remember { mutableStateOf(false) }
 
     @Composable
     fun getStatusText(): String {
@@ -272,25 +271,6 @@ fun ConnectSmartTargetView(
                                 fontWeight = FontWeight.Medium
                             )
                         }
-
-                        // BLE Test Tool button
-                        Button(
-                            onClick = {
-                                showBLETestTool = true
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth(0.75f)
-                                .height(44.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF, 0x99, 0x00)),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.ble_test_tool),
-                                color = Color.White,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
                     }
                 }
             }
@@ -315,11 +295,11 @@ fun ConnectSmartTargetView(
         // Error alert
         bleManager.error?.let { error ->
             AlertDialog(
-                onDismissRequest = { /* Handle dismiss */ },
+                onDismissRequest = { bleManager.error = null },
                 title = { Text(stringResource(R.string.error_title)) },
                 text = { Text(error.message ?: stringResource(R.string.error_unknown)) },
                 confirmButton = {
-                    TextButton(onClick = { /* Handle OK */ }) {
+                    TextButton(onClick = { bleManager.error = null }) {
                         Text(stringResource(R.string.ok))
                     }
                 }
@@ -330,13 +310,6 @@ fun ConnectSmartTargetView(
         if (showImageCrop) {
             ImageCropViewV2(
                 onDismiss = { showImageCrop = false }
-            )
-        }
-
-        // BLE Test Tool View
-        if (showBLETestTool) {
-            BLETestToolView(
-                onDismiss = { showBLETestTool = false }
             )
         }
     }

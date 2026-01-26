@@ -179,7 +179,7 @@ private fun BoxScope.renderBulletHole(
     ) {
         // Bullet hole drawable
         Image(
-            painter = painterResource(id = R.drawable.bullet_hole2),
+            painter = painterResource(id = R.drawable.ft_bullet_hole),
             contentDescription = "Bullet hole",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Fit

@@ -85,7 +85,7 @@ fun DrillFormView(
     // Check if editing is disabled (drill has results or is linked to a competition)
     val isEditingDisabled = existingDrill != null && drillResultCount > 0
 
-    val isFormValid = drillName.isNotBlank() && bleManager.isConnected && !isEditingDisabled
+    val isFormValid = drillName.isNotBlank() && bleManager.isConnected && !isEditingDisabled && isTargetListReceivedDerived
 
     // Query device list on appear
     LaunchedEffect(Unit) {
@@ -467,7 +467,7 @@ private fun FormScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 70.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Warning label if editing is disabled
@@ -565,7 +565,8 @@ private fun FormScreen(
                     enabled = isFormValid && !isSaving,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isFormValid) Color.Red else Color.Gray
+                        containerColor = if (isFormValid) Color.Red else Color.Gray,
+                        disabledContainerColor = Color.Gray
                     )
                 ) {
                     Text(
@@ -612,10 +613,11 @@ private fun FormScreen(
                             onStartDrill(sessionDrill, sessionTargets)
                         }
                     },
-                    enabled = bleManager.isConnected && androidBleManager != null,
+                    enabled = bleManager.isConnected && androidBleManager != null && isTargetListReceived,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (bleManager.isConnected && androidBleManager != null) Color.Green else Color.Gray
+                        containerColor = if (bleManager.isConnected && androidBleManager != null && isTargetListReceived) Color.Green else Color.Gray,
+                        disabledContainerColor = Color.Gray
                     )
                 ) {
                     Text(stringResource(R.string.start_drill), color = Color.White)

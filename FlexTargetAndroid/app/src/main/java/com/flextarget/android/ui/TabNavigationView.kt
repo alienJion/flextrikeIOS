@@ -2,13 +2,14 @@ package com.flextarget.android.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -29,6 +30,7 @@ import com.flextarget.android.ui.drills.HistoryTabView
 import com.flextarget.android.ui.admin.AdminTabView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.flextarget.android.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,97 +42,30 @@ fun TabNavigationView(
 
     Scaffold(
         bottomBar = {
-            NavigationBar(
-                containerColor = Color.Black,
-                contentColor = Color.Red
-            ) {
-                val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.SportsBaseball, contentDescription = "Drills") },
-                    label = { Text(stringResource(R.string.tab_drills)) },
-                    selected = currentRoute == "drills",
-                    onClick = {
-                        navController.navigate("drills") {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
-                        }
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Red,
-                        selectedTextColor = Color.Red,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Red.copy(alpha = 0.1f)
-                    )
-                )
-
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.History, contentDescription = "History") },
-                    label = { Text(stringResource(R.string.tab_history)) },
-                    selected = currentRoute == "history",
-                    onClick = {
-                        navController.navigate("history") {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
-                        }
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Red,
-                        selectedTextColor = Color.Red,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Red.copy(alpha = 0.1f)
-                    )
-                )
-
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.EmojiEvents, contentDescription = "Competition") },
-                    label = { Text(stringResource(R.string.tab_competition)) },
-                    selected = currentRoute == "competition",
-                    onClick = {
-                        navController.navigate("competition") {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
-                        }
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Red,
-                        selectedTextColor = Color.Red,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Red.copy(alpha = 0.1f)
-                    )
-                )
-
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.AdminPanelSettings, contentDescription = "Admin") },
-                    label = { Text(stringResource(R.string.tab_admin)) },
-                    selected = currentRoute == "admin",
-                    onClick = {
-                        navController.navigate("admin") {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
-                        }
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Red,
-                        selectedTextColor = Color.Red,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Red.copy(alpha = 0.1f)
-                    )
-                )
-            }
+            val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+            CompactBottomBar(
+                currentRoute = currentRoute,
+                onNavigate = { route ->
+                    navController.navigate(route) {
+                        popUpTo(navController.graph.startDestinationId)
+                        launchSingleTop = true
+                    }
+                }
+            )
         },
-        containerColor = Color.Black
+        containerColor = Color.Black,
+        contentWindowInsets = WindowInsets(0)
     ) { paddingValues ->
         NavHost(
             navController = navController,
             startDestination = "drills",
             modifier = Modifier
                 .background(Color.Black)
-                .padding(paddingValues)
+                .padding(
+                    top = paddingValues.calculateTopPadding(),
+                    start = paddingValues.calculateLeftPadding(LayoutDirection.Ltr),
+                    end = paddingValues.calculateRightPadding(LayoutDirection.Ltr)
+                )
         ) {
             composable("drills") {
                 DrillsTabContent(
@@ -192,6 +127,82 @@ fun TabNavigationView(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CompactBottomBar(
+    currentRoute: String?,
+    onNavigate: (String) -> Unit
+) {
+    // Compact, custom bottom bar with explicit height and minimal vertical padding
+    Surface(color = Color.Black) {
+        Column(
+            modifier = Modifier
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .fillMaxWidth()
+                .height(54.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                BottomBarItem(
+                    route = "drills",
+                    label = stringResource(R.string.tab_drills),
+                    icon = Icons.Default.SportsBaseball,
+                    selected = currentRoute == "drills",
+                    onClick = onNavigate
+                )
+                BottomBarItem(
+                    route = "history",
+                    label = stringResource(R.string.tab_history),
+                    icon = Icons.Default.History,
+                    selected = currentRoute == "history",
+                    onClick = onNavigate
+                )
+                BottomBarItem(
+                    route = "competition",
+                    label = stringResource(R.string.tab_competition),
+                    icon = Icons.Default.EmojiEvents,
+                    selected = currentRoute == "competition",
+                    onClick = onNavigate
+                )
+                BottomBarItem(
+                    route = "admin",
+                    label = stringResource(R.string.tab_admin),
+                    icon = Icons.Default.AdminPanelSettings,
+                    selected = currentRoute == "admin",
+                    onClick = onNavigate
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun androidx.compose.foundation.layout.RowScope.BottomBarItem(
+    route: String,
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    selected: Boolean,
+    onClick: (String) -> Unit
+) {
+    val iconColor = if (selected) Color.Red else Color.Gray
+    val textColor = if (selected) Color.Red else Color.Gray
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .padding(vertical = 4.dp)
+            .clickable { onClick(route) },
+        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp, androidx.compose.ui.Alignment.CenterVertically)
+    ) {
+        Icon(imageVector = icon, contentDescription = label, tint = iconColor, modifier = Modifier.size(22.dp))
+        Text(text = label, color = textColor, style = MaterialTheme.typography.labelSmall, maxLines = 1)
     }
 }
 

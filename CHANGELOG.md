@@ -323,4 +323,9 @@ Verify penalty calculation logic and hit zone count computations are identical a
 
 
 DrillReplayView
+
+
+Integration Test
+- HistoryTabView Delete the Result
+- DrillFormView Auto Save 
 - 
