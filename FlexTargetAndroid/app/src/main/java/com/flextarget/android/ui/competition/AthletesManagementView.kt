@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
@@ -23,6 +23,16 @@ import com.flextarget.android.data.local.entity.AthleteEntity
 import com.flextarget.android.ui.viewmodel.CompetitionViewModel
 import androidx.compose.ui.res.stringResource
 import com.flextarget.android.R
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
+import coil.compose.AsyncImage
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun AthletesManagementView(
@@ -32,6 +42,26 @@ fun AthletesManagementView(
     val uiState by viewModel.competitionUiState.collectAsState()
     val newAthleteNameInput = remember { mutableStateOf("") }
     val newAthleteClubInput = remember { mutableStateOf("") }
+    val newAthleteAvatarData = remember { mutableStateOf<ByteArray?>(null) }
+    val context = LocalContext.current
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            // Decode URI to Bitmap
+            val bitmap = if (Build.VERSION.SDK_INT < 28) {
+                MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+            } else {
+                val source = ImageDecoder.createSource(context.contentResolver, it)
+                ImageDecoder.decodeBitmap(source)
+            }
+            // Compress to ByteArray
+            val outputStream = java.io.ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+            newAthleteAvatarData.value = outputStream.toByteArray()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -43,7 +73,7 @@ fun AthletesManagementView(
             title = { Text(stringResource(R.string.shooters)) },
             navigationIcon = {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -92,10 +122,20 @@ fun AthletesManagementView(
                                 modifier = Modifier
                                     .size(48.dp)
                                     .clip(CircleShape)
-                                    .background(Color.Gray.copy(alpha = 0.3f)),
+                                    .background(Color.Gray.copy(alpha = 0.3f))
+                                    .clickable { imagePickerLauncher.launch("image/*") },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
+                                if (newAthleteAvatarData.value != null) {
+                                    AsyncImage(
+                                        model = newAthleteAvatarData.value,
+                                        contentDescription = "Avatar",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
+                                }
                             }
 
                             Column(modifier = Modifier.weight(1f)) {
@@ -131,10 +171,12 @@ fun AthletesManagementView(
                                 if (newAthleteNameInput.value.isNotEmpty()) {
                                     viewModel.addAthlete(
                                         newAthleteNameInput.value,
-                                        newAthleteClubInput.value
+                                        newAthleteClubInput.value,
+                                        newAthleteAvatarData.value
                                     )
                                     newAthleteNameInput.value = ""
                                     newAthleteClubInput.value = ""
+                                    newAthleteAvatarData.value = null
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
@@ -183,11 +225,20 @@ fun AthleteRow(
                     .background(Color.Red.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = athlete.name?.take(1)?.uppercase() ?: "?",
-                    color = Color.Red,
-                    style = MaterialTheme.typography.titleMedium
-                )
+                if (athlete.avatarData != null) {
+                    AsyncImage(
+                        model = athlete.avatarData,
+                        contentDescription = "Avatar",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Text(
+                        text = athlete.name?.take(1)?.uppercase() ?: "?",
+                        color = Color.Red,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
             }
 
             Column(
