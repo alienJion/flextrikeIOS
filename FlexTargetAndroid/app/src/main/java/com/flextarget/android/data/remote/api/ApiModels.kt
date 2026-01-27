@@ -66,6 +66,15 @@ data class ChangePasswordRequest(
     val new_password: String  // Base64 encoded
 )
 
+data class GetUserResponse(
+    @SerializedName("user_uuid")
+    val userUUID: String,
+    @SerializedName("username")
+    val username: String,
+    @SerializedName("mobile")
+    val mobile: String
+)
+
 data class DeviceRelateRequest(
     @SerializedName("auth_data")
     val auth_data: String

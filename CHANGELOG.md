@@ -329,3 +329,18 @@ Integration Test
 - HistoryTabView Delete the Result
 - DrillFormView Auto Save 
 - 
+
+
+Plan: Display Updated User Name in Admin Menu
+Enhance AdminTabView to show the current user name in the User Profile button description after successful profile updates, leveraging reactive authUiState for automatic UI refresh.
+
+Steps
+Modify AdminTabView.kt to pass authUiState.userName to AdminMainMenuView.
+Update AdminMainMenuView function signature to accept userName: String? parameter.
+Change User Profile AdminMenuButton description to userName ?: stringResource(R.string.manage_user_profile).
+Further Considerations
+Fallback ensures UI stability if userName is null.
+Reactive updates via authUiState eliminate manual refresh needs.
+Test profile update flow to confirm description changes on success.
+
+user/get 接口

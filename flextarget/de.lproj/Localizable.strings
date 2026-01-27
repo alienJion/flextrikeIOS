@@ -371,6 +371,7 @@
 "confirm_password" = "Neues Passwort bestätigen";
 "profile_updated_success" = "Profil erfolgreich aktualisiert";
 "username" = "Benutzername";
+"session_expired_message" = "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.";
 
 /* Competition Results Sync */
 "sync_results" = "Ergebnisse Synchronisieren";

@@ -130,7 +130,7 @@ object AppContainer {
     // ViewModels
     val authViewModel by lazy {
         authManager.setTokenRefreshQueue(tokenRefreshQueue)
-        AuthViewModel(authManager, deviceAuthManager)
+        AuthViewModel(applicationContext as android.app.Application, authManager, deviceAuthManager)
     }
 
     val drillViewModel by lazy {

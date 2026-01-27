@@ -90,12 +90,13 @@ abstract class FlexTargetDatabase : RoomDatabase() {
             
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
-                INSTANCE?.let { database ->
-                    scope.launch {
-                        // Populate database with initial data from JSON
-                        populateDatabase(database, context)
-                    }
-                }
+                // Removed sample drill seeding for clean app installation
+                // INSTANCE?.let { database ->
+                //     scope.launch {
+                //         // Populate database with initial data from JSON
+                //         populateDatabase(database, context)
+                //     }
+                // }
             }
         }
 

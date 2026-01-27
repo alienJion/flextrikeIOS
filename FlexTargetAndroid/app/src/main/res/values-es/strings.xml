@@ -184,6 +184,7 @@
     <string name="change_password">Cambiar contraseña</string>
     <string name="logout">Cerrar sesión</string>
     <string name="logout_confirm">¿Está seguro de que desea cerrar sesión?</string>
+    <string name="session_expired_message">Su sesión ha expirado. Por favor, inicie sesión nuevamente.</string>
     
     <!-- Device -->
     <string name="connected_device">Dispositivo conectado</string>

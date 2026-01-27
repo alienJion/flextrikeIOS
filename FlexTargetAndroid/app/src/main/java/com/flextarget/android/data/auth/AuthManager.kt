@@ -142,6 +142,28 @@ class AuthManager @Inject constructor(
                 // Start refresh timer
                 startTokenRefreshTimer()
                 
+                // Fetch user info to get username
+                try {
+                    val userGetResponse = userApiService.getUser("Bearer ${data.accessToken}")
+                    if (userGetResponse.code == 0 && userGetResponse.data != null) {
+                        val updatedUser = user.copy(username = userGetResponse.data.username)
+                        _currentUser.value = updatedUser
+                        preferences.saveUserToken(
+                            userUUID = updatedUser.userUUID,
+                            accessToken = updatedUser.accessToken,
+                            refreshToken = updatedUser.refreshToken,
+                            mobile = updatedUser.mobile,
+                            username = userGetResponse.data.username
+                        )
+                        Log.d(TAG, "User info fetched and updated: ${userGetResponse.data.username}")
+                    } else {
+                        Log.w(TAG, "Failed to fetch user info: ${userGetResponse.msg}")
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Exception while fetching user info: ${e.message}")
+                    // Continue with login even if user info fetch fails
+                }
+                
                 Log.d(TAG, "Login successful for user: $mobile")
                 Result.success(user)
             } catch (e: Exception) {
@@ -256,6 +278,13 @@ class AuthManager @Inject constructor(
             )
 
             if (response.code != 0) {
+                // Check for token expiration (code 401)
+                if (response.code == 401) {
+                    Log.w(TAG, "Token expired during profile update: ${response.msg}")
+                    // Trigger auto-logout
+                    logout()
+                    return@withContext Result.failure(Exception(response.msg))
+                }
                 return@withContext Result.failure(Exception(response.msg))
             }
 
@@ -268,6 +297,15 @@ class AuthManager @Inject constructor(
             
             Log.d(TAG, "Profile updated: username=$username")
             Result.success(Unit)
+        } catch (e: retrofit2.HttpException) {
+            // Handle HTTP exceptions (e.g., 401 Unauthorized)
+            Log.e(TAG, "HTTP exception during profile update: ${e.code()} ${e.message}", e)
+            if (e.code() == 401) {
+                Log.w(TAG, "Token expired during profile update (HTTP 401)")
+                logout()
+                return@withContext Result.failure(Exception("401"))
+            }
+            Result.failure(e)
         } catch (e: Exception) {
             Log.e(TAG, "Profile update failed", e)
             Result.failure(e)
@@ -296,11 +334,27 @@ class AuthManager @Inject constructor(
                 )
 
                 if (response.code != 0) {
+                    // Check for token expiration (code 401)
+                    if (response.code == 401) {
+                        Log.w(TAG, "Token expired during password change: ${response.msg}")
+                        // Trigger auto-logout
+                        logout()
+                        return@withContext Result.failure(Exception(response.msg))
+                    }
                     return@withContext Result.failure(Exception(response.msg))
                 }
                 
                 Log.d(TAG, "Password changed successfully")
                 Result.success(Unit)
+            } catch (e: retrofit2.HttpException) {
+                // Handle HTTP exceptions (e.g., 401 Unauthorized)
+                Log.e(TAG, "HTTP exception during password change: ${e.code()} ${e.message}", e)
+                if (e.code() == 401) {
+                    Log.w(TAG, "Token expired during password change (HTTP 401)")
+                    logout()
+                    return@withContext Result.failure(Exception("401"))
+                }
+                Result.failure(e)
             } catch (e: Exception) {
                 Log.e(TAG, "Password change failed", e)
                 Result.failure(e)

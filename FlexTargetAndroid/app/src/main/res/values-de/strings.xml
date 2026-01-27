@@ -184,6 +184,7 @@
     <string name="change_password">Passwort ändern</string>
     <string name="logout">Abmelden</string>
     <string name="logout_confirm">Sind Sie sicher, dass Sie sich abmelden möchten?</string>
+    <string name="session_expired_message">Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.</string>
     
     <!-- Device -->
     <string name="connected_device">Verbundenes Gerät</string>

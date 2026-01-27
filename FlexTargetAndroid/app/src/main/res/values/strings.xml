@@ -315,4 +315,7 @@
     <string name="targets_count">%d targets</string>
     <string name="arrow_right">></string>
     <string name="targets_section">Targets</string>
+    
+    <!-- User Profile & Authentication -->
+    <string name="session_expired_message">Your session has expired. Please login again.</string>
 </resources>

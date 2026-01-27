@@ -1,7 +1,9 @@
 package com.flextarget.android.ui.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.flextarget.android.R
 import com.flextarget.android.data.auth.AuthManager
 import com.flextarget.android.data.auth.DeviceAuthManager
 import kotlinx.coroutines.flow.*
@@ -30,9 +32,10 @@ data class AuthUiState(
  * - Manage error states
  */
 class AuthViewModel(
+    application: Application,
     private val authManager: AuthManager,
     private val deviceAuthManager: DeviceAuthManager
-) : ViewModel() {
+) : AndroidViewModel(application) {
     
     private val _loading = MutableStateFlow(false)
     private val _error = MutableStateFlow<String?>(null)
@@ -107,8 +110,16 @@ class AuthViewModel(
             _loading.value = false
             result.onSuccess {
                 _message.value = "Profile updated successfully"
-            }.onFailure {
-                _error.value = it.message ?: "Failed to update profile"
+            }.onFailure { error ->
+                val errorMsg = error.message ?: "Failed to update profile"
+                // Check if it's a token expired error (401)
+                if (errorMsg == "401") {
+                    _error.value = getApplication<Application>().getString(R.string.session_expired_message)
+                    // Auto-logout on token expiration
+                    logout()
+                } else {
+                    _error.value = errorMsg
+                }
             }
         }
     }
@@ -125,8 +136,16 @@ class AuthViewModel(
             _loading.value = false
             result.onSuccess {
                 _message.value = "Password changed successfully"
-            }.onFailure {
-                _error.value = it.message ?: "Failed to change password"
+            }.onFailure { error ->
+                val errorMsg = error.message ?: "Failed to change password"
+                // Check if it's a token expired error (401)
+                if (errorMsg == "401") {
+                    _error.value = getApplication<Application>().getString(R.string.session_expired_message)
+                    // Auto-logout on token expiration
+                    logout()
+                } else {
+                    _error.value = errorMsg
+                }
             }
         }
     }

@@ -190,6 +190,24 @@ struct UserProfileView: View {
                     usernameFieldFocused = false  // Lose focus on success
                     showSuccess = true
                 }
+            } catch let error as UserAPIError {
+                // Handle token expiration with auto-logout
+                if case .tokenExpired = error {
+                    // Show session expired message to user
+                    errorMessage = NSLocalizedString("session_expired_message", comment: "Your session has expired. Please login again.")
+                    showError = true
+                    
+                    // Auto-logout after a short delay to let user see the message
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        Task {
+                            await authManager.logout()
+                            onDismiss()
+                        }
+                    }
+                } else {
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
             } catch {
                 errorMessage = error.localizedDescription
                 showError = true
@@ -213,6 +231,24 @@ struct UserProfileView: View {
                 oldPassword = ""
                 newPassword = ""
                 confirmPassword = ""
+            } catch let error as UserAPIError {
+                // Handle token expiration with auto-logout
+                if case .tokenExpired = error {
+                    // Show session expired message to user
+                    errorMessage = NSLocalizedString("session_expired_message", comment: "Your session has expired. Please login again.")
+                    showError = true
+                    
+                    // Auto-logout after a short delay to let user see the message
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        Task {
+                            await authManager.logout()
+                            onDismiss()
+                        }
+                    }
+                } else {
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
             } catch {
                 errorMessage = error.localizedDescription
                 showError = true

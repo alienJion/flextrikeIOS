@@ -90,6 +90,17 @@ struct LoginView: View {
                     refreshToken: loginData.refresh_token
                 )
                 authManager.login(user: user)
+                
+                // Fetch user info and update username
+                do {
+                    let userGetData = try await UserAPIService.shared.getUser(accessToken: loginData.access_token)
+                    authManager.updateUserInfo(username: userGetData.username)
+                    print("[LoginView] User info fetched and updated: \(userGetData.username)")
+                } catch {
+                    print("[LoginView] Failed to fetch user info: \(error)")
+                    // Continue with login even if user info fetch fails
+                }
+                
                 onDismiss()
             } catch {
                 errorMessage = error.localizedDescription

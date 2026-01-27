@@ -57,6 +57,15 @@ interface FlexTargetAPI {
         @Header("Authorization") authHeader: String
     ): ApiResponse<EditUserResponse>
     
+    /**
+     * POST /user/get
+     * Get current user information
+     */
+    @POST("/user/get")
+    suspend fun getUser(
+        @Header("Authorization") authHeader: String
+    ): ApiResponse<GetUserResponse>
+    
     // ============ DEVICE AUTHENTICATION ============
     
     /**

@@ -37,6 +37,10 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.statusBars
 
 private const val TAG = "QRScannerView"
 
@@ -79,7 +83,7 @@ fun QRScannerView(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
         if (hasCameraPermission) {
             // Camera preview with QR scanning
             QRScannerCameraView(
@@ -109,18 +113,13 @@ fun QRScannerView(
         }
 
         // Back button
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            FloatingActionButton(
-                onClick = onDismiss,
-                modifier = Modifier.align(Alignment.TopStart),
-                containerColor = Color.Red
-            ) {
-                Text("←", color = Color.White, fontSize = 20.sp)
-            }
+        Box(modifier = Modifier.fillMaxSize()) {
+            Text(
+                text = "←",
+                color = Color.Red,
+                fontSize = 24.sp,
+                modifier = Modifier.align(Alignment.TopStart).clickable { onDismiss() }.padding(16.dp)
+            )
         }
 
         // Result overlay

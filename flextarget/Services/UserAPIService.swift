@@ -1,5 +1,28 @@
 import Foundation
 
+// MARK: - Custom Errors
+
+enum UserAPIError: Error, LocalizedError {
+    case tokenExpired(String)
+    case invalidResponse(String)
+    case apiError(code: Int, message: String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .tokenExpired(let message):
+            return message
+        case .invalidResponse(let message):
+            return message
+        case .apiError(_, let message):
+            return message
+        }
+    }
+    
+    var localizedDescription: String {
+        return errorDescription ?? "Unknown error"
+    }
+}
+
 class UserAPIService {
     static let shared = UserAPIService()
     
@@ -44,6 +67,12 @@ class UserAPIService {
     
     struct ChangePasswordData: Codable {
         let user_uuid: String
+    }
+    
+    struct UserGetData: Codable {
+        let user_uuid: String
+        let username: String
+        let mobile: String
     }
     
     struct DeviceRelateData: Codable {
@@ -155,6 +184,10 @@ class UserAPIService {
         let response: APIResponse<EditUserData> = try JSONDecoder().decode(APIResponse.self, from: data)
         
         if response.code != 0 {
+            // Check for token expiration (code 401)
+            if response.code == 401 && response.msg.lowercased().contains("token") && response.msg.lowercased().contains("expired") {
+                throw UserAPIError.tokenExpired(response.msg)
+            }
             throw NSError(domain: "UserAPI", code: response.code, userInfo: [NSLocalizedDescriptionKey: response.msg])
         }
         
@@ -182,6 +215,35 @@ class UserAPIService {
         let response: APIResponse<ChangePasswordData> = try JSONDecoder().decode(APIResponse.self, from: data)
         
         if response.code != 0 {
+            // Check for token expiration (code 401)
+            if response.code == 401 && response.msg.lowercased().contains("token") && response.msg.lowercased().contains("expired") {
+                throw UserAPIError.tokenExpired(response.msg)
+            }
+            throw NSError(domain: "UserAPI", code: response.code, userInfo: [NSLocalizedDescriptionKey: response.msg])
+        }
+        
+        guard let data = response.data else {
+            throw NSError(domain: "UserAPI", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])
+        }
+        
+        return data
+    }
+    
+    func getUser(accessToken: String) async throws -> UserGetData {
+        let url = URL(string: "\(baseURL)/user/get")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        
+        let (data, _) = try await session.data(for: request)
+        let response: APIResponse<UserGetData> = try JSONDecoder().decode(APIResponse.self, from: data)
+        
+        if response.code != 0 {
+            // Check for token expiration (code 401)
+            if response.code == 401 && response.msg.lowercased().contains("token") && response.msg.lowercased().contains("expired") {
+                throw UserAPIError.tokenExpired(response.msg)
+            }
             throw NSError(domain: "UserAPI", code: response.code, userInfo: [NSLocalizedDescriptionKey: response.msg])
         }
         

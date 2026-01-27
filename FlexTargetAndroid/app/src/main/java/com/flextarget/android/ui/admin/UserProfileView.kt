@@ -31,7 +31,8 @@ import com.flextarget.android.R
 @Composable
 fun UserProfileView(
     authViewModel: AuthViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onLogout: () -> Unit = {}
 ) {
     val authUiState by authViewModel.authUiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -47,6 +48,14 @@ fun UserProfileView(
     LaunchedEffect(authUiState.userName) {
         if (authUiState.userName != null) {
             username.value = authUiState.userName!!
+        }
+    }
+    
+    // Handle auto-logout on 401 error (token expired)
+    LaunchedEffect(authUiState.isAuthenticated) {
+        if (!authUiState.isAuthenticated) {
+            // User has been logged out (likely due to 401 token expiration)
+            onLogout()
         }
     }
 
@@ -112,164 +121,173 @@ fun UserProfileView(
                 )
             }
 
-            LazyColumn(
+            Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .weight(1f)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                if (selectedTab.value == 0) {
-                    // Edit Profile Tab
-                    item {
-                        Text(
-                            stringResource(R.string.update_profile),
-                            color = Color.White,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                    }
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (selectedTab.value == 0) {
+                        // Edit Profile Tab
+                        item {
+                            Text(
+                                stringResource(R.string.update_profile),
+                                color = Color.White,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
 
-                    item {
-                        OutlinedTextField(
-                            value = username.value,
-                            onValueChange = { username.value = it },
-                            label = { Text(stringResource(R.string.username), color = Color.Gray) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    color = Color.White.copy(alpha = 0.05f),
-                                    shape = RoundedCornerShape(8.dp)
+                        item {
+                            OutlinedTextField(
+                                value = username.value,
+                                onValueChange = { username.value = it },
+                                label = { Text(stringResource(R.string.username), color = Color.Gray) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        color = Color.White.copy(alpha = 0.05f),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    focusedBorderColor = Color.Red,
+                                    unfocusedBorderColor = Color.Gray
                                 ),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = Color.Red,
-                                unfocusedBorderColor = Color.Gray
-                            ),
-                            singleLine = true,
-                            enabled = !authUiState.isLoading
-                        )
-                    }
+                                singleLine = true,
+                                enabled = !authUiState.isLoading
+                            )
+                        }
 
-                    item {
-                        Button(
-                            onClick = { 
-                                when {
-                                    username.value.isBlank() -> {
-                                        authViewModel.setShowError("Username cannot be empty")
+                        item {
+                            Button(
+                                onClick = { 
+                                    when {
+                                        username.value.isBlank() -> {
+                                            authViewModel.setShowError("Username cannot be empty")
+                                        }
+                                        username.value.length <= 5 -> {
+                                            authViewModel.setShowError("Username must be longer than 5 characters")
+                                        }
+                                        username.value == authUiState.userName -> {
+                                            authViewModel.setShowError("New username must be different from current one")
+                                        }
+                                        else -> {
+                                            authViewModel.updateProfile(username.value)
+                                        }
                                     }
-                                    username.value == authUiState.userName -> {
-                                        authViewModel.setShowError("New username must be different from current one")
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
+                                enabled = !authUiState.isLoading,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Red
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(stringResource(R.string.update_profile), color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    } else {
+                        // Change Password Tab
+                        item {
+                            Text(
+                                stringResource(R.string.change_password),
+                                color = Color.White,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
+
+                        item {
+                            PasswordField(
+                                value = oldPassword.value,
+                                onValueChange = { oldPassword.value = it },
+                                label = "Old Password",
+                                enabled = !authUiState.isLoading
+                            )
+                        }
+
+                        item {
+                            PasswordField(
+                                value = newPassword.value,
+                                onValueChange = { newPassword.value = it },
+                                label = "New Password",
+                                enabled = !authUiState.isLoading
+                            )
+                        }
+
+                        item {
+                            PasswordField(
+                                value = confirmPassword.value,
+                                onValueChange = { confirmPassword.value = it },
+                                label = "Confirm Password",
+                                enabled = !authUiState.isLoading
+                            )
+                        }
+
+                        item {
+                            Button(
+                                onClick = { 
+                                    when {
+                                        oldPassword.value.isEmpty() || newPassword.value.isEmpty() || confirmPassword.value.isEmpty() -> {
+                                            authViewModel.setShowMessage("Please fill in all fields")
+                                        }
+                                        newPassword.value != confirmPassword.value -> {
+                                            authViewModel.setShowMessage("Passwords do not match")
+                                        }
+                                        newPassword.value.length < 6 -> {
+                                            authViewModel.setShowMessage("Password must be at least 6 characters")
+                                        }
+                                        else -> {
+                                            authViewModel.changePassword(oldPassword.value, newPassword.value)
+                                            oldPassword.value = ""
+                                            newPassword.value = ""
+                                            confirmPassword.value = ""
+                                        }
                                     }
-                                    else -> {
-                                        authViewModel.updateProfile(username.value)
-                                    }
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            enabled = !authUiState.isLoading,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Red
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(stringResource(R.string.update_profile), color = Color.White, fontWeight = FontWeight.Bold)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
+                                enabled = !authUiState.isLoading,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Red
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(stringResource(R.string.change_password), color = Color.White, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
-                } else {
-                    // Change Password Tab
-                    item {
-                        Text(
-                            stringResource(R.string.change_password),
-                            color = Color.White,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                    }
 
-                    item {
-                        PasswordField(
-                            value = oldPassword.value,
-                            onValueChange = { oldPassword.value = it },
-                            label = "Old Password",
-                            enabled = !authUiState.isLoading
-                        )
-                    }
-
-                    item {
-                        PasswordField(
-                            value = newPassword.value,
-                            onValueChange = { newPassword.value = it },
-                            label = "New Password",
-                            enabled = !authUiState.isLoading
-                        )
-                    }
-
-                    item {
-                        PasswordField(
-                            value = confirmPassword.value,
-                            onValueChange = { confirmPassword.value = it },
-                            label = "Confirm Password",
-                            enabled = !authUiState.isLoading
-                        )
-                    }
-
+                    // Logout Button - as last item in LazyColumn
                     item {
                         Button(
-                            onClick = { 
-                                when {
-                                    oldPassword.value.isEmpty() || newPassword.value.isEmpty() || confirmPassword.value.isEmpty() -> {
-                                        authViewModel.setShowMessage("Please fill in all fields")
-                                    }
-                                    newPassword.value != confirmPassword.value -> {
-                                        authViewModel.setShowMessage("Passwords do not match")
-                                    }
-                                    newPassword.value.length < 6 -> {
-                                        authViewModel.setShowMessage("Password must be at least 6 characters")
-                                    }
-                                    else -> {
-                                        authViewModel.changePassword(oldPassword.value, newPassword.value)
-                                        oldPassword.value = ""
-                                        newPassword.value = ""
-                                        confirmPassword.value = ""
-                                    }
-                                }
-                            },
+                            onClick = { showLogoutConfirm.value = true },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp),
                             enabled = !authUiState.isLoading,
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Red
+                                containerColor = Color.Red.copy(alpha = 0.8f)
                             ),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text(stringResource(R.string.change_password), color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.logout), color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
-            }
-
-            // Logout Button
-            Button(
-                onClick = { showLogoutConfirm.value = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .height(48.dp)
-                    .navigationBarsPadding(),
-                enabled = !authUiState.isLoading,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Red.copy(alpha = 0.8f)
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(stringResource(R.string.logout), color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
 

@@ -96,6 +96,7 @@ fun AdminTabView(
             showMainMenu.value -> {
                 AdminMainMenuView(
                     isDeviceConnected = bleManager.isConnected,
+                    userName = authUiState.userName,
                     onDeviceManagementClick = {
                         showMainMenu.value = false
                         showDeviceManagement.value = true
@@ -141,6 +142,12 @@ fun AdminTabView(
                     onBack = {
                         showUserProfile.value = false
                         showMainMenu.value = true
+                    },
+                    onLogout = {
+                        // User was logged out (401 token expired), show login
+                        showUserProfile.value = false
+                        showMainMenu.value = false
+                        showLogin.value = true
                     }
                 )
             }
@@ -160,6 +167,7 @@ fun AdminTabView(
 @Composable
 private fun AdminMainMenuView(
     isDeviceConnected: Boolean,
+    userName: String?,
     onDeviceManagementClick: () -> Unit,
     onUserProfileClick: () -> Unit
 ) {
@@ -201,7 +209,7 @@ private fun AdminMainMenuView(
                 AdminMenuButton(
                     icon = Icons.Default.Person,
                     title = stringResource(R.string.user_profile),
-                    description = stringResource(R.string.manage_user_profile),
+                    description = userName ?: stringResource(R.string.manage_user_profile),
                     isActive = false,
                     onClick = onUserProfileClick
                 )

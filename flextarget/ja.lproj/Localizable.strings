@@ -370,6 +370,7 @@
 "confirm_password" = "新しいパスワードを確認";
 "profile_updated_success" = "プロフィールが正常に更新されました";
 "username" = "ユーザー名";
+"session_expired_message" = "セッションの有効期限が切れました。もう一度ログインしてください。";
 
 /* Competition Results Sync */
 "sync_results" = "結果を同期";

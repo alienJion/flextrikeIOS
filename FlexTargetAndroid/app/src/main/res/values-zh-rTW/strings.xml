@@ -184,6 +184,7 @@
     <string name="change_password">更改密碼</string>
     <string name="logout">登出</string>
     <string name="logout_confirm">您確定要登出嗎？</string>
+    <string name="session_expired_message">您的工作階段已過期。請重新登入。</string>
     
     <!-- Device -->
     <string name="connected_device">已連接設備</string>

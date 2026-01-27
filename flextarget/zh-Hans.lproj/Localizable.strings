@@ -374,6 +374,7 @@
 "confirm_password" = "确认新密码";
 "profile_updated_success" = "资料更新成功";
 "username" = "用户名";
+"session_expired_message" = "您的会话已过期。请重新登录。";
 
 /* Competition Results Sync */
 "sync_results" = "同步结果";

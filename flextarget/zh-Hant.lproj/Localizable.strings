@@ -370,6 +370,7 @@
 "confirm_password" = "確認新密碼";
 "profile_updated_success" = "資料更新成功";
 "username" = "用戶名稱";
+"session_expired_message" = "您的工作階段已過期。請重新登入。";
 
 /* Competition Results Sync */
 "sync_results" = "同步結果";

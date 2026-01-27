@@ -184,6 +184,7 @@
     <string name="change_password">パスワードを変更</string>
     <string name="logout">ログアウト</string>
     <string name="logout_confirm">ログアウトしてもよろしいですか？</string>
+    <string name="session_expired_message">セッションの有効期限が切れました。もう一度ログインしてください。</string>
     
     <!-- Device -->
     <string name="connected_device">接続されたデバイス</string>

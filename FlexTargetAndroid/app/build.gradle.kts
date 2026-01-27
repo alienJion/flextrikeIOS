@@ -67,12 +67,19 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3"
+        kotlinCompilerExtensionVersion = "1.5.14"
+    }
+
+    bundle {
+        enableUncompressedNativeLibs.set(false)
     }
 
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
 }
@@ -85,7 +92,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
 
     // Compose
-    val composeBom = "2024.02.00"
+    val composeBom = "2024.09.00"
     implementation(platform("androidx.compose:compose-bom:$composeBom"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
