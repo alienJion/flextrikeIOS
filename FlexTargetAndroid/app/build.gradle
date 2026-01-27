@@ -8,11 +8,23 @@ android {
     namespace = 'com.flextarget.android'
     compileSdk = 35
 
+    // Use local build directory to avoid macOS resource fork issues on external drive
+    buildDir = "${System.getProperty('user.home')}/FlexTargetAndroid/build"
+
+    // Clean resource fork files before build
+    preBuild.doFirst {
+        exec {
+            workingDir projectDir
+            environment 'COPYFILE_DISABLE', '1'
+            commandLine 'find', '.', '-name', '._*', '-type', 'f', '-delete'
+        }
+    }
+
     defaultConfig {
         applicationId = 'com.flextarget.android'
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
+        versionCode = 4
         versionName = '1.0'
 
         testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
@@ -70,9 +82,25 @@ android {
         kotlinCompilerExtensionVersion = '1.5.3'
     }
 
+    aaptOptions {
+        ignoreAssetsPattern '._*'
+    }
+
+    sourceSets {
+        main {
+            res {
+                exclude '**/_*'
+            }
+            assets {
+                exclude '**/_*'
+            }
+        }
+    }
+
     packaging {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
+            excludes += '**/_*'
         }
         jniLibs {
             useLegacyPackaging = true
@@ -88,7 +116,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
 
     // Compose
-    def composeBom = '2024.02.00'
+    def composeBom = '2023.10.01'
     implementation platform("androidx.compose:compose-bom:$composeBom")
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.ui:ui-graphics'
