@@ -74,4 +74,11 @@ interface DrillResultDao {
     
     @Query("SELECT COUNT(*) FROM drill_result WHERE drillSetupId = :drillSetupId")
     suspend fun getDrillResultCountBySetupId(drillSetupId: UUID): Int
+    
+    @Query("SELECT * FROM drill_result WHERE competitionId = :competitionId ORDER BY date DESC")
+    fun getDrillResultsByCompetitionId(competitionId: UUID): Flow<List<DrillResultEntity>>
+    
+    @Transaction
+    @Query("SELECT * FROM drill_result WHERE competitionId = :competitionId ORDER BY date DESC")
+    fun getDrillResultsWithShotsByCompetitionId(competitionId: UUID): Flow<List<DrillResultWithShots>>
 }

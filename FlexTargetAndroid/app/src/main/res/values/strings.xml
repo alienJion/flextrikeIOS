@@ -316,6 +316,11 @@
     <string name="arrow_right">></string>
     <string name="targets_section">Targets</string>
     
+    <!-- Results & Competition -->
+    <string name="results">Results</string>
+    <string name="no_results_yet">No results yet</string>
+    <string name="unknown_athlete">Unknown Athlete</string>
+    
     <!-- User Profile & Authentication -->
     <string name="session_expired_message">Your session has expired. Please login again.</string>
 </resources>

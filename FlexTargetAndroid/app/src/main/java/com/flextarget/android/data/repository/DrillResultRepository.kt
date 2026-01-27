@@ -95,9 +95,15 @@ class DrillResultRepository(
         drillResult: DrillResultEntity,
         shots: List<ShotEntity>
     ) {
-        drillResultDao.insertDrillResult(drillResult)
-        val shotsWithResultId = shots.map { it.copy(drillResultId = drillResult.id) }
-        shotDao.insertShots(shotsWithResultId)
+        try {
+            drillResultDao.insertDrillResult(drillResult)
+            val shotsWithResultId = shots.map { it.copy(drillResultId = drillResult.id) }
+            shotDao.insertShots(shotsWithResultId)
+            println("[DrillResultRepository] ✓ Inserted drill result ${drillResult.id} with ${shots.size} shots, competitionId=${drillResult.competitionId}, athleteId=${drillResult.athleteId}")
+        } catch (e: Exception) {
+            println("[DrillResultRepository] ✗ Error inserting drill result: ${e.message}")
+            throw e
+        }
     }
     
     // Update drill result
@@ -123,5 +129,15 @@ class DrillResultRepository(
     // Get count by setup ID
     suspend fun getDrillResultCountBySetupId(drillSetupId: UUID): Int {
         return drillResultDao.getDrillResultCountBySetupId(drillSetupId)
+    }
+    
+    // Get results by competition ID
+    fun getDrillResultsByCompetitionId(competitionId: UUID): Flow<List<DrillResultEntity>> {
+        return drillResultDao.getDrillResultsByCompetitionId(competitionId)
+    }
+    
+    // Get results with shots by competition ID
+    fun getDrillResultsWithShotsByCompetitionId(competitionId: UUID): Flow<List<DrillResultWithShots>> {
+        return drillResultDao.getDrillResultsWithShotsByCompetitionId(competitionId)
     }
 }

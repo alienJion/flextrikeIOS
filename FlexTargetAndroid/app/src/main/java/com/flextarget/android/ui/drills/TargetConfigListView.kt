@@ -77,7 +77,8 @@ fun TargetConfigListView(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(16.dp)
+                .navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // List of targets
@@ -100,7 +101,9 @@ fun TargetConfigListView(
             // Save Button
             Button(
                 onClick = onDone,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
             ) {
                 Text(stringResource(R.string.save), color = Color.White)

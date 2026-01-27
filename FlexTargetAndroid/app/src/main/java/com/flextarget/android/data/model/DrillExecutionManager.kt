@@ -57,9 +57,12 @@ class DrillExecutionManager(
     private var onRepeatFinalized: ((Int) -> Unit)? = null
     private var drillDuration: Double? = null
     private var isReadinessCheckOnly = false
+    private var isFinalizingRepeat = false
 
     val summaries: List<DrillRepeatSummary>
         get() = repeatSummaries
+
+    fun isCurrentRepeatFinalized(): Boolean = !isFinalizingRepeat
 
     init {
         startObservingShots()
@@ -141,8 +144,7 @@ class DrillExecutionManager(
         // stopObservingShots() will be called when stopping execution or leaving the view
         val repeatIndex = currentRepeat
         finalizeRepeat(repeatIndex)
-        // Notify UI that repeat is finalized
-        onRepeatFinalized?.invoke(repeatIndex)
+        // NOTE: Do NOT call onRepeatFinalized here - it's already called in completeRepeat via finalizeRepeat completion
         // NOTE: Do NOT call onComplete here - UI will call completeDrill() when ready
     }
 
@@ -428,8 +430,9 @@ class DrillExecutionManager(
         val repeatIndex = currentRepeat
         finalizeRepeat(repeatIndex)
 
-        // Notify UI that repeat is complete, UI will handle next repeat logic
+        // Notify UI that repeat is finalized
         println("Completed repeat $repeatIndex")
+        onRepeatFinalized?.invoke(repeatIndex)
         // NOTE: onComplete is NOT called here - UI will call completeDrill() when all repeats are done
     }
 
@@ -450,9 +453,11 @@ class DrillExecutionManager(
     }
 
     private fun finalizeRepeat(repeatIndex: Int) {
+        isFinalizingRepeat = true
         try {
             val startTime = currentRepeatStartTime ?: run {
                 println("[DrillExecutionManager] No start time for repeat $repeatIndex, skipping summary")
+                isFinalizingRepeat = false
                 return
             }
 
@@ -474,6 +479,7 @@ class DrillExecutionManager(
                 // DO NOT clear currentRepeatStartTime here - let grace period shots be collected
                 // It will be cleared in sendReadyCommands() when next repeat starts
                 currentRepeatShots.clear()
+                isFinalizingRepeat = false
                 return
             }
 
@@ -578,6 +584,8 @@ class DrillExecutionManager(
         } catch (e: Exception) {
             println("[DrillExecutionManager] Exception in finalizeRepeat: ${e.message}")
             e.printStackTrace()
+        } finally {
+            isFinalizingRepeat = false
         }
     }
 

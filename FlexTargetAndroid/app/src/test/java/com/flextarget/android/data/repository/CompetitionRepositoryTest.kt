@@ -176,23 +176,38 @@ class CompetitionRepositoryTest {
     }
 
     @Test
-    fun `submitGamePlay returns failure when device not authenticated`() = runTest {
+    fun `submitGamePlay succeeds when device not authenticated but user is authenticated`() = runTest {
         // Given
+        val competitionId = UUID.randomUUID()
+        val drillSetupId = UUID.randomUUID()
+        val playUuid = "user-only-submission-uuid"
+        
         every { mockAuthManager.currentAccessToken } returns "user_token"
         every { mockDeviceAuthManager.deviceToken.value } returns null
+        every { mockDeviceAuthManager.deviceUUID.value } returns null
+        coEvery { mockApi.addGamePlay(any(), "Bearer user_token") } returns
+            AddGamePlayResponse(
+                code = 0,
+                msg = "success",
+                data = GamePlayResponseData(
+                    playUUID = playUuid,
+                    deviceUUID = "server-assigned-device"
+                )
+            )
+        coEvery { mockGamePlayDao.insertGamePlay(any()) } returns Unit
 
         // When
         val result = competitionRepository.submitGamePlay(
-            competitionId = UUID.randomUUID(),
-            drillSetupId = UUID.randomUUID(),
+            competitionId = competitionId,
+            drillSetupId = drillSetupId,
             score = 100,
             detail = "{}"
         )
 
-        // Then
-        assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull()).isInstanceOf(IllegalStateException::class.java)
-        assertThat(result.exceptionOrNull()?.message).isEqualTo("Device not authenticated")
+        // Then - should succeed with user token only
+        assertThat(result.isSuccess).isTrue()
+        assertThat(result.getOrNull()).isEqualTo(playUuid)
+        coVerify { mockApi.addGamePlay(any(), "Bearer user_token") }
     }
 
     @Test

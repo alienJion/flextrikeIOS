@@ -138,6 +138,7 @@ class CompetitionViewModel(
     fun submitGamePlay(
         score: Int,
         detail: String,
+        athleteName: String = "",
         isPublic: Boolean = true,
         onSuccess: () -> Unit = {},
         onFailure: (String) -> Unit = {}
@@ -145,8 +146,11 @@ class CompetitionViewModel(
         val competition = _selectedCompetition.value
             ?: return onFailure("No competition selected")
         
-        val athlete = _selectedAthlete.value
-            ?: return onFailure("No athlete selected")
+        val playerNickname = if (athleteName.isNotEmpty()) {
+            athleteName
+        } else {
+            _selectedAthlete.value?.name ?: return onFailure("No athlete selected")
+        }
 
         viewModelScope.launch {
             _isLoading.value = true
@@ -155,7 +159,7 @@ class CompetitionViewModel(
                 drillSetupId = competition.drillSetupId ?: UUID.randomUUID(),
                 score = score,
                 detail = detail,
-                playerNickname = athlete.name,
+                playerNickname = playerNickname,
                 isPublic = isPublic
             ).onSuccess {
                 _isLoading.value = false

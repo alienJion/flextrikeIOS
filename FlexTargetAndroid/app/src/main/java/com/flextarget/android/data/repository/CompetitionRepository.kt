@@ -150,14 +150,20 @@ class CompetitionRepository @Inject constructor(
             val userToken = authManager.currentAccessToken
                 ?: return@withContext Result.failure(IllegalStateException("Not authenticated"))
             
+            // Device token is optional - allow submission with just user token
             val deviceToken = deviceAuthManager.deviceToken.value
-                ?: return@withContext Result.failure(IllegalStateException("Device not authenticated"))
-            
             val deviceUuid = deviceAuthManager.deviceUUID.value
-                ?: return@withContext Result.failure(IllegalStateException("Device UUID not available"))
             
             // Format play time
             val playTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
+            
+            // Build auth header: include device token if available, otherwise use just user token
+            val authHeader = if (deviceToken != null && deviceUuid != null) {
+                "Bearer $userToken|$deviceToken"
+            } else {
+                Log.w(TAG, "Device token not available, submitting with user token only")
+                "Bearer $userToken"
+            }
             
             // Call API to submit result
             val response = api.addGamePlay(
@@ -172,7 +178,7 @@ class CompetitionRepository @Inject constructor(
                     is_public = isPublic,
                     namespace = "default"
                 ),
-                authHeader = "Bearer $userToken|$deviceToken"
+                authHeader = authHeader
             )
             
             // Create local game play entity

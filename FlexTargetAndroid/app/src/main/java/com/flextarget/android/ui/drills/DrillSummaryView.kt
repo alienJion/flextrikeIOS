@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,6 +46,7 @@ fun DrillSummaryView(
     onViewResult: (DrillRepeatSummary) -> Unit,
     onReplay: (DrillRepeatSummary) -> Unit,
     isCompetitionDrill: Boolean = false,
+    athleteName: String = "",
     onCompetitionSubmit: () -> Unit = {}
 ) {
     val originalScores = remember { mutableStateMapOf<UUID, Int>() }
@@ -100,81 +102,66 @@ fun DrillSummaryView(
             )
         )
 
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .weight(1f)
         ) {
-            if (summaries.isEmpty()) {
-                EmptyStateView()
-            } else if (isCQBMode) {
-                CQBDrillSummaryView(summaries = summaries)
-            } else {
-                val bottomPadding = if (isCompetitionDrill) 120.dp else 24.dp
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(top = 24.dp, bottom = bottomPadding, start = 16.dp, end = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    itemsIndexed(summaries) { index, summary ->
-                        Column {
-                            SummaryCard(
-                                title = "Repeat ${summary.repeatIndex}",
-                                subtitle = "Factor: ${String.format("%.1f", calculateFactor(summary.score, summary.totalTime))}",
-                                metrics = getMetricsForSummary(summary, drillSetup),
-                                summaryIndex = index,
-                                onDeductScore = { deductScore(summaries, index, originalScores) },
-                                onRestoreScore = { restoreScore(summaries, index, originalScores) },
-                                onCardClick = { onViewResult(summary) },
-                                onEditHitZones = {
-                                    editingSummary = summary
-                                    showEditDialog = true
-                                }
-                            )
-                            
-                            // Play button below the card
-                            PlayReplayButton(
-                                onReplay = { 
-                                    try {
-                                        onReplay(summary)
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    }
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Competition Submit Button Overlay
-            if (isCompetitionDrill && summaries.isNotEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(bottom = 32.dp, start = 32.dp, end = 32.dp)
-                ) {
-                    Button(
-                        onClick = onCompetitionSubmit,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .shadow(16.dp, RoundedCornerShape(28.dp), ambientColor = Color.Red.copy(alpha = 0.5f)),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Red,
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(28.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                if (summaries.isEmpty()) {
+                    EmptyStateView()
+                } else if (isCQBMode) {
+                    CQBDrillSummaryView(summaries = summaries)
+                } else {
+                    val bottomPadding = if (isCompetitionDrill) 16.dp else 24.dp
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(top = 24.dp, bottom = bottomPadding, start = 16.dp, end = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Icon(Icons.Default.Upload, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            stringResource(R.string.submit_competition_result),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            letterSpacing = 1.sp
-                        )
+                        itemsIndexed(summaries) { index, summary ->
+                            Column {
+                                SummaryCard(
+                                    title = "Repeat ${summary.repeatIndex}",
+                                    subtitle = "Factor: ${String.format("%.1f", calculateFactor(summary.score, summary.totalTime))}",
+                                    metrics = getMetricsForSummary(summary, drillSetup),
+                                    summaryIndex = index,
+                                    onDeductScore = { deductScore(summaries, index, originalScores) },
+                                    onRestoreScore = { restoreScore(summaries, index, originalScores) },
+                                    onCardClick = { onViewResult(summary) },
+                                    onEditHitZones = {
+                                        editingSummary = summary
+                                        showEditDialog = true
+                                    }
+                                )
+                                
+                                // Play button below the card
+//                                PlayReplayButton(
+//                                    onReplay = {
+//                                        try {
+//                                            onReplay(summary)
+//                                        } catch (e: Exception) {
+//                                            e.printStackTrace()
+//                                        }
+//                                    }
+//                                )
+                                // Competition Submit Footer
+                                if (isCompetitionDrill && summaries.isNotEmpty() && !isCQBMode) {
+                                    CompetitionSubmitFooter(
+                                        onReplay = {
+                                            summaries.lastOrNull()?.let { summary ->
+                                                onReplay(summary)
+                                            }
+                                        },
+                                        onSubmit = onCompetitionSubmit
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -807,6 +794,66 @@ private fun PlayReplayButton(
             fontWeight = FontWeight.SemiBold,
             fontSize = 14.sp
         )
+    }
+}
+
+@Composable
+private fun CompetitionSubmitFooter(
+    onReplay: () -> Unit,
+    onSubmit: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .background(Color.Black),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Button(
+            onClick = onReplay,
+            modifier = Modifier
+                .weight(1f)
+                .height(48.dp)
+                .shadow(8.dp, RoundedCornerShape(12.dp), ambientColor = Color.Blue.copy(alpha = 0.3f)),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Red,
+                contentColor = Color.White
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                stringResource(R.string.replay_drill),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp
+            )
+        }
+
+        Button(
+            onClick = onSubmit,
+            modifier = Modifier
+                .weight(1f)
+                .height(48.dp)
+                .shadow(8.dp, RoundedCornerShape(12.dp), ambientColor = Color.Blue.copy(alpha = 0.3f)),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Blue,
+                contentColor = Color.White
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                stringResource(R.string.submit_competition_result),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp
+            )
+        }
     }
 }
 

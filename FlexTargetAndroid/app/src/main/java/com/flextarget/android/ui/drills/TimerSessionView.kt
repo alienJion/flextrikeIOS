@@ -219,38 +219,45 @@ fun TimerSessionView(
                             gracePeriodRemaining = maxOf(0.0, gracePeriodRemaining - 0.05)
                             if (gracePeriodRemaining <= 0) {
                                 println("[TimerSessionView] Grace period ended, collecting summary and checking for more repeats")
-                                gracePeriodActive = false
+                                
+                                // CRITICAL: Wait for finalizeRepeat to complete before proceeding
+                                if (executionManager?.isCurrentRepeatFinalized() == true) {
+                                    gracePeriodActive = false
 
-                                // Collect the summary from the just-completed repeat
-                                executionManager?.summaries?.let { summaries ->
-                                    val completedSummary = summaries.getOrNull(currentRepeat - 1)
-                                    if (completedSummary != null) {
-                                        accumulatedSummaries = accumulatedSummaries + listOf(completedSummary)
-                                        println("[TimerSessionView] Collected repeat ${completedSummary.repeatIndex} summary, total collected: ${accumulatedSummaries.size}")
+                                    // Collect the summary from the just-completed repeat
+                                    executionManager?.summaries?.let { summaries ->
+                                        val completedSummary = summaries.getOrNull(currentRepeat - 1)
+                                        if (completedSummary != null) {
+                                            accumulatedSummaries = accumulatedSummaries + listOf(completedSummary)
+                                            println("[TimerSessionView] Collected repeat ${completedSummary.repeatIndex} summary, total collected: ${accumulatedSummaries.size}")
+                                        }
                                     }
-                                }
 
-                                // Check if drill was ended early or all repeats are complete
-                                if (drillEndedEarly || currentRepeat >= totalRepeats) {
-                                    // Drill completed (either manually ended or all repeats done) - finalize drill
-                                    stopUpdateTimer()
-                                    executionManager?.completeDrill()
-                                } else if (currentRepeat < totalRepeats) {
-                                    // More repeats to go - start pause and prepare next repeat
-                                    isPauseActive = true
-                                    pauseRemaining = drillSetup.pause.toDouble()
+                                    // Check if drill was ended early or all repeats are complete
+                                    if (drillEndedEarly || currentRepeat >= totalRepeats) {
+                                        // Drill completed (either manually ended or all repeats done) - finalize drill
+                                        stopUpdateTimer()
+                                        executionManager?.completeDrill()
+                                    } else if (currentRepeat < totalRepeats) {
+                                        // More repeats to go - start pause and prepare next repeat
+                                        isPauseActive = true
+                                        pauseRemaining = drillSetup.pause.toDouble()
 
-                                    // Increment repeat for next drill
-                                    currentRepeat++
+                                        // Increment repeat for next drill
+                                        currentRepeat++
 
-                                    // Reset readiness state
-                                    readyTargetsCount = 0
-                                    nonResponsiveTargets = emptyList()
-                                    readinessTimeoutOccurred = false
+                                        // Reset readiness state
+                                        readyTargetsCount = 0
+                                        nonResponsiveTargets = emptyList()
+                                        readinessTimeoutOccurred = false
 
-                                    // Set the next repeat in the manager and perform readiness check
-                                    executionManager?.setCurrentRepeat(currentRepeat)
-                                    executionManager?.performReadinessCheck()
+                                        // Set the next repeat in the manager and perform readiness check
+                                        executionManager?.setCurrentRepeat(currentRepeat)
+                                        executionManager?.performReadinessCheck()
+                                    }
+                                } else {
+                                    // Still finalizing, extend grace period by small amount
+                                    gracePeriodRemaining = 0.1
                                 }
                             }
                         }
@@ -330,6 +337,7 @@ fun TimerSessionView(
                 // This callback is ONLY called when completeDrill() is explicitly called by UI
                 // It provides all summaries for all completed repeats
                 println("[TimerSessionView] onComplete called with ${summaries.size} summaries")
+                println("[TimerSessionView] competitionId: $competitionId, athleteId: $athleteId")
                 summaries.forEach { summary ->
                     println("[TimerSessionView] Summary ${summary.repeatIndex}: ${summary.numShots} shots, score: ${summary.score}")
                 }
@@ -337,14 +345,14 @@ fun TimerSessionView(
                 accumulatedSummaries = summaries
                 println("[TimerSessionView] Using ${summaries.size} summaries from onComplete parameter")
 
-                // Save drill results to database using GlobalScope to prevent cancellation
-                // when the composable is disposed during navigation
-                GlobalScope.launch(Dispatchers.IO) {
+                // Save drill results to database using async/await to ensure proper completion
+                coroutineScope.launch(Dispatchers.IO) {
                     try {
                         val sessionId = UUID.randomUUID()
                         val gson = Gson()
 
                         summaries.forEach { summary ->
+                            println("[TimerSessionView] Creating DrillResultEntity with id=${summary.id}, competitionId=$competitionId, athleteId=$athleteId")
                             val drillResult = DrillResultEntity(
                                 id = summary.id,
                                 date = Date(),
@@ -365,18 +373,25 @@ fun TimerSessionView(
                                 )
                             }
 
-                            drillResultRepository.insertDrillResultWithShots(drillResult, shots)
-                            println("[TimerSessionView] Saved drill result ${drillResult.id} with ${shots.size} shots")
+                            try {
+                                drillResultRepository.insertDrillResultWithShots(drillResult, shots)
+                                println("[TimerSessionView] ✓ Successfully saved drill result ${drillResult.id} with ${shots.size} shots, competitionId=$competitionId, athleteId=$athleteId")
+                            } catch (dbError: Exception) {
+                                println("[TimerSessionView] ✗ Database error saving result ${drillResult.id}: ${dbError.message}")
+                                throw dbError
+                            }
                         }
 
-                        println("[TimerSessionView] Successfully saved ${summaries.size} drill results")
+                        println("[TimerSessionView] ✓ Successfully saved all ${summaries.size} drill results")
+                        // Call onDrillComplete after successful save
+                        onDrillComplete(accumulatedSummaries)
                     } catch (e: Exception) {
-                        println("[TimerSessionView] Error saving drill results: ${e.message}")
+                        println("[TimerSessionView] ✗ Error saving drill results: ${e.message}")
                         e.printStackTrace()
+                        // Still call onDrillComplete even on error so user can proceed
+                        onDrillComplete(accumulatedSummaries)
                     }
                 }
-
-                onDrillComplete(accumulatedSummaries)
                 // NOTE: Do NOT navigate here - let parent view handle navigation
             },
             onFailure = {

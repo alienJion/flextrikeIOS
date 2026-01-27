@@ -344,3 +344,7 @@ Reactive updates via authUiState eliminate manual refresh needs.
 Test profile update flow to confirm description changes on success.
 
 user/get 接口
+
+
+BLE message: 
+{"type":"netlink","action":"forward","device":"01","content":{"cmd":"shot","ha":"CZone","hp":{"x":"206.9","y":"431.0"},"rep":1,"std":"0.00","td":7.41,"tt":"ipsc"}}
