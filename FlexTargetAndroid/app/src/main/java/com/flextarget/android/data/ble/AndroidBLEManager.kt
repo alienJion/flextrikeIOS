@@ -57,6 +57,7 @@ class AndroidBLEManager(private val context: Context) {
     var onReadyToDownload: (() -> Unit)? = null
     var onDownloadComplete: ((String) -> Unit)? = null
     var onVersionInfoReceived: ((String) -> Unit)? = null
+    var onDeviceVersionUpdated: ((String) -> Unit)? = null
 
     private var bluetoothGatt: BluetoothGatt? = null
     private var writeCharacteristic: BluetoothGattCharacteristic? = null
@@ -334,11 +335,11 @@ class AndroidBLEManager(private val context: Context) {
                         // Note: iOS calls reloadUI() here, but we'll handle it in the repository
                         BLEManager.shared.onDownloadComplete?.invoke(version)
                     }
-                    // Check for OTA version info
+                    // Check for OTA version info - treat as device version update
                     else if (content.has("version")) {
                         val version = content.optString("version")
-                        println("[AndroidBLEManager] Received OTA version info (forwarded): $version")
-                        BLEManager.shared.onVersionInfoReceived?.invoke(version)
+                        println("[AndroidBLEManager] Received device version info (forwarded): $version")
+                        BLEManager.shared.onDeviceVersionUpdated?.invoke(version)
                     }
                 }
                 // Handle OTA "download complete" notification (Top-level fallback)

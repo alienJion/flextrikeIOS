@@ -55,6 +55,7 @@ class BLEManager private constructor() {
     var onReadyToDownload: (() -> Unit)? = null
     var onDownloadComplete: ((String) -> Unit)? = null
     var onVersionInfoReceived: ((String) -> Unit)? = null
+    var onDeviceVersionUpdated: ((String) -> Unit)? = null
 
     val connectedPeripheralName: String?
         get() = connectedPeripheral?.name
@@ -91,6 +92,9 @@ class BLEManager private constructor() {
             }
             onVersionInfoReceived = { version ->
                 this@BLEManager.onVersionInfoReceived?.invoke(version)
+            }
+            onDeviceVersionUpdated = { version ->
+                this@BLEManager.onDeviceVersionUpdated?.invoke(version)
             }
         }
     }

@@ -8,6 +8,7 @@ import com.flextarget.android.data.repository.OTARepository
 import com.flextarget.android.data.repository.OTAState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -49,20 +50,22 @@ class OTAViewModel(
     /**
      * Current OTA UI state
      */
-    val otaUiState: StateFlow<OTAUiState> = otaRepository.otaProgress
-        .map { progress ->
-            OTAUiState(
-                state = progress.state,
-                progress = progress.progress,
-                currentVersion = null, // Would need to be set from somewhere
-                availableVersion = progress.version,
-                description = "", // Would need to be set from update info
-                mandatory = false, // Would need to be set from update info
-                lastCheck = progress.lastCheck?.toString(),
-                error = progress.error,
-                updateHistory = emptyList() // Would need to be fetched separately
-            )
-        }
+    val otaUiState: StateFlow<OTAUiState> = combine(
+        otaRepository.otaProgress,
+        otaRepository.currentDeviceVersion
+    ) { progress, currentVersion ->
+        OTAUiState(
+            state = progress.state,
+            progress = progress.progress,
+            currentVersion = currentVersion,
+            availableVersion = progress.version,
+            description = "", // Would need to be set from update info
+            mandatory = false, // Would need to be set from update info
+            lastCheck = progress.lastCheck?.toString(),
+            error = progress.error,
+            updateHistory = emptyList() // Would need to be fetched separately
+        )
+    }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

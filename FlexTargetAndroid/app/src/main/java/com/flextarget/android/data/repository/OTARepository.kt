@@ -89,16 +89,24 @@ class OTARepository @Inject constructor(
     private val _currentState = MutableSharedFlow<OTAState>(replay = 1)
     val currentState: Flow<OTAState> = _currentState.asSharedFlow()
     
+    // Current device version tracking
+    private val _currentDeviceVersion = MutableSharedFlow<String?>(replay = 1)
+    val currentDeviceVersion: Flow<String?> = _currentDeviceVersion.asSharedFlow()
+    
     // Download cache directory path
     private var downloadCachePath: String? = null
     
     // Current update info
     private var currentUpdateInfo: OTAVersionInfo? = null
     
+    // Current device version
+    private var _currentDeviceVersionValue: String? = null
+    
     init {
         coroutineScope.launch {
             _otaProgress.emit(OTAProgress(state = OTAState.IDLE))
             _currentState.emit(OTAState.IDLE)
+            _currentDeviceVersion.emit(null)
         }
         
         // Schedule periodic OTA checks (60-second interval in production, 10min in real app)
@@ -460,7 +468,46 @@ class OTARepository @Inject constructor(
                 _otaProgress.emit(OTAProgress(state = OTAState.ERROR, error = "BLE communication error"))
             }
         }
+        
+        // Set up callback for device version updates
+        BLEManager.shared.onDeviceVersionUpdated = { version ->
+            Log.d(TAG, "Received device version update: $version")
+            updateCurrentDeviceVersion(version)
+            
+            // Also handle OTA verification if we're in VERIFYING state
+            coroutineScope.launch {
+                val currentProgress = _otaProgress.replayCache.lastOrNull()
+                if (currentProgress?.state == OTAState.VERIFYING) {
+                    val expectedVersion = currentUpdateInfo?.version
+                    if (version == expectedVersion) {
+                        Log.d(TAG, "OTA verification successful: $version")
+                        _currentState.emit(OTAState.COMPLETED)
+                        _otaProgress.emit(OTAProgress(state = OTAState.COMPLETED, version = version))
+                    } else {
+                        Log.e(TAG, "OTA verification failed. Expected: $expectedVersion, Got: $version")
+                        _currentState.emit(OTAState.ERROR)
+                        _otaProgress.emit(OTAProgress(state = OTAState.ERROR, error = "Version verification failed"))
+                    }
+                }
+            }
+        }
     }
+    
+    /**
+     * Update current device version
+     */
+    fun updateCurrentDeviceVersion(version: String) {
+        coroutineScope.launch {
+            _currentDeviceVersionValue = version
+            _currentDeviceVersion.emit(version)
+            Log.d(TAG, "Updated current device version to: $version")
+        }
+    }
+    
+    /**
+     * Get current device version
+     */
+    fun getCurrentDeviceVersion(): String? = _currentDeviceVersionValue
     
     companion object {
         private const val TAG = "OTARepository"
