@@ -24,6 +24,17 @@ import com.flextarget.android.data.local.entity.CompetitionEntity
 import com.flextarget.android.ui.viewmodel.CompetitionViewModel
 import androidx.compose.ui.res.stringResource
 import com.flextarget.android.R
+import com.flextarget.android.data.repository.CompetitionRepository
+import com.flextarget.android.data.repository.DrillSetupRepository
+import com.flextarget.android.data.model.DrillRepeatSummary
+import com.flextarget.android.data.model.ShotData
+import com.flextarget.android.data.local.entity.DrillSetupEntity
+import com.google.gson.Gson
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import com.flextarget.android.ui.drills.DrillSummaryView
+import androidx.compose.foundation.clickable
 
 // Placeholder data class for Ranking
 data class RankingRow(
@@ -43,12 +54,28 @@ fun LeaderboardView(
     val isLoading = uiState.isLoading
     val errorMessage = uiState.error
     val selectedLeaderboardCompetition = remember { mutableStateOf<CompetitionEntity?>(null) }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val showDrillSummary = remember { mutableStateOf(false) }
+    val selectedDrillSummary = remember { mutableStateOf<DrillRepeatSummary?>(null) }
+    val selectedDrillSetup = remember { mutableStateOf<DrillSetupEntity?>(null) }
+    val selectedAthleteName = remember { mutableStateOf("") }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
+    if (showDrillSummary.value && selectedDrillSummary.value != null && selectedDrillSetup.value != null) {
+        DrillSummaryView(
+            drillSetup = selectedDrillSetup.value!!,
+            summaries = listOf(selectedDrillSummary.value!!),
+            onBack = { showDrillSummary.value = false },
+            onViewResult = { /* No-op */ },
+            onReplay = { /* No-op */ },
+            athleteName = selectedAthleteName.value
+        )
+    } else {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
         // Top Bar
         TopAppBar(
             title = { Text(stringResource(R.string.competitions_leaderboard)) },
@@ -189,14 +216,43 @@ fun LeaderboardView(
                                 athleteName = ranking.playerNickname ?: "Unknown",
                                 score = ranking.score.toString(),
                                 shotCount = 0 // Info not directly available in ranking data for now
-                            )
+                            ),
+                            onClick = {
+                                val competition = selectedLeaderboardCompetition.value
+                                if (competition != null && ranking.playerNickname != null) {
+                                    coroutineScope.launch {
+                                        try {
+                                            val gamePlay = viewModel.getGamePlayForAthlete(competition.id, ranking.playerNickname!!)
+                                            if (gamePlay != null && competition.drillSetupId != null) {
+                                                val gson = Gson()
+                                                val summary: DrillRepeatSummary = gson.fromJson(gamePlay.detail, DrillRepeatSummary::class.java)
+                                                
+                                                val drillSetup = DrillSetupRepository.getInstance(context)
+                                                    .getDrillSetupById(competition.drillSetupId!!)
+                                                
+                                                if (drillSetup != null) {
+                                                    selectedDrillSummary.value = summary
+                                                    selectedDrillSetup.value = drillSetup
+                                                    selectedAthleteName.value = ranking.playerNickname ?: ""
+                                                    showDrillSummary.value = true
+                                                }
+                                            }
+                                        } catch (e: Exception) {
+                                            // Handle error, maybe show toast
+                                        }
+                                    }
+                                }
+                            }
                         )
                     }
                 }
             }
         }
     }
+    }
 }
+
+
 
 @Composable
 private fun CompetitionDropdown(
@@ -260,9 +316,11 @@ private fun CompetitionDropdown(
 }
 
 @Composable
-private fun RankingListItem(ranking: RankingRow) {
+private fun RankingListItem(ranking: RankingRow, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White.copy(alpha = 0.05f)
@@ -306,11 +364,6 @@ private fun RankingListItem(ranking: RankingRow) {
                     text = ranking.athleteName,
                     color = Color.White,
                     style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "${ranking.shotCount} ${stringResource(R.string.shots)}",
-                    color = Color.Gray,
-                    style = MaterialTheme.typography.labelSmall
                 )
             }
 

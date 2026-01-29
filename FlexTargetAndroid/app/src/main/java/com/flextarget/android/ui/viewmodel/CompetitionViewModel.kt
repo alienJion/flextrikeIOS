@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.flextarget.android.data.local.entity.CompetitionEntity
 import com.flextarget.android.data.local.entity.AthleteEntity
+import com.flextarget.android.data.local.entity.GamePlayEntity
 import com.flextarget.android.data.repository.CompetitionRepository
 import com.flextarget.android.data.repository.AthleteRepository
 import com.flextarget.android.data.repository.RankingData
@@ -190,6 +191,15 @@ class CompetitionViewModel(
                     _isLoading.value = false
                 }
         }
+    }
+
+    /**
+     * Get GamePlayEntity for a specific competition and athlete
+     */
+    suspend fun getGamePlayForAthlete(competitionId: UUID, playerNickname: String): GamePlayEntity? {
+        return competitionRepository.getGamePlaysByCompetition(competitionId)
+            .first()
+            .find { it.playerNickname == playerNickname }
     }
 
     /**
