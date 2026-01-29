@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -101,6 +102,17 @@ class OTARepository @Inject constructor(
     
     // Current device version
     private var _currentDeviceVersionValue: String? = null
+    
+    // OTA timeout management
+    private var prepareGameDiskOTATimeoutJob: Job? = null
+    private val prepareGameDiskOTATimeout = 600_000L // 10 minutes in milliseconds
+    
+    private var readyToDownloadTimeoutJob: Job? = null
+    private val readyToDownloadTimeout = 30_000L // 30 seconds
+    
+    private var verificationTimeoutJob: Job? = null
+    private val verificationTimeout = 60_000L // 60 seconds
+    private val verificationPollInterval = 5_000L // 5 seconds
     
     init {
         coroutineScope.launch {
@@ -231,6 +243,16 @@ class OTARepository @Inject constructor(
             Log.d(TAG, "Sending prepare_game_disk_ota command to device")
             BLEManager.shared.androidManager?.prepareGameDiskOTA()
             
+            // Start timeout for prepare_game_disk_ota
+            prepareGameDiskOTATimeoutJob = coroutineScope.launch {
+                delay(prepareGameDiskOTATimeout)
+                if (_currentState.replayCache.lastOrNull() == OTAState.PREPARING) {
+                    Log.e(TAG, "prepare_game_disk_ota timeout after ${prepareGameDiskOTATimeout}ms")
+                    _currentState.emit(OTAState.ERROR)
+                    _otaProgress.emit(OTAProgress(state = OTAState.ERROR, error = "OTA preparation timeout"))
+                }
+            }
+            
             // Simulate download with progress updates (in real implementation, this would download the file)
             for (i in 0..100 step 10) {
                 _otaProgress.emit(
@@ -256,6 +278,7 @@ class OTARepository @Inject constructor(
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to prepare update", e)
+            prepareGameDiskOTATimeoutJob?.cancel()
             _currentState.emit(OTAState.ERROR)
             _otaProgress.emit(OTAProgress(state = OTAState.ERROR, error = e.message))
             Result.failure(e)
@@ -341,6 +364,11 @@ class OTARepository @Inject constructor(
      */
     suspend fun cancelUpdate(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            // Cancel all timeout jobs
+            prepareGameDiskOTATimeoutJob?.cancel()
+            readyToDownloadTimeoutJob?.cancel()
+            verificationTimeoutJob?.cancel()
+            
             currentUpdateInfo = null
             _currentState.emit(OTAState.IDLE)
             _otaProgress.emit(OTAProgress(state = OTAState.IDLE))
@@ -376,8 +404,21 @@ class OTARepository @Inject constructor(
         BLEManager.shared.onGameDiskOTAReady = {
             Log.d(TAG, "Received onGameDiskOTAReady callback")
             coroutineScope.launch {
+                // Cancel prepare timeout
+                prepareGameDiskOTATimeoutJob?.cancel()
+                
                 _currentState.emit(OTAState.WAITING_FOR_READY_TO_DOWNLOAD)
                 _otaProgress.emit(OTAProgress(state = OTAState.WAITING_FOR_READY_TO_DOWNLOAD))
+                
+                // Start ready-to-download timeout
+                readyToDownloadTimeoutJob = coroutineScope.launch {
+                    delay(readyToDownloadTimeout)
+                    if (_currentState.replayCache.lastOrNull() == OTAState.WAITING_FOR_READY_TO_DOWNLOAD) {
+                        Log.e(TAG, "ready_to_download timeout after ${readyToDownloadTimeout}ms")
+                        _currentState.emit(OTAState.ERROR)
+                        _otaProgress.emit(OTAProgress(state = OTAState.ERROR, error = "Ready to download timeout"))
+                    }
+                }
             }
         }
         
@@ -385,6 +426,9 @@ class OTARepository @Inject constructor(
         BLEManager.shared.onReadyToDownload = {
             Log.d(TAG, "Received onReadyToDownload callback")
             coroutineScope.launch {
+                // Cancel ready-to-download timeout
+                readyToDownloadTimeoutJob?.cancel()
+                
                 val updateInfo = currentUpdateInfo
                 if (updateInfo != null) {
                     _currentState.emit(OTAState.DOWNLOADING)
@@ -416,7 +460,7 @@ class OTARepository @Inject constructor(
                 Log.d(TAG, "Sending reload_ui command to device")
                 BLEManager.shared.androidManager?.reloadUI()
                 
-                // Wait for reload_ui to be processed
+                // Wait for reload_ui to be processed (fixed delay like iOS)
                 kotlinx.coroutines.delay(2000)
                 
                 // Send finish_game_disk_ota to exit OTA mode
@@ -429,8 +473,8 @@ class OTARepository @Inject constructor(
                 _currentState.emit(OTAState.VERIFYING)
                 _otaProgress.emit(OTAProgress(state = OTAState.VERIFYING, version = version))
                 
-                // Query version to verify update
-                BLEManager.shared.androidManager?.queryVersion()
+                // Start verification polling with timeout
+                startVerificationPolling()
             }
         }
         
@@ -441,10 +485,12 @@ class OTARepository @Inject constructor(
                 val expectedVersion = currentUpdateInfo?.version
                 if (version == expectedVersion) {
                     Log.d(TAG, "Version verification successful: $version")
+                    verificationTimeoutJob?.cancel()
                     _currentState.emit(OTAState.COMPLETED)
                     _otaProgress.emit(OTAProgress(state = OTAState.COMPLETED, version = version))
                 } else {
                     Log.e(TAG, "Version verification failed. Expected: $expectedVersion, Got: $version")
+                    verificationTimeoutJob?.cancel()
                     _currentState.emit(OTAState.ERROR)
                     _otaProgress.emit(OTAProgress(state = OTAState.ERROR, error = "Version verification failed"))
                 }
@@ -455,6 +501,7 @@ class OTARepository @Inject constructor(
         BLEManager.shared.onOTAPreparationFailed = { errorReason ->
             Log.e(TAG, "Received onOTAPreparationFailed callback: $errorReason")
             coroutineScope.launch {
+                prepareGameDiskOTATimeoutJob?.cancel()
                 _currentState.emit(OTAState.ERROR)
                 _otaProgress.emit(OTAProgress(state = OTAState.ERROR, error = "OTA preparation failed: $errorReason"))
             }
@@ -481,14 +528,41 @@ class OTARepository @Inject constructor(
                     val expectedVersion = currentUpdateInfo?.version
                     if (version == expectedVersion) {
                         Log.d(TAG, "OTA verification successful: $version")
+                        verificationTimeoutJob?.cancel()
                         _currentState.emit(OTAState.COMPLETED)
                         _otaProgress.emit(OTAProgress(state = OTAState.COMPLETED, version = version))
                     } else {
                         Log.e(TAG, "OTA verification failed. Expected: $expectedVersion, Got: $version")
+                        verificationTimeoutJob?.cancel()
                         _currentState.emit(OTAState.ERROR)
                         _otaProgress.emit(OTAProgress(state = OTAState.ERROR, error = "Version verification failed"))
                     }
                 }
+            }
+        }
+    }
+    
+    /**
+     * Start verification polling with timeout
+     * Polls every 5 seconds for up to 60 seconds
+     */
+    private fun startVerificationPolling() {
+        verificationTimeoutJob = coroutineScope.launch {
+            val startTime = System.currentTimeMillis()
+            while (System.currentTimeMillis() - startTime < verificationTimeout) {
+                BLEManager.shared.androidManager?.queryVersion()
+                delay(verificationPollInterval)
+                
+                // Check if verification completed
+                val currentProgress = _otaProgress.replayCache.lastOrNull()
+                if (currentProgress?.state != OTAState.VERIFYING) break
+            }
+            
+            // If still verifying after timeout
+            if (_currentState.replayCache.lastOrNull() == OTAState.VERIFYING) {
+                Log.e(TAG, "Version verification timeout after ${verificationTimeout}ms")
+                _currentState.emit(OTAState.ERROR)
+                _otaProgress.emit(OTAProgress(state = OTAState.ERROR, error = "Version verification timeout"))
             }
         }
     }

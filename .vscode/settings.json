@@ -12,5 +12,6 @@
   "extensions.ignoreRecommendations": true,
   "extensions.autoUpdate": false,
   "editor.codeActionsOnSave": {},
-  "editor.lightbulb.enabled": "off"
+  "editor.lightbulb.enabled": "off",
+  "godotTools.editorPath.godot4": "/Applications/Godot_gd.app"
 }
