@@ -41,6 +41,7 @@ fun AdminTabView(
     val showQRScanner = remember { mutableStateOf(false) }
     val showConnectedDeviceDetails = remember { mutableStateOf(false) }
     val showOTAUpdate = remember { mutableStateOf(false) }
+    val showRemoteControl = remember { mutableStateOf(false) }
 
     val authUiState by authViewModel.authUiState.collectAsState()
 
@@ -50,6 +51,15 @@ fun AdminTabView(
             .background(Color.Black)
     ) {
         when {
+            showRemoteControl.value -> {
+                RemoteControlView(
+                    bleManager = bleManager,
+                    onBack = {
+                        showRemoteControl.value = false
+                        showDeviceManagement.value = true
+                    }
+                )
+            }
             showOTAUpdate.value -> {
                 OTAUpdateView(
                     otaViewModel = otaViewModel,
@@ -133,6 +143,10 @@ fun AdminTabView(
                     onOTAUpdateClick = {
                         showDeviceManagement.value = false
                         showOTAUpdate.value = true
+                    },
+                    onRemoteControlClick = {
+                        showDeviceManagement.value = false
+                        showRemoteControl.value = true
                     }
                 )
             }
@@ -297,7 +311,8 @@ private fun DeviceManagementView(
     onManualSelectClick: () -> Unit = {},
     onQRScanClick: () -> Unit = {},
     onConnectedDeviceClick: () -> Unit = {},
-    onOTAUpdateClick: () -> Unit = {}
+    onOTAUpdateClick: () -> Unit = {},
+    onRemoteControlClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -340,6 +355,15 @@ private fun DeviceManagementView(
                         title = stringResource(R.string.ota_update),
                         subtitle = stringResource(R.string.check_install_updates),
                         onClick = onOTAUpdateClick
+                    )
+                }
+
+                item {
+                    DeviceMenuOption(
+                        icon = Icons.Default.Smartphone,
+                        title = stringResource(R.string.remote_control),
+                        subtitle = stringResource(R.string.remote_control_description),
+                        onClick = onRemoteControlClick
                     )
                 }
             } else {

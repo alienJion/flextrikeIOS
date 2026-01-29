@@ -323,4 +323,11 @@
     
     <!-- User Profile & Authentication -->
     <string name="session_expired_message">Your session has expired. Please login again.</string>
+    
+    <!-- Remote Control -->
+    <string name="remote_control">Remote Control</string>
+    <string name="remote_control_description">Control the target remotely</string>
+    <string name="remote_control_instruction">Swipe to navigate • Tap to select</string>
+    <string name="back_button">Back</string>
+    <string name="home_button">Home</string>
 </resources>

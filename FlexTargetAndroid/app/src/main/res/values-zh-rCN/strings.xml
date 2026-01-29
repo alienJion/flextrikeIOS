@@ -318,4 +318,16 @@
     <string name="targets_count">%d 个目标</string>
     <string name="arrow_right">></string>
     <string name="targets_section">目标</string>
+    
+    <!-- Results & Competition -->
+    <string name="results">结果</string>
+    <string name="no_results_yet">还没有结果</string>
+    <string name="unknown_athlete">未知运动员</string>
+    
+    <!-- Remote Control -->
+    <string name="remote_control">遥控器</string>
+    <string name="remote_control_description">远程控制目标</string>
+    <string name="remote_control_instruction">滑动导航 • 点击选择</string>
+    <string name="back_button">返回</string>
+    <string name="home_button">首页</string>
 </resources>

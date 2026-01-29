@@ -317,4 +317,16 @@
     <string name="targets_count">%d 個目標</string>
     <string name="arrow_right">></string>
     <string name="targets_section">目標</string>
+    
+    <!-- Results & Competition -->
+    <string name="results">結果</string>
+    <string name="no_results_yet">還沒有結果</string>
+    <string name="unknown_athlete">未知運動員</string>
+    
+    <!-- Remote Control -->
+    <string name="remote_control">遙控器</string>
+    <string name="remote_control_description">遠端控制目標</string>
+    <string name="remote_control_instruction">滑動導航 • 點選選擇</string>
+    <string name="back_button">返回</string>
+    <string name="home_button">首頁</string>
 </resources>

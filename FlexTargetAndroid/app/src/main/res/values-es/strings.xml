@@ -317,4 +317,16 @@
     <string name="targets_count">%d objetivos</string>
     <string name="arrow_right">></string>
     <string name="targets_section">Objetivos</string>
+    
+    <!-- Results & Competition -->
+    <string name="results">Resultados</string>
+    <string name="no_results_yet">Sin resultados aún</string>
+    <string name="unknown_athlete">Atleta desconocido</string>
+    
+    <!-- Remote Control -->
+    <string name="remote_control">Control Remoto</string>
+    <string name="remote_control_description">Controla el objetivo de forma remota</string>
+    <string name="remote_control_instruction">Desliza para navegar • Toca para seleccionar</string>
+    <string name="back_button">Atrás</string>
+    <string name="home_button">Inicio</string>
 </resources>

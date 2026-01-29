@@ -317,4 +317,16 @@
     <string name="targets_count">%d ターゲット</string>
     <string name="arrow_right">></string>
     <string name="targets_section">ターゲット</string>
+    
+    <!-- Results & Competition -->
+    <string name="results">結果</string>
+    <string name="no_results_yet">まだ結果がありません</string>
+    <string name="unknown_athlete">未知の選手</string>
+    
+    <!-- Remote Control -->
+    <string name="remote_control">リモートコントロール</string>
+    <string name="remote_control_description">ターゲットをリモートで制御する</string>
+    <string name="remote_control_instruction">スワイプしてナビゲート • タップして選択</string>
+    <string name="back_button">戻る</string>
+    <string name="home_button">ホーム</string>
 </resources>
