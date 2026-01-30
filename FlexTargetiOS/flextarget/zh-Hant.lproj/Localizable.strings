@@ -445,6 +445,13 @@
 "ota_failed_to_start_title" = "OTA啟動失敗";
 "ota_game_disk_not_found" = "設備上找不到遊戲磁碟。請檢查設備並重試。";
 
+/* Remote Control */
+"remote_control" = "遠端控制";
+"remote_control_description" = "遠端控制目標";
+"remote_control_instruction" = "滑動導航 • 點擊選擇";
+"back_button" = "返回";
+"home_button" = "主頁";
+
 /* OTA - Over-The-Air Update */
 "ota_waiting_for_confirm" = "等待設備確認進入OTA模式...";
 "ota_device_in_mode" = "設備處於OTA模式。等待下載準備就緒信號...";

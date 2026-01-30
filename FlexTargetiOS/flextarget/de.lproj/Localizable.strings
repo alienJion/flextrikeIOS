@@ -445,3 +445,10 @@
 /* OTA Error Alerts */
 "ota_failed_to_start_title" = "OTA konnte nicht gestartet werden";
 "ota_game_disk_not_found" = "Spieldatenträger auf dem Gerät nicht gefunden. Bitte überprüfen Sie das Gerät und versuchen Sie es erneut.";
+
+/* Remote Control */
+"remote_control" = "Fernsteuerung";
+"remote_control_description" = "Steuern Sie das Ziel ferngesteuert";
+"remote_control_instruction" = "Wischen zum Navigieren • Tippen zum Auswählen";
+"back_button" = "Zurück";
+"home_button" = "Startseite";

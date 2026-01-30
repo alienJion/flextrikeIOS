@@ -26,6 +26,19 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		2AB9AA782F2BAD55001F8053 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		2A28B4AA2F272A78000A6A39 /* FlexTargetTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FlexTargetTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A28B5102F272D00000A6A39 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
@@ -176,6 +189,7 @@
 				2AEA529A2E07F37C009C0C68 /* Sources */,
 				2AEA529B2E07F37C009C0C68 /* Frameworks */,
 				2AEA529C2E07F37C009C0C68 /* Resources */,
+				2AB9AA782F2BAD55001F8053 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);

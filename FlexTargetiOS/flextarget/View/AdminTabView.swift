@@ -198,6 +198,31 @@ struct AdminContentView: View {
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(8)
                     }
+                    
+                    // Remote Control Menu
+                    NavigationLink(destination: RemoteControlView()) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "gamecontroller")
+                                .font(.title2)
+                                .foregroundColor(.red)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(NSLocalizedString("remote_control", comment: "Remote Control"))
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                Text(NSLocalizedString("remote_control_description", comment: "Control the target remotely"))
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                            
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.red)
+                        }
+                        .padding(12)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(8)
+                    }
                 }
                 .padding(12)
                 

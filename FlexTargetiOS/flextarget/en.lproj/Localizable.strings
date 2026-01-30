@@ -435,3 +435,10 @@
 /* UserProfileView Validation */
 "username_empty_error" = "Username cannot be empty";
 "username_same_error" = "New username must be different from current one";
+
+/* Remote Control */
+"remote_control" = "Remote Control";
+"remote_control_description" = "Control the target remotely";
+"remote_control_instruction" = "Swipe to navigate • Tap to select";
+"back_button" = "Back";
+"home_button" = "Home";

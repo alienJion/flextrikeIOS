@@ -445,6 +445,13 @@
 "ota_msg_auth_failed" = "获取OTA认证数据失败。";
 "ota_msg_no_version_selected" = "未选择OTA版本。";
 
+/* Remote Control */
+"remote_control" = "远程控制";
+"remote_control_description" = "远程控制目标";
+"remote_control_instruction" = "滑动导航 • 点击选择";
+"back_button" = "返回";
+"home_button" = "主页";
+
 /* OTA Error Alerts */
 "ota_failed_to_start_title" = "OTA启动失败";
 "ota_game_disk_not_found" = "设备上找不到游戏磁盘。请检查设备并重试。";

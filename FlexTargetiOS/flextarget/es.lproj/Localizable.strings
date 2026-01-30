@@ -443,3 +443,10 @@
 /* OTA Error Alerts */
 "ota_failed_to_start_title" = "Error al Iniciar OTA";
 "ota_game_disk_not_found" = "Disco de juego no encontrado en el dispositivo. Por favor verifique el dispositivo e intente de nuevo.";
+
+/* Remote Control */
+"remote_control" = "Control Remoto";
+"remote_control_description" = "Controla el objetivo de forma remota";
+"remote_control_instruction" = "Desliza para navegar • Toca para seleccionar";
+"back_button" = "Atrás";
+"home_button" = "Inicio";

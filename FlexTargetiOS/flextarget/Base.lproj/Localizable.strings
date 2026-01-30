@@ -325,3 +325,10 @@
 "sync_error_title" = "Sync Error";
 "submitted" = "Submitted";
 "local_unsubmitted" = "Local/Unsubmitted";
+
+/* Remote Control */
+"remote_control" = "Remote Control";
+"remote_control_description" = "Control the target remotely";
+"remote_control_instruction" = "Swipe to navigate • Tap to select";
+"back_button" = "Back";
+"home_button" = "Home";

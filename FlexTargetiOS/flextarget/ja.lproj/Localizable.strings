@@ -444,3 +444,10 @@
 /* OTA Error Alerts */
 "ota_failed_to_start_title" = "OTA開始失敗";
 "ota_game_disk_not_found" = "デバイス上にゲームディスクが見つかりません。デバイスを確認してもう一度お試しください。";
+
+/* Remote Control */
+"remote_control" = "リモートコントロール";
+"remote_control_description" = "ターゲットをリモートで制御";
+"remote_control_instruction" = "スワイプしてナビゲート • タップして選択";
+"back_button" = "戻る";
+"home_button" = "ホーム";
