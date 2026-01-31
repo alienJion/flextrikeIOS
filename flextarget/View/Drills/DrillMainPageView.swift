@@ -180,19 +180,21 @@ struct DrillMainPageView: View {
                     }
                 }) {
                     HStack(spacing: 8) {
-                        Image(bleManager.isConnected ? "BleConnect": "BleDisconnect")
+                        Image(bleManager.isConnected ? "BleConnect" : "BleDisconnect")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 22, height: 22)
-                        
-                        Text(bleManager.connectedPeripheral?.name ?? (bleManager.isConnected ? NSLocalizedString("target_connected", comment: "Status when target is connected") : NSLocalizedString("target_disconnected", comment: "Status when target is disconnected")))
-                            .font(.footnote)
-                            .foregroundColor(.gray)
+                            .frame(width: 18, height: 18)
+                        Text(bleManager.connectedPeripheral?.name ?? (bleManager.isConnected ? NSLocalizedString("target_connected", comment: "") : NSLocalizedString("target_disconnected", comment: "")))
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(bleManager.isConnected ? .red : .gray)
+                            .lineLimit(1)
                     }
-                    .padding(.vertical, 4)
-                    .padding(.horizontal, 12)
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(16)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 14)
+                    .background(Color.white.opacity(bleManager.isConnected ? 0.12 : 0.08))
+                    .cornerRadius(12)
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(bleManager.isConnected ? Color.red.opacity(0.4) : Color.white.opacity(0.1), lineWidth: 1))
                 }
             }
             
@@ -219,22 +221,25 @@ struct DrillMainPageView: View {
         let text: String
         let color: Color
         var body: some View {
-            HStack {
+            HStack(spacing: 14) {
                 Image(systemName: icon)
+                    .font(.system(size: 20))
                     .foregroundColor(color)
-                    .font(.system(size: 28))
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(Color.white.opacity(0.08)))
                 Text(text)
                     .foregroundColor(.white)
                     .font(.headline)
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .foregroundColor(color)
-                    .font(.system(size: 20))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.gray)
             }
-            .padding()
-            .background(Color.gray.opacity(0.3))
-            .cornerRadius(24)
-            .padding(.horizontal)
+            .padding(16)
+            .background(Color.white.opacity(0.06))
+            .cornerRadius(14)
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08), lineWidth: 1))
+            .padding(.horizontal, 16)
         }
     }
     

@@ -37,12 +37,12 @@ struct TargetsSectionView: View {
     }
 
     private var targetsRowContent: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "shield")
+        HStack(spacing: 12) {
+            Image(systemName: "target")
+                .font(.system(size: 16))
                 .foregroundColor(.red)
-                .padding(10)
-                .background(Circle().fill(Color.white.opacity(0.1)))
-                .overlay(Circle().stroke(Color.red, lineWidth: 2))
+                .frame(width: 36, height: 36)
+                .background(Circle().fill(Color.white.opacity(0.08)))
 
             Text(NSLocalizedString("targets", comment: "Targets label"))
                 .foregroundColor(.white)
@@ -51,19 +51,18 @@ struct TargetsSectionView: View {
             Spacer()
 
             Text(String(format: NSLocalizedString("targets_count_label", comment: "Number of targets"), targetConfigs.count))
-                .foregroundColor(.white)
-                .font(.headline)
-
-            Spacer()
+                .foregroundColor(.gray)
+                .font(.subheadline)
 
             Image(systemName: "chevron.right")
                 .foregroundColor(.gray)
                 .font(.system(size: 14, weight: .semibold))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color.gray.opacity(targetConfigs.count > 0 ? 0.2 : 0.1))
-        .cornerRadius(16)
+        .padding(16)
+        .background(Color.white.opacity(targetConfigs.count > 0 ? 0.08 : 0.06))
+        .cornerRadius(14)
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08), lineWidth: 1))
         .opacity(isTargetListReceived ? 1.0 : 0.6)
     }
 }

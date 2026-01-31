@@ -319,6 +319,8 @@
 "disconnect" = "Disconnect";
 "login" = "Login";
 "user_login" = "User login";
+"login_title" = "Login";
+"login_subtitle" = "Enter your mobile and password to continue";
 "information" = "Information";
 "app_info" = "App information";
 "connected_device" = "Connected device";
@@ -365,7 +367,7 @@
 "delete_athlete_confirm" = "This will delete the athlete and all their competition results. This action cannot be undone.";
 
 /* HistoryTabView - Filters */
-"all_drill_setup" = "All Drill Setup";
+"all_drill_setup" = "Drill Setup";
 
 /* OTA - Over-The-Air Update */
 "ota_waiting_for_confirm" = "Waiting for device to confirm OTA mode...";

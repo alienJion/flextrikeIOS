@@ -157,9 +157,9 @@ struct RecentTrainingView: View {
             .padding(.vertical, 12)
         }
         .padding(.top, 0)
-        .background(Color.gray.opacity(0.3))
-        .cornerRadius(20)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .background(Color.white.opacity(0.06))
+        .cornerRadius(16)
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.08), lineWidth: 1))
         .frame(height: cardHeight)
         .padding(.horizontal, 4)
         .onTapGesture {

@@ -61,7 +61,7 @@
 "ready_to_scan" = "準備掃描";
 
 /* HistoryTabView - Filters */
-"all_drill_setup" = "所有訓練設定";
+"all_drill_setup" = "訓練設定";
 
 /* LaserDryFire/OverlayView */
 "fps_display" = "FPS: %d";
@@ -264,11 +264,13 @@
 /* History Tab */
 "all_modes" = "所有模式";
 "all_time" = "全部時間";
+"done" = "完成";
 "past_week" = "過去一週";
 "past_month" = "過去一個月";
 "custom_date" = "自訂日期";
 "no_results" = "無結果";
 "no_results_hint" = "執行訓練以查看歷史記錄";
+"repeats" = "次";
 "unknown_date" = "未知日期";
 
 /* Tab Navigation */
@@ -337,6 +339,7 @@
 "logout_confirm" = "您確定要登出嗎？";
 "user_logout" = "用戶登出";
 "user_login" = "用戶登錄";
+"login_subtitle" = "輸入手機號與密碼以繼續";
 "mobile_number" = "手機號碼";
 "password" = "密碼";
 "login" = "登錄";

@@ -3,8 +3,10 @@ import SwiftUI
 struct UserProfileView: View {
     @Environment(\.presentationMode) var presentationMode
     @ObservedObject var authManager = AuthManager.shared
-    
+
     let onDismiss: () -> Void
+    /// 为 true 时使用系统返回按钮，不显示自定义 toolbar 返回（如 push 进入时）
+    var useSystemBackButton: Bool = false
     
     @State private var username = ""
     @State private var oldPassword = ""
@@ -53,10 +55,12 @@ struct UserProfileView: View {
         .navigationTitle(NSLocalizedString("user_profile", comment: "User Profile"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onDismiss) {
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(.red)
+            if !useSystemBackButton {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: onDismiss) {
+                        Image(systemName: "chevron.left")
+                            .foregroundColor(.red)
+                    }
                 }
             }
         }

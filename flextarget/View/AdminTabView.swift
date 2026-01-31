@@ -3,65 +3,82 @@ import CoreData
 
 struct AdminTabView: View {
     @Environment(\.managedObjectContext) var managedObjectContext
-    
+
     var body: some View {
         AdminContentView()
             .environment(\.managedObjectContext, managedObjectContext)
     }
 }
 
+// MARK: - Admin route (push navigation)
+
+private enum AdminRoute: Hashable {
+    case deviceMgmt
+    case userProfile
+    case qrScanner
+}
+
 struct AdminContentView: View {
     @Environment(\.managedObjectContext) var managedObjectContext
-    @State private var selectedAdminTab = 0
-    @State private var showMainMenu = true
-    @State private var showDeviceManagement = false
-    @State private var showLoginFlow = false
-    @State private var showInformation = false
-    @State private var showUserProfile = false
+
+    @State private var path = NavigationPath()
     @State private var scannedPeripheralName: String? = nil
     @State private var showConnectView = false
+    @State private var showLoginModal = false
+
     @ObservedObject var bleManager = BLEManager.shared
     @ObservedObject var authManager = AuthManager.shared
-    
+
     let persistenceController = PersistenceController.shared
-    
+
     var isDeviceConnected: Bool {
         bleManager.isConnected && bleManager.connectedPeripheral != nil
     }
-    
+
+    private func popToRoot() {
+        path = NavigationPath()
+    }
+
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
-            
-            if showMainMenu {
-                mainMenuView
-            } else if showDeviceManagement {
-                deviceManagementView
-            } else if showLoginFlow {
-                LoginView(onDismiss: {
-                    showLoginFlow = false
-                    showMainMenu = true
-                })
-            } else if showUserProfile {
-                UserProfileView(onDismiss: {
-                    showUserProfile = false
-                    showMainMenu = true
-                })
-            } else if showInformation {
-                InformationPage()
-            }
+        NavigationStack(path: $path) {
+            mainMenuView
+                .navigationTitle(NSLocalizedString("admin", comment: "Admin tab title"))
+                .navigationBarTitleDisplayMode(.inline)
+                .navigationDestination(for: AdminRoute.self) { route in
+                    switch route {
+                    case .deviceMgmt:
+                        AdminDeviceManagementView(
+                            bleManager: bleManager,
+                            isDeviceConnected: isDeviceConnected
+                        )
+                    case .userProfile:
+                        UserProfileView(
+                            onDismiss: { if !path.isEmpty { path.removeLast() } },
+                            useSystemBackButton: true
+                        )
+                    case .qrScanner:
+                        QRScannerView(
+                            onQRScanned: { code in
+                                popToRoot()
+                                scannedPeripheralName = code
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                    showConnectView = true
+                                }
+                            },
+                            hideBackButton: false
+                        )
+                    }
+                }
         }
-        .navigationTitle(NSLocalizedString("admin", comment: "Admin tab title"))
-        .navigationBarTitleDisplayMode(.inline)
+        .background(Color.black.ignoresSafeArea())
         .onChange(of: authManager.isAuthenticated) { newValue in
             if !newValue {
-                // User was logged out (either manually or due to token expiration)
-                showMainMenu = false
-                showDeviceManagement = false
-                showUserProfile = false
-                showInformation = false
-                showLoginFlow = true
+                popToRoot()
+                showLoginModal = true
             }
+        }
+        .fullScreenCover(isPresented: $showLoginModal) {
+            LoginView(onDismiss: { showLoginModal = false }, showCancelButton: true)
         }
         .sheet(isPresented: $showConnectView) {
             ConnectSmartTargetView(
@@ -73,214 +90,50 @@ struct AdminContentView: View {
             )
         }
     }
-    
+
+    // MARK: - Main menu (beautified)
+
     private var mainMenuView: some View {
-        VStack(spacing: 0) {
-            
-            // Menu List
-            ScrollView {
-                VStack(spacing: 12) {
-                    // Device Management
-                    adminMenuButton(
-                        icon: "iphone.and.arrow.forward",
-                        title: NSLocalizedString("device_management", comment: "Device Management"),
-                        description: isDeviceConnected ?
-                            NSLocalizedString("device_connected", comment: "Device is connected") :
-                            NSLocalizedString("connect_device", comment: "Connect to a device"),
-                        isActive: isDeviceConnected
+        ScrollView {
+            VStack(spacing: 16) {
+                adminMenuRow(
+                    icon: "iphone.and.arrow.forward",
+                    title: NSLocalizedString("device_management", comment: "Device Management"),
+                    description: isDeviceConnected
+                        ? NSLocalizedString("device_connected", comment: "Device is connected")
+                        : NSLocalizedString("connect_device", comment: "Connect to a device"),
+                    isActive: isDeviceConnected
+                ) {
+                    path.append(AdminRoute.deviceMgmt)
+                }
+
+                if authManager.isAuthenticated {
+                    adminMenuRow(
+                        icon: "person.circle.fill",
+                        title: authManager.currentUser?.username ?? NSLocalizedString("user_profile", comment: "User Profile"),
+                        description: NSLocalizedString("manage_profile", comment: "Manage user profile"),
+                        isActive: false
                     ) {
-                        showMainMenu = false
-                        showDeviceManagement = true
+                        path.append(AdminRoute.userProfile)
                     }
-                    
-                    // User Management
-                    if authManager.isAuthenticated {
-                        // User Profile
-                        adminMenuButton(
-                            icon: "person.circle",
-                            title: authManager.currentUser?.username ?? NSLocalizedString("user_profile", comment: "User Profile"),
-                            description: NSLocalizedString("manage_profile", comment: "Manage user profile"),
-                            isActive: false
-                        ) {
-                            showMainMenu = false
-                            showUserProfile = true
-                        }
-                    } else {
-                        // Login
-                        adminMenuButton(
-                            icon: "person.circle",
-                            title: NSLocalizedString("login", comment: "Login"),
-                            description: NSLocalizedString("user_login", comment: "User login"),
-                            isActive: false
-                        ) {
-                            showMainMenu = false
-                            showLoginFlow = true
-                        }
+                } else {
+                    adminMenuRow(
+                        icon: "person.circle.fill",
+                        title: NSLocalizedString("login", comment: "Login"),
+                        description: NSLocalizedString("user_login", comment: "User login"),
+                        isActive: false
+                    ) {
+                        showLoginModal = true
                     }
-                    
-                    // Information
-                    // adminMenuButton(
-                    //     icon: "info.circle",
-                    //     title: NSLocalizedString("information", comment: "Information"),
-                    //     description: NSLocalizedString("app_info", comment: "App information"),
-                    //     isActive: false
-                    // ) {
-                    //     showMainMenu = false
-                    //     showInformation = true
-                    // }
                 }
-                .padding(12)
             }
+            .padding(20)
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.black)
     }
-    
-    private var deviceManagementView: some View {
-        VStack {
-            if isDeviceConnected {
-                VStack(spacing: 16) {
-                    // Connected Device Menu
-                    NavigationLink(destination: ConnectSmartTargetView(
-                        bleManager: bleManager,
-                        navigateToMain: .constant(false),
-                        isAlreadyConnected: true,
-                        hideCloseButton: true
-                    )) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "antenna.radiowaves.left.and.right")
-                                .font(.title2)
-                                .foregroundColor(.red)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(NSLocalizedString("connected_device", comment: "Connected device"))
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                if let peripheralName = bleManager.connectedPeripheral?.name {
-                                    Text(peripheralName)
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                } else {
-                                    Text(NSLocalizedString("manage_connection", comment: "Manage connection"))
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                }
-                            }
-                            
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.red)
-                        }
-                        .padding(12)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
-                    }
-                    
-                    // OTA Update Menu
-                    NavigationLink(destination: OTAUpdateView()) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "arrow.triangle.2.circlepath.circle")
-                                .font(.title2)
-                                .foregroundColor(.red)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(NSLocalizedString("ota_update_title", comment: "OTA Update"))
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                Text(NSLocalizedString("ota_update_description", comment: "Check for and install system updates"))
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                            }
-                            
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.red)
-                        }
-                        .padding(12)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
-                    }
-                }
-                .padding(12)
-                
-                Spacer()
-            } else {
-                VStack(spacing: 16) {
-                    // Manual Device Selection
-                    NavigationLink(destination: ManualDeviceSelectionView(bleManager: bleManager)) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "list.bullet.rectangle.portrait")
-                                .font(.title2)
-                                .foregroundColor(.red)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(NSLocalizedString("manual_select_title", comment: "Manual Select"))
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                Text(NSLocalizedString("manual_select_description", comment: "Browse and select available devices"))
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                            }
-                            
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.red)
-                        }
-                        .padding(12)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
-                    }
-                    
-                    // QR Scan Option
-                    NavigationLink(destination: QRScannerView(onQRScanned: { code in
-                        // Save scanned peripheral name and present connect view
-                        scannedPeripheralName = code
-                        showDeviceManagement = false
-                        showMainMenu = true
-                        // Small delay to ensure state settles before presenting sheet
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            showConnectView = true
-                        }
-                    }, hideBackButton: true)) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "qrcode.viewfinder")
-                                .font(.title2)
-                                .foregroundColor(.red)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(NSLocalizedString("scan_qr_code", comment: "Scan QR Code"))
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                Text(NSLocalizedString("scan_device_qr", comment: "Scan device QR code"))
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                            }
-                            
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.red)
-                        }
-                        .padding(12)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
-                    }
-                    
-                    Spacer()
-                }
-                .padding(12)
-            }
-        }
-        .background(Color.black.ignoresSafeArea())
-        .navigationTitle(NSLocalizedString("device_management", comment: "Device Management"))
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: { showDeviceManagement = false; showMainMenu = true }) {
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(.red)
-                }
-            }
-        }
-    }
-    
-    private func adminMenuButton(
+
+    private func adminMenuRow(
         icon: String,
         title: String,
         description: String,
@@ -288,56 +141,144 @@ struct AdminContentView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: 16) {
                 Image(systemName: icon)
-                    .font(.title2)
+                    .font(.system(size: 22))
                     .foregroundColor(.red)
-                    .frame(width: 32, height: 32)
-                
-                VStack(alignment: .leading, spacing: 2) {
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(Color.white.opacity(0.08)))
+                    .overlay(Circle().stroke(Color.red.opacity(0.4), lineWidth: 1))
+
+                VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.headline)
                         .foregroundColor(.white)
                     Text(description)
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundColor(.gray)
                 }
-                
+
                 Spacer()
-                
+
                 if isActive {
                     Image(systemName: "checkmark.circle.fill")
+                        .font(.title3)
                         .foregroundColor(.green)
                 } else {
                     Image(systemName: "chevron.right")
-                        .foregroundColor(.red)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.gray)
                 }
             }
-            .frame(maxWidth: .infinity)
-            .padding(12)
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
+            .padding(16)
+            .background(Color.white.opacity(0.06))
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
         }
+        .buttonStyle(.plain)
     }
-    
-    private func logout() {
-        let context = persistenceController.container.viewContext
-        let fetchRequest: NSFetchRequest<AppAuth> = AppAuth.fetchRequest()
-        
-        do {
-            let results = try context.fetch(fetchRequest)
-            for auth in results {
-                context.delete(auth)
+}
+
+// MARK: - Device management (push destination, beautified)
+
+private struct AdminDeviceManagementView: View {
+    let bleManager: BLEManager
+    let isDeviceConnected: Bool
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                if isDeviceConnected {
+                    NavigationLink(destination: ConnectSmartTargetView(
+                        bleManager: bleManager,
+                        navigateToMain: .constant(false),
+                        isAlreadyConnected: true,
+                        hideCloseButton: true
+                    )) {
+                        deviceRow(
+                            icon: "antenna.radiowaves.left.and.right",
+                            title: NSLocalizedString("connected_device", comment: "Connected device"),
+                            subtitle: bleManager.connectedPeripheral?.name ?? NSLocalizedString("manage_connection", comment: "Manage connection")
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink(destination: OTAUpdateView()) {
+                        deviceRow(
+                            icon: "arrow.triangle.2.circlepath.circle",
+                            title: NSLocalizedString("ota_update_title", comment: "OTA Update"),
+                            subtitle: NSLocalizedString("ota_update_description", comment: "Check for and install system updates")
+                        )
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    NavigationLink(destination: ManualDeviceSelectionView(bleManager: bleManager)) {
+                        deviceRow(
+                            icon: "list.bullet.rectangle.portrait",
+                            title: NSLocalizedString("manual_select_title", comment: "Manual Select"),
+                            subtitle: NSLocalizedString("manual_select_description", comment: "Browse and select available devices")
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink(value: AdminRoute.qrScanner) {
+                        deviceRow(
+                            icon: "qrcode.viewfinder",
+                            title: NSLocalizedString("scan_qr_code", comment: "Scan QR Code"),
+                            subtitle: NSLocalizedString("scan_device_qr", comment: "Scan device QR code")
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
             }
-            try context.save()
-        } catch {
-            print("Error during logout: \(error)")
+            .padding(20)
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.black)
+        .navigationTitle(NSLocalizedString("device_management", comment: "Device Management"))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func deviceRow(icon: String, title: String, subtitle: String) -> some View {
+        HStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundColor(.red)
+                .frame(width: 44, height: 44)
+                .background(Circle().fill(Color.white.opacity(0.08)))
+                .overlay(Circle().stroke(Color.red.opacity(0.4), lineWidth: 1))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.gray)
+        }
+        .padding(16)
+        .background(Color.white.opacity(0.06))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .contentShape(Rectangle())
     }
 }
 
 #Preview {
-    NavigationView {
+    NavigationStack {
         AdminTabView()
             .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
     }

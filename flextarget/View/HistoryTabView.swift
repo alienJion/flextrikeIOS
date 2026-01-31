@@ -30,8 +30,11 @@ struct HistoryTabView: View {
     ) private var drillResults: FetchedResults<DrillResult>
     
     let persistenceController = PersistenceController.shared
-    
-    enum DateRange {
+
+    private static let filterSideInset: CGFloat = 16
+    private static let filterChipSpacing: CGFloat = 12
+
+    enum DateRange: Hashable {
         case all
         case week
         case month
@@ -153,177 +156,181 @@ struct HistoryTabView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
-                // Filter Controls
-                VStack(spacing: 12) {
-                    // Drill Type Filter
-                    Menu {
-                        Button(NSLocalizedString("all_modes", comment: "All drills filter")) {
-                            selectedDrillType = nil
-                        }
-                        
-                        Divider()
-                        
-                        ForEach(uniqueDrillTypes, id: \.self) { type in
-                            Button(type.uppercased()) {
-                                selectedDrillType = type
+                // 筛选区：三按钮固定间距、左右边距一致
+                HStack(spacing: 0) {
+                    Spacer(minLength: HistoryTabView.filterSideInset)
+                    HStack(spacing: HistoryTabView.filterChipSpacing) {
+                        Picker(selection: $selectedDrillType) {
+                            Text(NSLocalizedString("all_modes", comment: "")).tag(nil as String?)
+                            ForEach(uniqueDrillTypes, id: \.self) { type in
+                                Text(type.uppercased()).tag(type as String?)
                             }
+                        } label: {
+                            filterChipLabel(icon: "line.3.horizontal.decrease.circle", title: selectedDrillType?.uppercased() ?? NSLocalizedString("all_modes", comment: ""))
                         }
-                    } label: {
-                        HStack {
-                            Image(systemName: "line.3.horizontal.decrease")
-                            Text(selectedDrillType?.uppercased() ?? NSLocalizedString("all_modes", comment: "All drills filter"))
-                                .lineLimit(1)
-                            Spacer()
-                            Image(systemName: "chevron.down")
+                        .pickerStyle(.menu)
+
+                        Picker(selection: $selectedDateRange) {
+                            Text(NSLocalizedString("all_time", comment: "")).tag(DateRange.all)
+                            Text(NSLocalizedString("past_week", comment: "")).tag(DateRange.week)
+                            Text(NSLocalizedString("past_month", comment: "")).tag(DateRange.month)
+                        } label: {
+                            filterChipLabel(icon: "calendar", title: dateRangeLabel)
                         }
-                        .foregroundColor(.red)
-                        .padding(12)
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(8)
-                    }
-                    
-                    // Date Range Filter
-                    Menu {
-                        Button(NSLocalizedString("all_time", comment: "All time filter")) {
-                            selectedDateRange = .all
-                        }
-                        
-                        Button(NSLocalizedString("past_week", comment: "Past week filter")) {
-                            selectedDateRange = .week
-                        }
-                        
-                        Button(NSLocalizedString("past_month", comment: "Past month filter")) {
-                            selectedDateRange = .month
-                        }
-                    } label: {
-                        HStack {
-                            Image(systemName: "calendar")
-                            Text(dateRangeLabel)
-                                .lineLimit(1)
-                            Spacer()
-                            Image(systemName: "chevron.down")
-                        }
-                        .foregroundColor(.red)
-                        .padding(12)
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(8)
-                    }
-                    
-                    // Drill Name Filter
-                    Menu {
-                        Button(NSLocalizedString("all_drill_setup", comment: "All names filter")) {
-                            selectedDrillName = nil
-                        }
-                        
-                        Divider()
-                        
-                        ForEach(uniqueDrillNames, id: \.self) { name in
-                            Button(name) {
-                                selectedDrillName = name
+                        .pickerStyle(.menu)
+
+                        Picker(selection: $selectedDrillName) {
+                            Text(NSLocalizedString("all_drill_setup", comment: "")).tag(nil as String?)
+                            ForEach(uniqueDrillNames, id: \.self) { name in
+                                Text(name).tag(name as String?)
                             }
+                        } label: {
+                            filterChipLabel(icon: "target", title: selectedDrillName ?? NSLocalizedString("all_drill_setup", comment: ""))
                         }
-                    } label: {
-                        HStack {
-                            Image(systemName: "target")
-                            Text(selectedDrillName ?? NSLocalizedString("all_drill_setup", comment: "All names filter"))
-                                .lineLimit(1)
-                            Spacer()
-                            Image(systemName: "chevron.down")
-                        }
-                        .foregroundColor(.red)
-                        .padding(12)
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(8)
+                        .pickerStyle(.menu)
                     }
+                    Spacer(minLength: HistoryTabView.filterSideInset)
                 }
-                .padding(12)
-                
-                Divider()
-                    .background(Color.red.opacity(0.3))
-                
-                // Results List
+                .padding(.vertical, 12)
+                .background(Color.black)
+
+                // 列表
                 if groupedResults.isEmpty {
-                    VStack {
-                        Spacer()
-                        VStack(spacing: 12) {
-                            Image(systemName: "clock.badge.exclamationmark")
-                                .font(.system(size: 48))
-                                .foregroundColor(.red)
-                            Text(NSLocalizedString("no_results", comment: "No results message"))
-                                .font(.headline)
-                            Text(NSLocalizedString("no_results_hint", comment: "No results hint"))
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                        }
-                        Spacer()
-                    }
+                    emptyStateView
                 } else {
                     ScrollView {
-                        VStack(spacing: 16) {
+                        LazyVStack(alignment: .leading, spacing: 20) {
                             ForEach(groupedResults.sorted(by: { $0.key > $1.key }), id: \.key) { dateKey, sessions in
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(dateKey)
-                                        .font(.subheadline)
-                                        .foregroundColor(.red)
-                                        .padding(.horizontal)
-                                    
-                                    ForEach(sessions, id: \.sessionId) { session in
-                                        let isExpanded = expandedDrillSetups.contains(session.sessionId)
-                                        VStack(spacing: 0) {
-                                            Button(action: {
-                                                withAnimation {
-                                                    if isExpanded {
-                                                        expandedDrillSetups.remove(session.sessionId)
-                                                    } else {
-                                                        expandedDrillSetups.insert(session.sessionId)
-                                                    }
-                                                }
-                                            }) {
-                                                HStack {
-                                                    VStack(alignment: .leading, spacing: 4) {
-                                                        Text(session.setup.name ?? NSLocalizedString("untitled", comment: "Untitled"))
-                                                            .font(.headline)
-                                                            .foregroundColor(.white)
-                                                        Text("\(session.repeatCount) repeats")
-                                                            .font(.caption)
-                                                            .foregroundColor(.gray)
-                                                    }
-                                                    Spacer()
-                                                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                                                        .foregroundColor(.red)
-                                                }
-                                                .padding(12)
-                                                .background(Color.gray.opacity(0.15))
-                                                .cornerRadius(8)
-                                            }
-                                            .buttonStyle(PlainButtonStyle())
-                                            
-                                            if isExpanded {
-                                                VStack(spacing: 8) {
-                                                    ForEach(session.results, id: \.objectID) { result in
-                                                        NavigationLink(destination: DrillSummaryView(drillSetup: session.setup, summaries: createSummaries(from: result) ?? [])
-                                                            .environment(\.managedObjectContext, persistenceController.container.viewContext)) {
-                                                            if let summaries = createSummaries(from: result) {
-                                                                DrillSummaryCard(drillSetup: session.setup, summaries: summaries)
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                                .padding(.top, 8)
-                                            }
-                                        }
-                                    }
-                                }
+                                sectionBlock(dateKey: dateKey, sessions: sessions)
                             }
                         }
-                        .padding(12)
+                        .padding(16)
+                        .padding(.bottom, 24)
                     }
+                    .scrollContentBackground(.hidden)
+                    .background(Color.black)
                 }
             }
             .navigationTitle(NSLocalizedString("history", comment: "History tab title"))
             .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func filterChipLabel(icon: String, title: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundColor(.red)
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Image(systemName: "chevron.down")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(.gray)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Color.white.opacity(0.08))
+        .cornerRadius(12)
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.12), lineWidth: 1))
+    }
+
+    private var emptyStateView: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Image(systemName: "clock.badge.checkmark")
+                .font(.system(size: 56))
+                .foregroundStyle(.red.opacity(0.8))
+            Text(NSLocalizedString("no_results", comment: ""))
+                .font(.title3)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+            Text(NSLocalizedString("no_results_hint", comment: ""))
+                .font(.subheadline)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .background(Color.black)
+    }
+
+    private func sectionBlock(dateKey: String, sessions: [DrillSession]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(dateKey)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundColor(.red)
+                .textCase(.uppercase)
+                .tracking(0.5)
+
+            VStack(spacing: 10) {
+                ForEach(sessions, id: \.sessionId) { session in
+                    sessionRow(session: session)
+                }
+            }
+        }
+    }
+
+    private func sessionRow(session: DrillSession) -> some View {
+        let isExpanded = expandedDrillSetups.contains(session.sessionId)
+        return VStack(spacing: 0) {
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    if isExpanded {
+                        expandedDrillSetups.remove(session.sessionId)
+                    } else {
+                        expandedDrillSetups.insert(session.sessionId)
+                    }
+                }
+            }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "doc.text.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.red)
+                        .frame(width: 32, height: 32)
+                        .background(Circle().fill(Color.white.opacity(0.08)))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(session.setup.name ?? NSLocalizedString("untitled", comment: ""))
+                            .font(.headline)
+                            .foregroundColor(.white)
+                        Text("\(session.repeatCount) \(NSLocalizedString("repeats", comment: ""))")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    Spacer()
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.gray)
+                }
+                .padding(16)
+                .background(Color.white.opacity(0.06))
+                .cornerRadius(14)
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                VStack(spacing: 10) {
+                    ForEach(session.results, id: \.objectID) { result in
+                        NavigationLink(destination: DrillSummaryView(drillSetup: session.setup, summaries: createSummaries(from: result) ?? [])
+                            .environment(\.managedObjectContext, persistenceController.container.viewContext)) {
+                            if let summaries = createSummaries(from: result) {
+                                DrillSummaryCard(drillSetup: session.setup, summaries: summaries)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.top, 4)
+                .padding(.leading, 8)
+            }
         }
     }
     
@@ -423,32 +430,37 @@ struct HistoryTabView: View {
 struct DrillSummaryCard: View {
     let drillSetup: DrillSetup
     let summaries: [DrillRepeatSummary]
-    
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(drillSetup.name ?? NSLocalizedString("untitled", comment: "Untitled"))
-                        .font(.headline)
-                        .foregroundColor(.white)
-                    Text(drillSetup.mode?.uppercased() ?? "N/A")
-                        .font(.caption)
-                        .foregroundColor(.red)
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text(String(format: "%.2fs", summaries.first?.totalTime ?? 0))
-                        .font(.caption)
-                        .foregroundColor(.red)
-                    Text(String(summaries.first?.shots.count ?? 0) + " shots")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(drillSetup.name ?? NSLocalizedString("untitled", comment: ""))
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                Text(drillSetup.mode?.uppercased() ?? "N/A")
+                    .font(.caption2)
+                    .foregroundColor(.red)
             }
-            .padding(12)
-            .background(Color.gray.opacity(0.15))
-            .cornerRadius(8)
+            Spacer()
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(String(format: "%.2fs", summaries.first?.totalTime ?? 0))
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.red)
+                Text("\(summaries.first?.shots.count ?? 0) shots")
+                    .font(.caption2)
+                    .foregroundColor(.gray)
+            }
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.gray)
         }
+        .padding(14)
+        .background(Color.white.opacity(0.06))
+        .cornerRadius(12)
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.08), lineWidth: 1))
+        .contentShape(Rectangle())
     }
 }
 

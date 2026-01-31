@@ -80,11 +80,16 @@ struct DescriptionVideoSectionView: View {
     @FocusState private var isDescriptionFocused: Bool
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "text.alignleft")
+                    .font(.system(size: 16))
+                    .foregroundColor(.red)
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(Color.white.opacity(0.08)))
                 Text(NSLocalizedString("description", comment: "Description label"))
                     .foregroundColor(.white)
-                    .font(.body)
+                    .font(.headline)
                 Spacer()
                 if isDescriptionFocused {
                     Image(systemName: "checkmark")
@@ -103,7 +108,7 @@ struct DescriptionVideoSectionView: View {
                     .cornerRadius(8)
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
                     )
                 
                 if description.isEmpty && !isDescriptionFocused {
@@ -197,6 +202,10 @@ struct DescriptionVideoSectionView: View {
             }
             .disabled(disabled)
         }
+        .padding(16)
+        .background(Color.white.opacity(0.06))
+        .cornerRadius(14)
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08), lineWidth: 1))
         .onChange(of: demoVideoURL) { _ in
             // Process the selected video URL
             if let url = demoVideoURL {

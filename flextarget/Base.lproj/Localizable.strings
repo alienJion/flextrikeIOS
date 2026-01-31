@@ -41,7 +41,7 @@
 "performed" = "Performed";
 
 /* HistoryTabView - Filters */
-"all_drill_setup" = "All Drill Setup";
+"all_drill_setup" = "Drill Setup";
 "delay_seconds" = "delay: %ds";
 
 /* BLE/ConnectSmartTargetView */
@@ -255,11 +255,13 @@
 /* History Tab */
 "all_modes" = "All Modes";
 "all_time" = "All Time";
+"done" = "Done";
 "past_week" = "Past Week";
 "past_month" = "Past Month";
 "custom_date" = "Custom Date";
 "no_results" = "No Results";
 "no_results_hint" = "Perform drills to see history";
+"repeats" = "repeats";
 "unknown_date" = "Unknown Date";
 
 /* Admin Tab */
@@ -287,6 +289,7 @@
 
 /* User Management */
 "user_login" = "User Login";
+"login_subtitle" = "Enter your mobile and password to continue";
 "mobile_number" = "Mobile Number";
 "password" = "Password";
 "login" = "Login";

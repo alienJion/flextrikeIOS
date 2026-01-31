@@ -54,16 +54,13 @@ struct TabNavigationView: View {
                 }
                 .tag(2)
                 
-                // Admin Tab
-                NavigationView {
-                    AdminTabView()
-                        .environment(\.managedObjectContext, persistenceController.container.viewContext)
-                }
-                .navigationViewStyle(.stack)
-                .tabItem {
-                    Label(NSLocalizedString("admin", comment: "Admin tab"), systemImage: "person.badge.key")
-                }
-                .tag(3)
+                // Admin Tab（使用 AdminContentView 内 NavigationStack，无需外层 NavigationView）
+                AdminTabView()
+                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                    .tabItem {
+                        Label(NSLocalizedString("admin", comment: "Admin tab"), systemImage: "person.badge.key")
+                    }
+                    .tag(3)
             }
             .tint(.red)
             .preferredColorScheme(.dark)

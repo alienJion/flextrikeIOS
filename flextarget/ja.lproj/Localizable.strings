@@ -81,7 +81,7 @@
 "drill_timer_expired" = "ドリルタイマー期限切れ";
 
 /* HistoryTabView - Filters */
-"all_drill_setup" = "すべてのトレーニング設定";
+"all_drill_setup" = "トレーニング設定";
 "shots_received" = "受信したショット";
 "drill_status_completed" = "完了";
 
@@ -264,11 +264,13 @@
 /* History Tab */
 "all_modes" = "すべてのモード";
 "all_time" = "全期間";
+"done" = "完了";
 "past_week" = "過去1週間";
 "past_month" = "過去1ヶ月";
 "custom_date" = "カスタム日付";
 "no_results" = "結果なし";
 "no_results_hint" = "ドリルを実行して履歴を表示";
+"repeats" = "回";
 "unknown_date" = "不明な日付";
 
 /* Tab Navigation */
@@ -337,6 +339,7 @@
 "logout_confirm" = "ログアウトしてもよろしいですか？";
 "user_logout" = "ユーザーログアウト";
 "user_login" = "ユーザーログイン";
+"login_subtitle" = "携帯番号とパスワードを入力してください";
 "mobile_number" = "携帯電話番号";
 "password" = "パスワード";
 "login" = "ログイン";

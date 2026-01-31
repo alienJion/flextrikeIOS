@@ -61,7 +61,7 @@
 "ready_to_scan" = "Listo para escanear";
 
 /* HistoryTabView - Filters */
-"all_drill_setup" = "Todas las configuraciones de ejercicio";
+"all_drill_setup" = "Configuración de ejercicio";
 
 /* LaserDryFire/OverlayView */
 "fps_display" = "FPS: %d";
@@ -263,11 +263,13 @@
 /* History Tab */
 "all_modes" = "Todos los modos";
 "all_time" = "Todo el tiempo";
+"done" = "Listo";
 "past_week" = "Semana pasada";
 "past_month" = "Mes pasado";
 "custom_date" = "Fecha personalizada";
 "no_results" = "Sin resultados";
 "no_results_hint" = "Realice ejercicios para ver el historial";
+"repeats" = "repeticiones";
 "unknown_date" = "Fecha desconocida";
 
 /* Tab Navigation */
@@ -338,6 +340,7 @@
 "logout_confirm" = "¿Estás seguro de que quieres cerrar sesión?";
 "user_logout" = "Cerrar sesión del usuario";
 "user_login" = "Inicio de sesión de usuario";
+"login_subtitle" = "Introduce tu móvil y contraseña para continuar";
 "mobile_number" = "Número de móvil";
 "password" = "Contraseña";
 "login" = "Iniciar sesión";

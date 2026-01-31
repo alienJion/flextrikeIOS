@@ -218,7 +218,7 @@
 "image_transferred_success" = "Bild erfolgreich übertragen";
 
 /* HistoryTabView - Filters */
-"all_drill_setup" = "Alle Trainingseinstellungen";
+"all_drill_setup" = "Trainingseinstellungen";
 "transfer_cancelled" = "Übertragung abgebrochen";
 "transfer" = "Übertragen";
 "ensure_target_ready" = "Stellen Sie sicher, dass das Ziel bereit ist";
@@ -263,11 +263,13 @@
 /* History Tab */
 "all_modes" = "Alle Modi";
 "all_time" = "Gesamte Zeit";
+"done" = "Fertig";
 "past_week" = "Letzte Woche";
 "past_month" = "Letzter Monat";
 "custom_date" = "Benutzerdefiniertes Datum";
 "no_results" = "Keine Ergebnisse";
 "no_results_hint" = "Führen Sie Übungen durch, um den Verlauf zu sehen";
+"repeats" = "Wdh.";
 "unknown_date" = "Unbekanntes Datum";
 
 /* Tab Navigation */
@@ -338,6 +340,7 @@
 "logout_confirm" = "Sind Sie sicher, dass Sie sich abmelden möchten?";
 "user_logout" = "Benutzer abmelden";
 "user_login" = "Benutzeranmeldung";
+"login_subtitle" = "Gib Handynummer und Passwort ein, um fortzufahren";
 "mobile_number" = "Handynummer";
 "password" = "Passwort";
 "login" = "Anmelden";

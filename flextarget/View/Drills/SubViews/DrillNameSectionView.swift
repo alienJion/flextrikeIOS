@@ -12,7 +12,7 @@ struct DrillNameSectionView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .center, spacing: 8) {
+            HStack(alignment: .center, spacing: 12) {
                 Group {
                     if isEditingName {
                         TextField("Drill Name", text: Binding(
@@ -84,9 +84,13 @@ struct DrillNameSectionView: View {
             
             Rectangle()
                 .frame(height: 1)
-                .foregroundColor(isEditingName ? .red : Color.gray.opacity(0.5))
+                .foregroundColor(isEditingName ? .red : Color.white.opacity(0.15))
                 .animation(.easeInOut, value: isEditingName)
         }
+        .padding(16)
+        .background(Color.white.opacity(0.06))
+        .cornerRadius(14)
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08), lineWidth: 1))
     }
 }
 

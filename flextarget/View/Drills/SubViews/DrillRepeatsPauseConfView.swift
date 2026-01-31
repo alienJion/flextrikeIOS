@@ -21,47 +21,45 @@ struct DrillRepeatsPauseConfView: View {
     @State private var showDurationPicker: Bool = false
 
     var body: some View {
-        HStack {
-            // Clock icon on the left
+        HStack(spacing: 12) {
             Image(systemName: "clock")
+                .font(.system(size: 16))
                 .foregroundColor(.red)
-                .padding(10)
-                .background(Circle().fill(Color.white.opacity(0.1)))
-                .overlay(
-                    Circle().stroke(Color.red, lineWidth: 2)
-                )
+                .frame(width: 36, height: 36)
+                .background(Circle().fill(Color.white.opacity(0.08)))
 
-            // Text label next to icon
             Text(NSLocalizedString("drill_pause_seconds_label", comment: "Drill pause in seconds label"))
                 .foregroundColor(.white)
+                .font(.headline)
 
             Spacer()
 
-            // Button to open picker sheet
             Button(action: {
                 if !disabled {
                     showDurationPicker = true
                 }
             }) {
-                HStack {
+                HStack(spacing: 6) {
                     Text("\(Int(drillDuration))")
                         .foregroundColor(.red)
-                        .font(.system(size: 16))
+                        .font(.subheadline)
+                        .fontWeight(.medium)
                     Image(systemName: "chevron.down")
-                        .foregroundColor(.red)
-                        .font(.system(size: 12))
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.gray)
                 }
                 .padding(.vertical, 8)
                 .padding(.horizontal, 12)
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(6)
+                .background(Color.white.opacity(0.08))
+                .cornerRadius(10)
             }
             .buttonStyle(.plain)
             .disabled(disabled)
         }
-        .padding()
-        .background(Color.gray.opacity(0.2))
-        .cornerRadius(16)
+        .padding(16)
+        .background(Color.white.opacity(0.06))
+        .cornerRadius(14)
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08), lineWidth: 1))
         .sheet(isPresented: $showDurationPicker) {
             DurationPickerView(
                 durationOptions: durationOptions,

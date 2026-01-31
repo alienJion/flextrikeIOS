@@ -54,16 +54,17 @@ struct DrillListView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                List {
-                    ForEach(filteredDrills, id: \.objectID) { drill in
-                        drillRow(for: drill)
-                    }
+            List {
+                ForEach(filteredDrills, id: \.objectID) { drill in
+                    drillRow(for: drill)
                 }
-                .id("drillList")
-                .listStyle(.plain)
-                .animation(nil, value: filteredDrills.count)
             }
+            .id("drillList")
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(Color.black)
+            .contentMargins(.top, 0, for: .scrollContent)
+            .animation(nil, value: filteredDrills.count)
         }
         .tint(.red)
         .navigationTitle(NSLocalizedString("drill_setup", comment: "Navigation title for drill list"))
@@ -89,6 +90,8 @@ struct DrillListView: View {
     @ViewBuilder
     private func drillRow(for drill: DrillSetup) -> some View {
         drillRowContent(for: drill)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             .listRowBackground(Color.clear)
             .onTapGesture {
                 onDrillSelected?(drill)
@@ -112,26 +115,31 @@ struct DrillListView: View {
     
     @ViewBuilder
     private func drillRowContent(for drill: DrillSetup) -> some View {
-        HStack(spacing: 12) {
-            Circle()
-                .fill(Color.gray)
-                .frame(width: 8, height: 8)
+        HStack(spacing: 14) {
+            Image(systemName: "target")
+                .font(.system(size: 16))
+                .foregroundColor(.red)
+                .frame(width: 36, height: 36)
+                .background(Circle().fill(Color.white.opacity(0.08)))
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(drill.name ?? NSLocalizedString("untitled", comment: "Default name for untitled drill"))
                     .foregroundColor(.white)
                     .font(.headline)
-                
                 drillInfo(for: drill)
             }
 
             Spacer()
 
             Image(systemName: "chevron.right")
-                .foregroundColor(.red)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.gray)
         }
+        .padding(16)
+        .background(Color.white.opacity(0.06))
+        .cornerRadius(14)
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08), lineWidth: 1))
         .contentShape(Rectangle())
-        .padding(.vertical, 8)
     }
     
     @ViewBuilder
